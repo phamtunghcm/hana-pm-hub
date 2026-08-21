@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "group": "Bắt buộc",
+    "title": "Điều lệ công ty",
+    "level": "Đặc biệt quan trọng",
+    "content": "- Tên, địa chỉ, ngành nghề kinh doanh, vốn điều lệ. - Tỷ lệ góp vốn, quyền và nghĩa vụ của các thành viên/cổ đông. - Cơ cấu tổ chức. - Người đại diện pháp luật.",
+    "department": "Ban Giám đốc / Pháp chế",
+    "deadline": "Đã hoàn thành",
+    "status": "Hoàn thành"
+  },
+  {
+    "id": 2,
+    "group": "Bắt buộc",
+    "title": "Sổ quản lý lao động",
+    "level": "Bắt buộc khi có nhân sự",
+    "content": "- Thông tin nhân sự. - Chuyên môn, Vị trí việc làm, Bậc lương. - Loại hợp đồng, quá trình BHXH.",
+    "department": "Hành chính Nhân sự",
+    "deadline": "15/09/2026",
+    "status": "Chưa bắt đầu"
+  },
+  {
+    "id": 3,
+    "group": "Bắt buộc",
+    "title": "Nội quy lao động",
+    "level": "Bắt buộc (Đăng ký nếu >10 LĐ)",
+    "content": "- Thời giờ làm việc, nghỉ ngơi. - Trật tự, An toàn lao động. - Các hành vi vi phạm và hình thức kỷ luật.",
+    "department": "Hành chính Nhân sự",
+    "deadline": "10/09/2026",
+    "status": "Đang soạn thảo"
+  },
+  {
+    "id": 4,
+    "group": "Bắt buộc",
+    "title": "Thang, bảng lương",
+    "level": "Bắt buộc",
+    "content": "- Nguyên tắc xây dựng lương. - Phân ngạch, Chia bậc và hệ số lương cho từng vị trí.",
+    "department": "Kế toán / Nhân sự",
+    "deadline": "15/09/2026",
+    "status": "Chưa bắt đầu"
+  },
+  {
+    "id": 5,
+    "group": "Bắt buộc",
+    "title": "Quy chế dân chủ ở cơ sở",
+    "level": "Bắt buộc",
+    "content": "- Nội dung người lao động được biết, tham gia ý kiến. - Đối thoại định kỳ, Hội nghị người lao động.",
+    "department": "Hành chính Nhân sự",
+    "deadline": "20/09/2026",
+    "status": "Chưa bắt đầu"
+  },
+  {
+    "id": 6,
+    "group": "Cần thiết",
+    "title": "Quy chế Lương, Thưởng, Phúc lợi",
+    "level": "Cực kỳ quan trọng (Kế toán & Thuế)",
+    "content": "- Cấu trúc thu nhập. - Các loại phụ cấp (quan trọng cho thuế). - Cơ chế tính KPI, thưởng Lễ, Tết. - Chế độ phúc lợi.",
+    "department": "Kế toán / Nhân sự",
+    "deadline": "15/09/2026",
+    "status": "Chưa bắt đầu"
+  },
+  {
+    "id": 7,
+    "group": "Cần thiết",
+    "title": "Quy chế Tài chính / Chi tiêu nội bộ",
+    "level": "Quản trị dòng tiền",
+    "content": "- Phân cấp phê duyệt chi phí. - Định mức công tác phí. - Tạm ứng, hoàn ứng. - Hồ sơ thanh toán hợp lệ.",
+    "department": "Kế toán",
+    "deadline": "20/09/2026",
+    "status": "Chưa bắt đầu"
+  },
+  {
+    "id": 8,
+    "group": "Cần thiết",
+    "title": "Quy định Bảo mật thông tin (NDA)",
+    "level": "Bảo vệ cốt lõi KD",
+    "content": "- Định nghĩa thông tin bảo mật. - Quyền và nghĩa vụ của nhân viên. - Chế tài xử lý và bồi thường.",
+    "department": "Ban Giám đốc / Pháp chế",
+    "deadline": "25/09/2026",
+    "status": "Chưa bắt đầu"
+  },
+  {
+    "id": 9,
+    "group": "Cần thiết",
+    "title": "Sơ đồ tổ chức & Mô tả công việc (JD)",
+    "level": "Quản trị vận hành",
+    "content": "- Sơ đồ bộ máy. - Chức năng phòng ban. - JD cho từng chức danh: Chi tiết công việc, quyền hạn, KPI.",
+    "department": "Ban Giám đốc",
+    "deadline": "05/09/2026",
+    "status": "Đang soạn thảo"
+  }
+]

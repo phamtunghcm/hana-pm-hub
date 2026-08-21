@@ -1,0 +1,292 @@
+[
+  {
+    "id": "capex_0_1",
+    "group": "Chi phí Cố định Ban đầu",
+    "title": "Thi công thô & Sửa chữa cơ sở",
+    "qty": 1,
+    "unitPrice": 110000000,
+    "totalPrice": 110000000,
+    "status": "Đã chi / Đang thi công",
+    "note": "Hạng mục 1.1 trong CSV CAPEX gốc"
+  },
+  {
+    "id": "capex_0_2",
+    "group": "Chi phí Cố định Ban đầu",
+    "title": "Đặt cọc thuê mặt bằng",
+    "qty": 1,
+    "unitPrice": 100000000,
+    "totalPrice": 100000000,
+    "status": "Đã hoàn thành",
+    "note": "Hạng mục 1.2 trong CSV CAPEX gốc"
+  },
+  {
+    "id": 1,
+    "group": "Nội thất & Vật tư cơ bản",
+    "title": "Giường spa",
+    "qty": 5,
+    "unitPrice": 6000000,
+    "totalPrice": 30000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 2,
+    "group": "Nội thất & Vật tư cơ bản",
+    "title": "Xe đẩy dụng cụ (3 tầng)",
+    "qty": 5,
+    "unitPrice": 500000,
+    "totalPrice": 2500000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 3,
+    "group": "Nội thất & Vật tư cơ bản",
+    "title": "Ghế spa cho kỹ thuật viên",
+    "qty": 5,
+    "unitPrice": 300000,
+    "totalPrice": 1500000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 4,
+    "group": "Nội thất & Vật tư cơ bản",
+    "title": "Quầy tiếp tân",
+    "qty": 1,
+    "unitPrice": 5000000,
+    "totalPrice": 5000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 5,
+    "group": "Nội thất & Vật tư cơ bản",
+    "title": "Bộ sofa tiếp khách",
+    "qty": 1,
+    "unitPrice": 8000000,
+    "totalPrice": 8000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 6,
+    "group": "Thiết bị chuyên môn",
+    "title": "Máy DDS",
+    "qty": 3,
+    "unitPrice": 20000000,
+    "totalPrice": 60000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 7,
+    "group": "Thiết bị chuyên môn",
+    "title": "Máy Bio Max",
+    "qty": 3,
+    "unitPrice": 40000000,
+    "totalPrice": 120000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 8,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Khăn spa các loại (trải giường, quấn đầu)",
+    "qty": 50,
+    "unitPrice": 50000,
+    "totalPrice": 2500000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 9,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Dép đi trong spa",
+    "qty": 20,
+    "unitPrice": 30000,
+    "totalPrice": 600000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 10,
+    "group": "Thiết bị điện máy & Văn phòng",
+    "title": "Laptop",
+    "qty": 1,
+    "unitPrice": 11000000,
+    "totalPrice": 11000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 11,
+    "group": "Thiết bị điện máy & Văn phòng",
+    "title": "Tablet",
+    "qty": 3,
+    "unitPrice": 3000000,
+    "totalPrice": 9000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 12,
+    "group": "Thiết bị điện máy & Văn phòng",
+    "title": "Máy lạnh 2.5HP Pana",
+    "qty": 1,
+    "unitPrice": 11000000,
+    "totalPrice": 11000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 13,
+    "group": "Thiết bị điện máy & Văn phòng",
+    "title": "Máy lạnh 2.5HP Daikin",
+    "qty": 1,
+    "unitPrice": 7000000,
+    "totalPrice": 7000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 14,
+    "group": "Nội thất & Vật tư cơ bản",
+    "title": "Rèm che giường (1 rèm 2.5x2.8m, 1 rèm 1x2.5m)",
+    "qty": 4,
+    "unitPrice": 3610000,
+    "totalPrice": 14440000,
+    "status": "Cần mua",
+    "note": "380k/m2"
+  },
+  {
+    "id": 15,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Đồng phục cho khách",
+    "qty": 50,
+    "unitPrice": 250000,
+    "totalPrice": 12500000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 16,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Đồng phục nhân viên",
+    "qty": 10,
+    "unitPrice": 600000,
+    "totalPrice": 6000000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 17,
+    "group": "Thiết bị điện máy & Văn phòng",
+    "title": "Camera wifi",
+    "qty": 3,
+    "unitPrice": 500000,
+    "totalPrice": 1500000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 18,
+    "group": "Thiết bị điện máy & Văn phòng",
+    "title": "Loa âm trần giá rẻ",
+    "qty": 3,
+    "unitPrice": 400000,
+    "totalPrice": 1200000,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 19,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Ly",
+    "qty": 20,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 20,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Khay dĩa",
+    "qty": 10,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 21,
+    "group": "Đồ tiêu hao & Phụ kiện",
+    "title": "Máy hấp",
+    "qty": 1,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 22,
+    "group": "Thiết bị PCCC",
+    "title": "Bình chữa cháy bột",
+    "qty": 0,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 23,
+    "group": "Thiết bị PCCC",
+    "title": "Bình chữa cháy CO2",
+    "qty": 0,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 24,
+    "group": "Thiết bị PCCC",
+    "title": "Đầu báo khói",
+    "qty": 0,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 25,
+    "group": "Thiết bị PCCC",
+    "title": "Đèn Exit",
+    "qty": 0,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 26,
+    "group": "Thiết bị PCCC",
+    "title": "Tiêu lệnh",
+    "qty": 0,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  },
+  {
+    "id": 27,
+    "group": "Thiết bị PCCC",
+    "title": "Mặt nạ phòng độc",
+    "qty": 0,
+    "unitPrice": 0,
+    "totalPrice": 0,
+    "status": "Cần mua",
+    "note": ""
+  }
+]

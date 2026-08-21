@@ -1,0 +1,382 @@
+﻿# ANTIGRAVITY OPERATING DIRECTIVE: FULL-STACK DEPLOYMENT OF HANA WELLNESS MASTER PM HUB
+
+
+> **Target Platform**: Antigravity Autonomous Coding Agent  
+> **Project Goal**: Build, configure, and deploy a production-grade, real-time, multi-LLM AI Project Management Hub for **HANA Wellness** using **Supabase + Cloudflare Pages + GitHub Actions + Google Gemini + Anthropic Claude**.
+
+
+---
+
+
+## 1. PROJECT SPECIFICATION & ARCHITECTURE
+
+
+### 1.1 Technology Stack Matrix
+* **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons (`lucide-react`), Headless UI / Radix primitives.
+* **Backend Database & Realtime**: Supabase (PostgreSQL with RLS, Stored Procedures, Triggers, Realtime Publications).
+* **Hosting & Edge Serverless**: Cloudflare Pages + Cloudflare Pages Functions (`/functions/api/ai-chat.ts`).
+* **CI/CD Pipeline**: GitHub Actions (`.github/workflows/deploy.yml`).
+* **AI Multi-Engine**:
+  * **Google Gemini 1.5 Flash**: High-speed Daily Standups, KPI digests, Overdue deadline scanners.
+  * **Anthropic Claude 3.5 Sonnet**: Deep WBS decomposition, 100% legal compliance copy audits (strictly banning medical jargon), break-even financial simulations.
+
+
+### 1.2 Core Domain Rules & Business Logic
+1. **Brand Positioning**: Premium Wellness Studio for office workers with neck/shoulder/back discomfort in District 1 & District 3, HCMC.
+2. **Brand Language Policy**: STRICTLY use *"chăm sóc"*, *"wellness"*, *"thư giãn sâu"*, *"reset"*, *"phục hồi cảm giác dễ chịu"*. STRICTLY BAN medical terms (*"trị liệu"*, *"thăm khám"*, *"chữa bệnh"*, *"bệnh nhân"*) in marketing to avoid medical compliance penalties (NĐ 117/2020: 40-50M VND).
+3. **Pricing & Unit Economics**: NO DISCOUNTS. Only compete via Bonus Value (extra sessions, Body Map reports, HomeCare videos). Gross margins must stay within **80% - 87%**.
+   * *Tripwire Product*: HANA First Touch (45 mins — 399,000 VND, 84% margin).
+   * *Core Product*: HANA Signature Reset (60 mins — 500,000 VND, 83% margin).
+   * *Care Plans*: Start 3 (1,399K), Relief 6 (3,000K), Recovery 10 (5,000K), Buddy Pack 2 (6,000K), Team Pack 4 (5,596K).
+4. **Care Passport 6-Form Stack**: FORM-01 Intake Form, FORM-02 Session Note, FORM-03 Body Map, FORM-04 Recovery Report, FORM-05 Aftercare Log (2h/24h/5d/14d SLA), FORM-06 Claim-ready Pack (24h turnaround).
+5. **Financial Guardrails**: Monthly OPEX ceiling <= 155M VND. Break-even target: Month 3. Monthly Net Profit from Month 6 >= 100M VND.
+
+
+---
+
+
+## 2. DATABASE SCHEMA & MIGRATIONS (`supabase/schema.sql`)
+
+
+Antigravity must execute the following PostgreSQL schema on Supabase:
+
+
+```sql
+-- Enable Extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+
+-- Enums
+CREATE TYPE task_priority AS ENUM ('Thấp', 'Trung bình', 'Cao', 'Đặc biệt cao');
+CREATE TYPE task_status AS ENUM ('Chưa bắt đầu', 'Đang thực hiện', 'Đang soạn thảo', 'Đã chuẩn bị', 'Hoàn thành', 'Bị chậm', 'Có rủi ro');
+CREATE TYPE compliance_status AS ENUM ('Chưa nộp', 'Đang thụ lý', 'Đã thẩm duyệt', 'Đã hoàn thành');
+
+
+-- Projects Table
+CREATE TABLE IF NOT EXISTS projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    target_launch_date DATE NOT NULL,
+    capex_budget NUMERIC(15, 2) DEFAULT 0,
+    opex_ceiling_monthly NUMERIC(15, 2) DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+
+-- Workstreams Table (7 Strategic Workstreams)
+CREATE TABLE IF NOT EXISTS workstreams (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    code VARCHAR(20) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    lead_name VARCHAR(100) NOT NULL,
+    color VARCHAR(20) DEFAULT '#0F766E',
+    sort_order INT DEFAULT 0
+);
+
+
+-- Tasks Table (Consolidated Tasks)
+CREATE TABLE IF NOT EXISTS tasks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    workstream_id UUID REFERENCES workstreams(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    pic VARCHAR(100) NOT NULL,
+    start_date DATE,
+    due_date DATE NOT NULL,
+    priority task_priority DEFAULT 'Trung bình',
+    status task_status DEFAULT 'Chưa bắt đầu',
+    completion_percentage INT DEFAULT 0 CHECK (completion_percentage BETWEEN 0 AND 100),
+    source_reference VARCHAR(100),
+    action_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+
+-- Risks Table
+CREATE TABLE IF NOT EXISTS risks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    category VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    likelihood INT CHECK (likelihood BETWEEN 1 AND 5) NOT NULL,
+    impact INT CHECK (impact BETWEEN 1 AND 5) NOT NULL,
+    risk_score INT GENERATED ALWAYS AS (likelihood * impact) STORED,
+    mitigation_plan TEXT NOT NULL,
+    pic VARCHAR(100) NOT NULL,
+    status VARCHAR(50) DEFAULT 'Đang kiểm soát',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+
+-- Compliance Table
+CREATE TABLE IF NOT EXISTS compliance_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    authority VARCHAR(100),
+    legal_basis VARCHAR(150),
+    template_drive_link TEXT,
+    penalty_range VARCHAR(100),
+    mitigation_rule TEXT NOT NULL,
+    status compliance_status DEFAULT 'Chưa nộp',
+    due_date DATE
+);
+
+
+-- Governance Policies Table
+CREATE TABLE IF NOT EXISTS governance_docs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    importance VARCHAR(50) NOT NULL,
+    scope_details TEXT NOT NULL,
+    department VARCHAR(100) NOT NULL,
+    deadline DATE,
+    status VARCHAR(50) DEFAULT 'Chưa bắt đầu'
+);
+
+
+-- Products Menu Table
+CREATE TABLE IF NOT EXISTS products_menu (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    code VARCHAR(50) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    duration_minutes INT,
+    price NUMERIC(12, 2) NOT NULL,
+    therapist_commission NUMERIC(12, 2) DEFAULT 0,
+    consumables_cost NUMERIC(12, 2) DEFAULT 0,
+    gross_margin_percent INT DEFAULT 80,
+    bonus_value_description TEXT,
+    validity_days INT,
+    description TEXT
+);
+
+
+-- Care Passport Forms Table
+CREATE TABLE IF NOT EXISTS care_passport_forms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    form_code VARCHAR(20) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    purpose TEXT NOT NULL,
+    timing VARCHAR(100) NOT NULL,
+    owner_role VARCHAR(100) NOT NULL,
+    kpi_sla VARCHAR(255) NOT NULL
+);
+
+
+-- Realtime & Security
+ALTER PUBLICATION supabase_realtime ADD TABLE tasks;
+ALTER PUBLICATION supabase_realtime ADD TABLE risks;
+ALTER PUBLICATION supabase_realtime ADD TABLE compliance_items;
+
+
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE risks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products_menu ENABLE ROW LEVEL SECURITY;
+ALTER TABLE care_passport_forms ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "Public Read Access" ON projects FOR SELECT USING (true);
+CREATE POLICY "Public Read Tasks" ON tasks FOR SELECT USING (true);
+CREATE POLICY "Public Update Tasks" ON tasks FOR UPDATE USING (true);
+CREATE POLICY "Public Insert Tasks" ON tasks FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Read Risks" ON risks FOR SELECT USING (true);
+CREATE POLICY "Public Read Products" ON products_menu FOR SELECT USING (true);
+CREATE POLICY "Public Read Forms" ON care_passport_forms FOR SELECT USING (true);
+```
+
+
+---
+
+
+## 3. SERVERLESS CLOUDFLARE EDGE FUNCTION (`functions/api/ai-chat.ts`)
+
+
+Antigravity must create the serverless API proxy for Edge AI execution:
+
+
+```typescript
+interface Env {
+  GEMINI_API_KEY?: string;
+  ANTHROPIC_API_KEY?: string;
+}
+
+
+export async function onRequestPost(context: { request: Request; env: Env }) {
+  try {
+    const { request, env } = context;
+    const body = await request.json() as {
+      messages: { role: string; content: string }[];
+      model: 'gemini' | 'claude';
+      apiKey?: string;
+    };
+
+
+    const { messages, model } = body;
+    const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
+    const userPrompt = messages[messages.length - 1]?.content || '';
+
+
+    // 1. Google Gemini 1.5 Flash Proxy
+    if (model === 'gemini') {
+      const apiKey = body.apiKey || env.GEMINI_API_KEY;
+      if (!apiKey) return new Response(JSON.stringify({ reply: 'Chưa cấu hình GEMINI_API_KEY' }), { status: 200 });
+
+
+      const promptText = `${systemPrompt}\n\nUser Question:\n${userPrompt}`;
+      const geminiResp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+          })
+        }
+      );
+
+
+      const geminiData = await geminiResp.json() as any;
+      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Không có phản hồi từ Gemini.';
+      return new Response(JSON.stringify({ reply: text }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+
+    // 2. Anthropic Claude 3.5 Sonnet Proxy
+    if (model === 'claude') {
+      const apiKey = body.apiKey || env.ANTHROPIC_API_KEY;
+      if (!apiKey) return new Response(JSON.stringify({ reply: 'Chưa cấu hình ANTHROPIC_API_KEY' }), { status: 200 });
+
+
+      const claudeMessages = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+
+
+      const claudeResp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20240620',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages: claudeMessages
+        })
+      });
+
+
+      const claudeData = await claudeResp.json() as any;
+      const text = claudeData.content?.[0]?.text || 'Không có phản hồi từ Claude.';
+      return new Response(JSON.stringify({ reply: text }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+
+    return new Response(JSON.stringify({ error: 'Model không hợp lệ' }), { status: 400 });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+}
+```
+
+
+---
+
+
+## 4. CI/CD GITHUB ACTIONS WORKFLOW (`.github/workflows/deploy.yml`)
+
+
+Antigravity must set up the automated CI/CD pipeline:
+
+
+```yaml
+name: Deploy to Cloudflare Pages
+
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+
+      - name: Install dependencies
+        run: npm ci
+
+
+      - name: Build Application
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=hana-pm-hub
+```
+
+
+---
+
+
+## 5. STEP-BY-STEP EXECUTION INSTRUCTIONS FOR ANTIGRAVITY
+
+
+1. **Workspace Initialization**:
+   * Create `package.json` with `@supabase/supabase-js`, `lucide-react`, `tailwindcss`, `clsx`, `react`, `react-dom`, `vite`.
+   * Configure `vite.config.ts`, `tailwind.config.js`, `tsconfig.json`, `wrangler.toml`.
+2. **Component & Module Construction**:
+   * Build `src/components/DashboardView.tsx`: Live KPI summary cards, RAG status meter, workstream progress bars, overdue radar.
+   * Build `src/components/KanbanView.tsx`: Multi-filter Kanban board (filter by WS1-WS7, priority, PIC, status update).
+   * Build `src/components/GanttView.tsx`: Month -3 to Month 6 timeline roadmap.
+   * Build `src/components/LegalRadarView.tsx`: Permits checklist, Google Drive template links, 5 penalty avoidance rules.
+   * Build `src/components/ProductsMenuView.tsx`: Full product menu (First Touch 399K, Signature Reset 500K, Care Plans, 6 Forms).
+   * Build `src/components/RiskMatrixView.tsx`: 13 integrated risks table with Likelihood x Impact auto-scoring.
+   * Build `src/components/AICopilotDrawer.tsx`: Multi-LLM AI chat drawer with quick action prompts.
+3. **Database Migration**:
+   * Connect to Supabase via database client/CLI or run SQL directly using `supabase/schema.sql` and `supabase/seed.sql`.
+4. **Cloudflare Deployment**:
+   * Link repo to Cloudflare Pages or run `npx wrangler pages deploy dist --project-name=hana-pm-hub`.
+   * Configure environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`.
+5. **Verification & Quality Gate**:
+   * Verify all 50 tasks load properly with days-left countdowns.
+   * Verify Realtime subscriptions update live on status change.
+   * Verify AI PM Copilot responds accurately using Gemini and Claude.

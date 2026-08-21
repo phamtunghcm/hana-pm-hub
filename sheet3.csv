@@ -1,0 +1,10 @@
+STT,Nhóm,Tên văn bản / Quy chế,Mức độ,Nội dung chi tiết (Deep Dive),Phòng ban phụ trách,Hạn chót dự kiến,Trạng thái
+1,Bắt buộc,Điều lệ công ty,Đặc biệt quan trọng,"- Tên, địa chỉ, ngành nghề kinh doanh, vốn điều lệ. - Tỷ lệ góp vốn, quyền và nghĩa vụ của các thành viên/cổ đông. - Cơ cấu tổ chức. - Người đại diện pháp luật.",Ban Giám đốc / Pháp chế,Đã hoàn thành,Hoàn thành
+2,Bắt buộc,Sổ quản lý lao động,Bắt buộc khi có nhân sự,"- Thông tin nhân sự. - Chuyên môn, Vị trí việc làm, Bậc lương. - Loại hợp đồng, quá trình BHXH.",Hành chính Nhân sự,15/09/2026,Chưa bắt đầu
+3,Bắt buộc,Nội quy lao động,Bắt buộc (Đăng ký nếu >10 LĐ),"- Thời giờ làm việc, nghỉ ngơi. - Trật tự, An toàn lao động. - Các hành vi vi phạm và hình thức kỷ luật.",Hành chính Nhân sự,10/09/2026,Đang soạn thảo
+4,Bắt buộc,"Thang, bảng lương",Bắt buộc,"- Nguyên tắc xây dựng lương. - Phân ngạch, Chia bậc và hệ số lương cho từng vị trí.",Kế toán / Nhân sự,15/09/2026,Chưa bắt đầu
+5,Bắt buộc,Quy chế dân chủ ở cơ sở,Bắt buộc,"- Nội dung người lao động được biết, tham gia ý kiến. - Đối thoại định kỳ, Hội nghị người lao động.",Hành chính Nhân sự,20/09/2026,Chưa bắt đầu
+6,Cần thiết,"Quy chế Lương, Thưởng, Phúc lợi",Cực kỳ quan trọng (Kế toán & Thuế),"- Cấu trúc thu nhập. - Các loại phụ cấp (quan trọng cho thuế). - Cơ chế tính KPI, thưởng Lễ, Tết. - Chế độ phúc lợi.",Kế toán / Nhân sự,15/09/2026,Chưa bắt đầu
+7,Cần thiết,Quy chế Tài chính / Chi tiêu nội bộ,Quản trị dòng tiền,"- Phân cấp phê duyệt chi phí. - Định mức công tác phí. - Tạm ứng, hoàn ứng. - Hồ sơ thanh toán hợp lệ.",Kế toán,20/09/2026,Chưa bắt đầu
+8,Cần thiết,Quy định Bảo mật thông tin (NDA),Bảo vệ cốt lõi KD,- Định nghĩa thông tin bảo mật. - Quyền và nghĩa vụ của nhân viên. - Chế tài xử lý và bồi thường.,Ban Giám đốc / Pháp chế,25/09/2026,Chưa bắt đầu
+9,Cần thiết,Sơ đồ tổ chức & Mô tả công việc (JD),Quản trị vận hành,"- Sơ đồ bộ máy. - Chức năng phòng ban. - JD cho từng chức danh: Chi tiết công việc, quyền hạn, KPI.",Ban Giám đốc,05/09/2026,Đang soạn thảo
