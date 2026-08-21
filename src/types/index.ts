@@ -50,3 +50,17 @@ export interface AppState {
   docs: DocItem[];
   capex: CapexItem[];
 }
+
+export interface UserPermission {
+  email: string;
+  name?: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'inactive';
+}
+
+export interface ProjectSettings {
+  logoText: string;
+  brandName: string;
+  subtitle: string;
+  targetOpeningDate: string;
+}

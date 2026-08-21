@@ -72,3 +72,21 @@ CREATE POLICY "Allow public access legal" ON public.legal FOR ALL USING (true);
 CREATE POLICY "Allow public access docs" ON public.docs FOR ALL USING (true);
 CREATE POLICY "Allow public access capex" ON public.capex FOR ALL USING (true);
 CREATE POLICY "Allow public access settings" ON public.settings FOR ALL USING (true);
+
+
+-- 6. Bảng User Permissions (Phân quyền & Whitelist Email)
+CREATE TABLE IF NOT EXISTS public.user_permissions (
+    email TEXT PRIMARY KEY,
+    name TEXT,
+    role TEXT NOT NULL DEFAULT 'user', -- 'admin' hoặc 'user'
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.user_permissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public access user_permissions" ON public.user_permissions FOR ALL USING (true);
+
+-- Chèn người dùng Admin mặc định
+INSERT INTO public.user_permissions (email, name, role) 
+VALUES ('phamtunghcm@gmail.com', 'Phạm Tùng (Owner)', 'admin')
+ON CONFLICT (email) DO NOTHING;
