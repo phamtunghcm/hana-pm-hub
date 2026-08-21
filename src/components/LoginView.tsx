@@ -62,7 +62,7 @@ export const LoginView: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                  placeholder="nhanvien@hanawellness.vn"
+                  placeholder="nhanvien@hanawellness-project.com"
                   className="w-full pl-11 pr-4 py-3 bg-[#FAF8F5] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#8D6E63] text-[#3D2B1A]"
                 />
               </div>

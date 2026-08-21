@@ -107,7 +107,7 @@ const AdminView: React.FC = () => {
                   type="email"
                   value={formData.reportEmail}
                   onChange={(e) => setFormData({ ...formData, reportEmail: e.target.value })}
-                  placeholder="nhanbaocao@hanawellness.vn, phamtunghcm@gmail.com"
+                  placeholder="nhanbaocao@hanawellness-project.com, phamtunghcm@gmail.com"
                   className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-[#3D2B1A] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]"
                 />
                 <span className="text-[11px] text-gray-500 mt-1 block">
@@ -243,7 +243,7 @@ const AdminView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
                 <input
                   type="email"
-                  placeholder="email@hanawellness.vn"
+                  placeholder="email@hanawellness-project.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#8D6E63]"
@@ -396,7 +396,7 @@ const AdminView: React.FC = () => {
             <div className="bg-[#FAF8F5] p-4 rounded-xl text-xs font-mono whitespace-pre-wrap text-[#3D2B1A] leading-relaxed border border-gray-200">
               📌 BÁO CÁO TIẾN ĐỘ DỰ ÁN HANA WELLNESS PM HUB<br/>
               ⏰ Thời gian: 08:00 AM Hàng Ngày<br/>
-              🔗 Truy cập PM Hub: https://hana-pm-hub.pages.dev/<br/><br/>
+              🔗 Truy cập PM Hub: https://hanawellness-project.com/<br/><br/>
               📊 1. TỔNG QUAN TIẾN ĐỘ:<br/>
               • Tỷ lệ hoàn thành: {pct}% ({completed}/{totalTasks} công việc)<br/>
               • Ngày mục tiêu khai trương: {formData.targetDate}<br/>
@@ -405,7 +405,7 @@ const AdminView: React.FC = () => {
               {urgentTasks.slice(0, 4).map(u => (
                 <div key={u.id}>• {u.title} | Phụ trách: {u.pic} | Hạn: {u.dueDate}</div>
               ))}<br/>
-              👉 Bấm vào liên kết để xem chi tiết & cập nhật: https://hana-pm-hub.pages.dev/
+              👉 Bấm vào liên kết để xem chi tiết & cập nhật: https://hanawellness-project.com/
             </div>
             <div className="p-3 bg-amber-50 rounded-xl text-xs text-amber-900 border border-amber-200">
               💌 <strong>Địa chỉ gửi đến:</strong> {formData.reportEmail || "Chưa nhập Email"}

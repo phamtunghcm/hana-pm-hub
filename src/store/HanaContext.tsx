@@ -24,9 +24,9 @@ export interface ProjectSettings {
 
 const DEFAULT_USERS: UserPermission[] = [
   { email: "phamtunghcm@gmail.com", name: "Phạm Tùng (Owner)", role: "admin", status: "active" },
-  { email: "admin@hanawellness.vn", name: "Quản trị viên", role: "admin", status: "active" },
-  { email: "ceo@hanawellness.vn", name: "Ban Giám đốc", role: "admin", status: "active" },
-  { email: "staff@hanawellness.vn", name: "Nhân viên xem", role: "user", status: "active" }
+  { email: "admin@hanawellness-project.com", name: "Quản trị viên", role: "admin", status: "active" },
+  { email: "ceo@hanawellness-project.com", name: "Ban Giám đốc", role: "admin", status: "active" },
+  { email: "staff@hanawellness-project.com", name: "Nhân viên xem", role: "user", status: "active" }
 ];
 
 interface HanaContextType {

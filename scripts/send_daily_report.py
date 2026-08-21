@@ -27,7 +27,7 @@ def generate_report():
     urgent = [t for t in tasks if t.get("status") != "Hoàn thành" and t.get("daysLeft", 0) < 15]
     total_capex = sum(float(c.get("totalPrice", 0)) for c in capex)
 
-    site_url = os.getenv("PM_HUB_SITE_URL", "https://hana-pm-hub.pages.dev/")
+    site_url = os.getenv("PM_HUB_SITE_URL", "https://hanawellness-project.com/")
 
     report_lines = [
         "📌 BÁO CÁO TIẾN ĐỘ DỰ ÁN HANA WELLNESS PM HUB",
