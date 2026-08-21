@@ -61,6 +61,8 @@ export interface UserPermission {
 export interface ProjectSettings {
   logoText: string;
   brandName: string;
-  subtitle: string;
-  targetOpeningDate: string;
+  subTitle: string;
+  targetDate: string;
+  reportEmail?: string;
+  zaloWebhook?: string;
 }

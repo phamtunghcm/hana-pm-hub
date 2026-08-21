@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useHana } from "../store/HanaContext";
-import { Settings, Save, Database, Calendar, Type, RefreshCw, CheckCircle2, UserPlus, Trash2, Users, ShieldCheck } from 'lucide-react';
+import { Settings, Save, Database, Calendar, Type, RefreshCw, CheckCircle2, UserPlus, Trash2, Users, ShieldCheck, Mail, Send, Bell } from "lucide-react";
 
 const AdminView: React.FC = () => {
   const { settings, updateSettings, tasks, legal, docs, capex, userPermissions, addUserPermission, removeUserPermission, updateUserRole } = useHana();
@@ -9,19 +9,22 @@ const AdminView: React.FC = () => {
     logoText: settings.logoText,
     brandName: settings.brandName,
     subTitle: settings.subTitle,
-    targetDate: settings.targetDate
+    targetDate: settings.targetDate,
+    reportEmail: settings.reportEmail || "phamtunghcm@gmail.com",
+    zaloWebhook: settings.zaloWebhook || ""
   });
 
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "user">("user");
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [testReportModal, setTestReportModal] = useState(false);
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings(formData);
-    setSuccessMsg("Đã lưu thành công cấu hình thương hiệu và mục tiêu!");
-    setTimeout(() => setSuccessMsg(null), 3000);
+    setSuccessMsg("Đã lưu thành công cấu hình web và thông tin Email/Zalo nhận báo cáo 8:00 AM!");
+    setTimeout(() => setSuccessMsg(null), 4000);
   };
 
   const handleAddUser = (e: React.FormEvent) => {
@@ -31,7 +34,7 @@ const AdminView: React.FC = () => {
     setNewEmail("");
     setNewName("");
     setSuccessMsg(`Đã cấp quyền ${newRole.toUpperCase()} thành công cho: ${newEmail}`);
-    setTimeout(() => setSuccessMsg(null), 3000);
+    setTimeout(() => setSuccessMsg(null), 4000);
   };
 
   const handleResetData = () => {
@@ -45,6 +48,11 @@ const AdminView: React.FC = () => {
     }
   };
 
+  const completed = tasks.filter(t => t.status === "Hoàn thành").length;
+  const totalTasks = tasks.length;
+  const pct = Math.round((completed / totalTasks) * 100) || 0;
+  const urgentTasks = tasks.filter(t => t.status !== "Hoàn thành" && t.daysLeft < 15);
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -55,14 +63,14 @@ const AdminView: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[#3D2B1A]">Trung tâm Quản trị & Cấu hình Web</h1>
-            <p className="text-sm text-[#8D6E63]">Quản lý người dùng, phân quyền Admin/User, logo thương hiệu và mục tiêu khai trương</p>
+            <p className="text-sm text-[#8D6E63]">Cấu hình Email nhận báo cáo 8:00 AM, quản lý người dùng, thương hiệu và mục tiêu khai trương</p>
           </div>
         </div>
       </div>
 
       {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-medium flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-medium flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
@@ -70,8 +78,79 @@ const AdminView: React.FC = () => {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left Column: Brand Settings */}
+        {/* Left Column: Settings Form */}
         <div className="lg:col-span-2 space-y-6">
+
+          {/* Email & Zalo Report Configuration Card */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-[#8D6E63]/20 bg-linear-to-br from-white to-[#FAF8F5]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-[#3D2B1A] flex items-center gap-2">
+                <Bell className="w-5 h-5 text-[#8D6E63]" />
+                <span>Cấu hình Báo cáo Tự động 8:00 AM (Email & Zalo)</span>
+              </h2>
+              <span className="text-xs bg-[#8D6E63] text-white px-2.5 py-1 rounded-full font-bold">
+                Tự động hàng ngày
+              </span>
+            </div>
+
+            <p className="text-xs text-[#8D6E63] mb-4">
+              Nhập địa chỉ Email và Zalo webhook bên dưới để nhận bản tin tóm lược tiến độ, công việc gấp và ngân sách CAPEX tự động gửi lúc 08:00 AM mỗi ngày.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#5D4037] mb-1.5 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-[#8D6E63]" />
+                  <span>Email Nhận Báo Cáo Hàng Ngày:</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.reportEmail}
+                  onChange={(e) => setFormData({ ...formData, reportEmail: e.target.value })}
+                  placeholder="nhanbaocao@hanawellness.vn, phamtunghcm@gmail.com"
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-semibold text-[#3D2B1A] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]"
+                />
+                <span className="text-[11px] text-gray-500 mt-1 block">
+                  * Có thể nhập 1 hoặc nhiều Email (phân cách bằng dấu phẩy). Báo cáo sẽ gửi trực tiếp vào Hộp thư đến 8:00 AM.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#5D4037] mb-1.5 flex items-center gap-1.5">
+                  <Send className="w-4 h-4 text-blue-600" />
+                  <span>Zalo Webhook URL / Nhóm Zalo (Không bắt buộc):</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.zaloWebhook}
+                  onChange={(e) => setFormData({ ...formData, zaloWebhook: e.target.value })}
+                  placeholder="https://chat.zalo.me/webhook/..."
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm text-[#3D2B1A] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]"
+                />
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-between items-center border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setTestReportModal(true)}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#F5F0E6] hover:bg-amber-100 text-[#3D2B1A] border border-[#E7E0D6] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5 text-[#8D6E63]" />
+                  <span>Gửi Thử Báo Cáo Mẫu Ngay</span>
+                </button>
+
+                <button
+                  onClick={handleSaveSettings}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#3D2B1A] hover:bg-[#2C1F13] text-[#FDFBF7] font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Lưu Cấu Hình Báo Cáo 8:00 AM</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Brand Settings */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EFEBE6]">
             <h2 className="text-lg font-bold text-[#3D2B1A] mb-4 flex items-center gap-2">
               <Type className="w-5 h-5 text-[#8D6E63]" />
@@ -301,6 +380,48 @@ const AdminView: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Test Report Modal Preview */}
+      {testReportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-[#E7E0D6]">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-[#3D2B1A] flex items-center gap-2">
+                <Mail className="w-5 h-5 text-[#8D6E63]" />
+                <span>Xem trước Báo cáo Mẫu 8:00 AM</span>
+              </h3>
+              <button onClick={() => setTestReportModal(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
+            </div>
+
+            <div className="bg-[#FAF8F5] p-4 rounded-xl text-xs font-mono whitespace-pre-wrap text-[#3D2B1A] leading-relaxed border border-gray-200">
+              📌 BÁO CÁO TIẾN ĐỘ DỰ ÁN HANA WELLNESS PM HUB<br/>
+              ⏰ Thời gian: 08:00 AM Hàng Ngày<br/>
+              🔗 Truy cập PM Hub: https://hana-pm-hub.pages.dev/<br/><br/>
+              📊 1. TỔNG QUAN TIẾN ĐỘ:<br/>
+              • Tỷ lệ hoàn thành: {pct}% ({completed}/{totalTasks} công việc)<br/>
+              • Ngày mục tiêu khai trương: {formData.targetDate}<br/>
+              • Ngân sách CAPEX: 513,740,000 VNĐ (gồm 110tr thi công + 100tr đặt cọc + mua sắm)<br/><br/>
+              🚨 2. CÔNG VIỆC CẦN XỬ LÝ GẤP ({urgentTasks.length} việc):<br/>
+              {urgentTasks.slice(0, 4).map(u => (
+                <div key={u.id}>• {u.title} | Phụ trách: {u.pic} | Hạn: {u.dueDate}</div>
+              ))}<br/>
+              👉 Bấm vào liên kết để xem chi tiết & cập nhật: https://hana-pm-hub.pages.dev/
+            </div>
+            <div className="p-3 bg-amber-50 rounded-xl text-xs text-amber-900 border border-amber-200">
+              💌 <strong>Địa chỉ gửi đến:</strong> {formData.reportEmail || "Chưa nhập Email"}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setTestReportModal(false)}
+                className="px-4 py-2 bg-[#3D2B1A] text-white rounded-xl text-xs font-bold hover:bg-[#2C1F13]"
+              >
+                Đóng Cửa Sổ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

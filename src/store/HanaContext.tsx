@@ -18,6 +18,8 @@ export interface ProjectSettings {
   subTitle: string;
   logoText: string;
   targetDate: string;
+  reportEmail?: string;
+  zaloWebhook?: string;
 }
 
 const DEFAULT_USERS: UserPermission[] = [
@@ -57,7 +59,9 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     brandName: "HANA Wellness",
     subTitle: "PM HUB",
     logoText: "H",
-    targetDate: "2026-11-02"
+    targetDate: "2026-11-02",
+    reportEmail: "phamtunghcm@gmail.com",
+    zaloWebhook: ""
   });
 
   const [currentUser, setCurrentUser] = useState<UserPermission | null>(null);
