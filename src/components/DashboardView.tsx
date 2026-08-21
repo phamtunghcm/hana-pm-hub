@@ -1,20 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { useHana, DRIVE_LINKS } from '../store/HanaContext';
-import { Calendar, AlertTriangle, ArrowRight, CheckCircle2, Clock, PieChart, BarChart3, Wallet, FileText, Scale } from 'lucide-react';
-import EditModal from './EditModal';
+import React, { useState, useMemo } from "react";
+import { useHana, DRIVE_LINKS } from "../store/HanaContext";
+import { Calendar, AlertTriangle, ArrowRight, CheckCircle2, Clock, PieChart, BarChart3, Wallet, FileText, Scale } from "lucide-react";
+import EditModal from "./EditModal";
 
 interface DashboardViewProps {
   onNavigate: (view: string) => void;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const { tasks, capex, settings } = useHana();
+  const { tasks, legal, docs, capex, settings } = useHana();
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [selectedItemForEdit, setSelectedItemForEdit] = useState<any | null>(null);
 
   // Compute Days Left to Opening
   const daysToOpening = useMemo(() => {
-    const target = new Date(settings.targetDate || '2026-11-02');
+    const target = new Date(settings.targetDate || "2026-11-02");
     const today = new Date();
     const diffTime = target.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -29,8 +29,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     let pending = 0;
 
     tasks.forEach(t => {
-      if (t.status === 'Hoàn thành') completed++;
-      else if (t.status === 'Đang thực hiện') {
+      if (t.status === "Hoàn thành") completed++;
+      else if (t.status === "Đang thực hiện") {
         inProgress++;
         if (t.daysLeft < 0) overdue++;
       } else {
@@ -53,14 +53,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     };
   }, [tasks]);
 
+  // Specific lists for level-1 details
+  const completedList = useMemo(() => tasks.filter(t => t.status === "Hoàn thành"), [tasks]);
+  const doingList = useMemo(() => tasks.filter(t => t.status === "Đang thực hiện"), [tasks]);
+
   // Compute CAPEX Total & Group Breakdown
   const capexStats = useMemo(() => {
     let total = 0;
     const groupTotals: Record<string, number> = {};
     capex.forEach(c => {
-      const val = typeof c.totalPrice === 'number' ? c.totalPrice : parseFloat(String(c.totalPrice).replace(/,/g, '')) || 0;
+      const val = typeof c.totalPrice === "number" ? c.totalPrice : parseFloat(String(c.totalPrice).replace(/,/g, "")) || 0;
       total += val;
-      const g = c.group || 'Khác';
+      const g = c.group || "Khác";
       groupTotals[g] = (groupTotals[g] || 0) + val;
     });
     return { total, groupTotals };
@@ -68,31 +72,35 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
   // Urgent tasks (daysLeft < 15 or overdue, not completed)
   const urgentTasks = useMemo(() => {
-    return tasks.filter(t => t.status !== 'Hoàn thành').slice(0, 4);
+    return tasks.filter(t => t.status !== "Hoàn thành").slice(0, 4);
   }, [tasks]);
 
   // Phase progress
   const phasesStats = useMemo(() => {
-    const map: Record<string, { total: number; done: number }> = {
-      'Trước khai trương': { total: 0, done: 0 },
-      'Khai trương': { total: 0, done: 0 },
-      'Hậu khai trương': { total: 0, done: 0 },
+    const map: Record<string, { total: number; done: number; doing: number; pending: number }> = {
+      "Trước khai trương": { total: 0, done: 0, doing: 0, pending: 0 },
+      "Khai trương": { total: 0, done: 0, doing: 0, pending: 0 },
+      "Hậu khai trương": { total: 0, done: 0, doing: 0, pending: 0 },
     };
 
     tasks.forEach(t => {
-      const ws = t.workstream || '';
-      let phaseKey = 'Trước khai trương';
-      if (ws.includes('Khai trương chính thức') || ws.includes('Khai trương thử nghiệm')) phaseKey = 'Khai trương';
-      else if (ws.includes('Tháng thứ')) phaseKey = 'Hậu khai trương';
+      const ws = t.workstream || "";
+      let phaseKey = "Trước khai trương";
+      if (ws.includes("Khai trương chính thức") || ws.includes("Khai trương thử nghiệm")) phaseKey = "Khai trương";
+      else if (ws.includes("Tháng thứ")) phaseKey = "Hậu khai trương";
 
       map[phaseKey].total++;
-      if (t.status === 'Hoàn thành') map[phaseKey].done++;
+      if (t.status === "Hoàn thành") map[phaseKey].done++;
+      else if (t.status === "Đang thực hiện") map[phaseKey].doing++;
+      else map[phaseKey].pending++;
     });
 
     return Object.entries(map).map(([name, data]) => ({
       name,
       total: data.total,
       done: data.done,
+      doing: data.doing,
+      pending: data.pending,
       pct: data.total > 0 ? Math.round((data.done / data.total) * 100) : 0,
     }));
   }, [tasks]);
@@ -119,20 +127,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <p className="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Mục tiêu Khai trương</p>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-red-600">{daysToOpening} ngày</span>
-              <span className="text-xs text-[#5D4037] font-medium">({settings.targetDate})</span>
+              <span className="text-xs text-[#8D6E63] font-medium">({settings.targetDate})</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* KPI Cards Row (Clickable + Hover Level 1 Detail) */}
+      {/* Row 1: KPI Summary Cards (Interactive Hover Level-1 Details) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Tổng Tasks */}
+        {/* Card 1: Tổng số việc */}
         <div 
-          onClick={() => onNavigate('tasks')}
-          onMouseEnter={() => setHoveredSection('kpi_tasks')}
+          onClick={() => onNavigate("tasks")}
+          onMouseEnter={() => setHoveredSection("kpi_tasks")}
           onMouseLeave={() => setHoveredSection(null)}
-          className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8E6E1] hover:border-amber-400 hover:shadow-md transition-all cursor-pointer relative group"
+          className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8E6E1] hover:border-blue-400 hover:shadow-md transition-all cursor-pointer relative group"
         >
           <div className="flex justify-between items-center text-[#8D6E63] mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Tổng số việc</span>
@@ -144,21 +152,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </p>
 
           {/* Level 1 Detail Hover Tooltip */}
-          {hoveredSection === 'kpi_tasks' && (
-            <div className="absolute left-0 top-full mt-2 w-64 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-xl z-30 space-y-1.5 animate-in fade-in duration-150">
-              <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Chi tiết phân bổ:</p>
-              <p className="flex justify-between"><span>Công việc chính:</span> <span className="font-bold">36 tasks</span></p>
-              <p className="flex justify-between"><span>Hồ sơ pháp lý:</span> <span className="font-bold">5 mục</span></p>
-              <p className="flex justify-between"><span>Văn bản nội bộ:</span> <span className="font-bold">9 tài liệu</span></p>
-              <p className="flex justify-between"><span>Vật dụng capex:</span> <span className="font-bold">29 hạng mục</span></p>
+          {hoveredSection === "kpi_tasks" && (
+            <div className="absolute left-0 top-full mt-2 w-72 bg-[#3D2B1A] text-white text-xs p-3.5 rounded-xl shadow-2xl z-40 space-y-1.5 animate-in fade-in duration-150 border border-amber-900/40">
+              <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Chi tiết cấp 1 — Phân bổ Dữ liệu Gốc:</p>
+              <p className="flex justify-between"><span>• Công việc chính:</span> <span className="font-bold text-amber-200">{tasks.length} tasks</span></p>
+              <p className="flex justify-between"><span>• Hồ sơ pháp lý (PCCC &gt;100m2):</span> <span className="font-bold text-amber-200">{legal.length} mục</span></p>
+              <p className="flex justify-between"><span>• Văn bản lập quy nội bộ:</span> <span className="font-bold text-amber-200">{docs.length} tài liệu</span></p>
+              <p className="flex justify-between"><span>• Danh mục Mua sắm CAPEX:</span> <span className="font-bold text-amber-200">{capex.length} hạng mục</span></p>
             </div>
           )}
         </div>
 
         {/* Card 2: Hoàn thành */}
         <div 
-          onClick={() => onNavigate('tasks')}
-          onMouseEnter={() => setHoveredSection('kpi_done')}
+          onClick={() => onNavigate("tasks")}
+          onMouseEnter={() => setHoveredSection("kpi_done")}
           onMouseLeave={() => setHoveredSection(null)}
           className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8E6E1] hover:border-green-400 hover:shadow-md transition-all cursor-pointer relative group"
         >
@@ -171,20 +179,24 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <div className="bg-green-500 h-1.5 rounded-full" style={{ width: taskStats.completedPct + "%" }}></div>
           </div>
 
-          {hoveredSection === 'kpi_done' && (
-            <div className="absolute left-0 top-full mt-2 w-64 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-xl z-30 space-y-1.5 animate-in fade-in duration-150">
-              <p className="font-bold border-b border-white/20 pb-1 text-green-300">Tỷ lệ đạt mục tiêu:</p>
-              <p className="flex justify-between"><span>Tỷ lệ hoàn thành:</span> <span className="font-bold text-green-400">{taskStats.completedPct}%</span></p>
-              <p className="flex justify-between"><span>Đã chốt hợp đồng:</span> <span className="font-bold">CEO</span></p>
-              <p className="flex justify-between"><span>Đã hoàn thành PCCC:</span> <span className="font-bold">Hồ sơ xong</span></p>
+          {hoveredSection === "kpi_done" && (
+            <div className="absolute left-0 top-full mt-2 w-72 bg-[#3D2B1A] text-white text-xs p-3.5 rounded-xl shadow-2xl z-40 space-y-1.5 animate-in fade-in duration-150 border border-green-900/40">
+              <p className="font-bold border-b border-white/20 pb-1 text-green-300">Chi tiết cấp 1 — Đã hoàn thành ({taskStats.completed}):</p>
+              {completedList.length > 0 ? (
+                completedList.map(t => (
+                  <p key={t.id} className="text-green-100 truncate">• {t.title} <span className="text-gray-400">({t.pic})</span></p>
+                ))
+              ) : (
+                <p className="text-gray-300">• Chưa có mục hoàn thành</p>
+              )}
             </div>
           )}
         </div>
 
         {/* Card 3: Đang làm */}
         <div 
-          onClick={() => onNavigate('tasks')}
-          onMouseEnter={() => setHoveredSection('kpi_doing')}
+          onClick={() => onNavigate("tasks")}
+          onMouseEnter={() => setHoveredSection("kpi_doing")}
           onMouseLeave={() => setHoveredSection(null)}
           className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8E6E1] hover:border-amber-400 hover:shadow-md transition-all cursor-pointer relative group"
         >
@@ -194,41 +206,41 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
           <div className="text-3xl font-black text-amber-600">{taskStats.inProgress}</div>
           <div className="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: taskStats.completedPct + "%" }}></div>
+            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: taskStats.inProgressPct + "%" }}></div>
           </div>
 
-          {hoveredSection === 'kpi_doing' && (
-            <div className="absolute left-0 top-full mt-2 w-64 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-xl z-30 space-y-1.5 animate-in fade-in duration-150">
-              <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Công việc đang triển khai:</p>
-              <p className="flex justify-between"><span>Care Passport / AI:</span> <span className="font-bold">IT / Ops</span></p>
-              <p className="flex justify-between"><span>Học & thi chứng chỉ:</span> <span className="font-bold">Training</span></p>
-              <p className="flex justify-between"><span>Nội quy & Sơ đồ JD:</span> <span className="font-bold">Đang soạn</span></p>
+          {hoveredSection === "kpi_doing" && (
+            <div className="absolute left-0 top-full mt-2 w-80 bg-[#3D2B1A] text-white text-xs p-3.5 rounded-xl shadow-2xl z-40 space-y-1.5 animate-in fade-in duration-150 border border-amber-900/40">
+              <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Chi tiết cấp 1 — Đang thực hiện ({taskStats.inProgress}):</p>
+              {doingList.slice(0, 5).map(t => (
+                <p key={t.id} className="text-amber-100 truncate">• {t.title} <span className="text-gray-400">({t.pic})</span></p>
+              ))}
             </div>
           )}
         </div>
 
         {/* Card 4: Quá hạn */}
         <div 
-          onClick={() => onNavigate('tasks')}
-          onMouseEnter={() => setHoveredSection('kpi_overdue')}
+          onClick={() => onNavigate("tasks")}
+          onMouseEnter={() => setHoveredSection("kpi_overdue")}
           onMouseLeave={() => setHoveredSection(null)}
-          className="bg-white p-5 rounded-2xl shadow-sm border border-[#E8E6E1] hover:border-red-400 hover:shadow-md transition-all cursor-pointer relative group"
+          className="bg-[#FFF5F5] p-5 rounded-2xl shadow-sm border border-red-200 hover:border-red-500 hover:shadow-md transition-all cursor-pointer relative group"
         >
-          <div className="flex justify-between items-center text-[#8D6E63] mb-2">
+          <div className="flex justify-between items-center text-red-800 mb-2">
             <span className="text-xs font-bold uppercase tracking-wider">Quá hạn / Cần gấp</span>
-            <AlertTriangle size={20} className="text-red-500" />
+            <AlertTriangle size={20} className="text-red-500 animate-pulse" />
           </div>
           <div className="text-3xl font-black text-red-600">{taskStats.overdue}</div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div className="bg-red-500 h-1.5 rounded-full" style={{ width: taskStats.completedPct + "%" }}></div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-3 overflow-hidden">
+            <div className="bg-red-500 h-1.5 rounded-full" style={{ width: (taskStats.overduePct || 10) + "%" }}></div>
           </div>
 
-          {hoveredSection === 'kpi_overdue' && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-xl z-30 space-y-1.5 animate-in fade-in duration-150">
-              <p className="font-bold border-b border-white/20 pb-1 text-red-300">Công việc trễ hạn:</p>
-              <p className="text-red-200">• Chốt mô hình kinh doanh (-21 ngày)</p>
-              <p className="text-red-200">• Care Passport EHR (-51 ngày)</p>
-              <p className="text-red-200">• CRM & AI vận hành (-32 ngày)</p>
+          {hoveredSection === "kpi_overdue" && (
+            <div className="absolute right-0 top-full mt-2 w-80 bg-[#3D2B1A] text-white text-xs p-3.5 rounded-xl shadow-2xl z-40 space-y-1.5 animate-in fade-in duration-150 border border-red-900/40">
+              <p className="font-bold border-b border-white/20 pb-1 text-red-300">Chi tiết cấp 1 — Cần xử lý gấp ({urgentTasks.length}):</p>
+              {urgentTasks.map(t => (
+                <p key={t.id} className="text-red-200 truncate">• {t.title} <span className="text-amber-300">({t.dueDate})</span></p>
+              ))}
             </div>
           )}
         </div>
@@ -237,14 +249,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       {/* Diversity Visual Section: Donut Chart + Phase Progress */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Visual 1: Donut SVG Chart for Status Ratio */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#E8E6E1] flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#E8E6E1] flex flex-col justify-between relative">
+          <div className="flex justify-between items-center mb-2">
             <h3 className="font-bold text-[#3D2B1A] text-lg flex items-center gap-2">
               <PieChart size={18} className="text-amber-700" /> Tỷ lệ Trạng thái Công việc
             </h3>
+            <span className="text-[11px] text-[#8D6E63] font-medium bg-[#F5F0E6] px-2 py-0.5 rounded">Rê chuột xem chi tiết</span>
           </div>
 
-          <div className="flex items-center justify-center my-4 relative">
+          <div 
+            onMouseEnter={() => setHoveredSection("donut_center")}
+            onMouseLeave={() => setHoveredSection(null)}
+            className="flex items-center justify-center my-4 relative cursor-pointer group"
+          >
             {/* SVG Donut Chart */}
             <svg className="w-44 h-44 transform -rotate-90" viewBox="0 0 36 36">
               <path
@@ -265,28 +282,104 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               />
             </svg>
-            <div className="absolute text-center">
+            <div className="absolute text-center group-hover:scale-105 transition-transform">
               <span className="text-2xl font-black text-[#3D2B1A]">{taskStats.completedPct}%</span>
               <span className="block text-xs text-[#8D6E63] font-medium">Hoàn thành</span>
             </div>
+
+            {/* Level 1 Detail Tooltip for Donut Center Hover */}
+            {hoveredSection === "donut_center" && (
+              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 bg-[#3D2B1A] text-white text-xs p-3.5 rounded-xl shadow-2xl z-40 space-y-1.5 animate-in fade-in duration-150 border border-amber-900/40">
+                <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Chi tiết Cấp 1 — Tỷ lệ Trạng thái ({taskStats.total} việc):</p>
+                <p className="flex justify-between text-green-300"><span>• Hoàn thành:</span> <span className="font-bold">{taskStats.completed} tasks ({taskStats.completedPct}%)</span></p>
+                <p className="flex justify-between text-amber-300"><span>• Đang thực hiện:</span> <span className="font-bold">{taskStats.inProgress} tasks ({taskStats.inProgressPct}%)</span></p>
+                <p className="flex justify-between text-red-300"><span>• Quá hạn / Cần gấp:</span> <span className="font-bold">{taskStats.overdue} tasks ({taskStats.overduePct}%)</span></p>
+                <p className="flex justify-between text-gray-300"><span>• Chưa thực hiện:</span> <span className="font-bold">{taskStats.pending} tasks ({taskStats.pendingPct}%)</span></p>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E8E6E1] text-xs font-medium text-[#5D4037]">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-green-500"></span>
-              <span>Hoàn thành ({taskStats.completed})</span>
+          {/* Interactive Legend Row (Hover each item -> Level 1 Popover) */}
+          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#E8E6E1] text-xs font-semibold text-[#5D4037]">
+            {/* Legend 1: Hoàn thành */}
+            <div 
+              onMouseEnter={() => setHoveredSection("donut_completed")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-green-50 transition-colors cursor-pointer relative"
+            >
+              <span className="w-3 h-3 rounded-full bg-green-500 shrink-0"></span>
+              <span className="truncate">Hoàn thành ({taskStats.completed})</span>
+
+              {hoveredSection === "donut_completed" && (
+                <div className="absolute left-0 bottom-full mb-2 w-64 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-green-900/40">
+                  <p className="font-bold border-b border-white/20 pb-1 text-green-300">Chi tiết — Đã hoàn thành ({taskStats.completed}):</p>
+                  {completedList.length > 0 ? (
+                    completedList.map(t => <p key={t.id} className="text-green-100 truncate">• {t.title}</p>)
+                  ) : (
+                    <p className="text-gray-300">• Chưa có mục hoàn thành</p>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-              <span>Đang làm ({taskStats.inProgress})</span>
+
+            {/* Legend 2: Đang làm */}
+            <div 
+              onMouseEnter={() => setHoveredSection("donut_doing")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-amber-50 transition-colors cursor-pointer relative"
+            >
+              <span className="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+              <span className="truncate">Đang làm ({taskStats.inProgress})</span>
+
+              {hoveredSection === "donut_doing" && (
+                <div className="absolute right-0 bottom-full mb-2 w-72 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-amber-900/40">
+                  <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Chi tiết — Đang thực hiện ({taskStats.inProgress}):</p>
+                  {doingList.slice(0, 5).map(t => (
+                    <p key={t.id} className="text-amber-100 truncate">• {t.title}</p>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500"></span>
-              <span>Quá hạn ({taskStats.overdue})</span>
+
+            {/* Legend 3: Quá hạn */}
+            <div 
+              onMouseEnter={() => setHoveredSection("donut_overdue")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer relative"
+            >
+              <span className="w-3 h-3 rounded-full bg-red-500 shrink-0"></span>
+              <span className="truncate">Quá hạn ({taskStats.overdue})</span>
+
+              {hoveredSection === "donut_overdue" && (
+                <div className="absolute left-0 bottom-full mb-2 w-72 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-red-900/40">
+                  <p className="font-bold border-b border-white/20 pb-1 text-red-300">Chi tiết — Cần xử lý gấp ({urgentTasks.length}):</p>
+                  {urgentTasks.map(t => (
+                    <p key={t.id} className="text-red-200 truncate">• {t.title} ({t.dueDate})</p>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-gray-400"></span>
-              <span>Chưa làm ({taskStats.pending})</span>
+
+            {/* Legend 4: Chưa làm */}
+            <div 
+              onMouseEnter={() => setHoveredSection("donut_pending")}
+              onMouseLeave={() => setHoveredSection(null)}
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer relative"
+            >
+              <span className="w-3 h-3 rounded-full bg-gray-400 shrink-0"></span>
+              <span className="truncate">Chưa làm ({taskStats.pending})</span>
+
+              {hoveredSection === "donut_pending" && (
+                <div className="absolute right-0 bottom-full mb-2 w-72 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-gray-700">
+                  <p className="font-bold border-b border-white/20 pb-1 text-gray-300">Chi tiết — Chưa thực hiện ({taskStats.pending}):</p>
+                  {phasesStats.map(p => (
+                    <p key={p.name} className="flex justify-between text-gray-200">
+                      <span>• {p.name}:</span>
+                      <span className="font-bold">{p.pending} tasks</span>
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -298,8 +391,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               <BarChart3 size={18} className="text-amber-700" /> Tiến độ theo Giai đoạn Dự án
             </h3>
             <button 
-              onClick={() => onNavigate('tasks')}
-              className="text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center gap-1"
+              onClick={() => onNavigate("tasks")}
+              className="text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center gap-1 cursor-pointer"
             >
               Bảng công việc <ArrowRight size={12} />
             </button>
@@ -309,7 +402,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             {phasesStats.map(p => (
               <div 
                 key={p.name}
-                onClick={() => onNavigate('tasks')}
+                onClick={() => onNavigate("tasks")}
                 onMouseEnter={() => setHoveredSection("phase_" + p.name)}
                 onMouseLeave={() => setHoveredSection(null)}
                 className="cursor-pointer p-3 rounded-xl hover:bg-[#FDFBF7] transition-all border border-transparent hover:border-[#E8E6E1] relative"
@@ -320,6 +413,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                     {p.done}/{p.total} tasks ({p.pct}%)
                   </span>
                 </div>
+
                 <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                   <div 
                     className={"h-3 rounded-full transition-all duration-500 " + (p.name === "Trước khai trương" ? "bg-amber-600" : p.name === "Khai trương" ? "bg-orange-500" : "bg-green-600")}
@@ -329,11 +423,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
                 {/* Level 1 Detail Tooltip for Phase */}
                 {hoveredSection === "phase_" + p.name && (
-                  <div className="absolute left-0 top-full mt-1 w-full bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-xl z-30 space-y-1 animate-in fade-in duration-150">
-                    <p className="font-bold text-amber-300 border-b border-white/20 pb-1">Chi tiết {p.name}:</p>
-                    <p>• Tổng số hạng mục: {p.total} công việc</p>
-                    <p>• Đã hoàn tất: {p.done} mục</p>
-                    <p>• Bấm để lọc danh sách công việc của giai đoạn này</p>
+                  <div className="absolute left-0 top-full mt-1 w-full bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-xl z-30 space-y-1 animate-in fade-in duration-150 border border-amber-900/40">
+                    <p className="font-bold text-amber-300 border-b border-white/20 pb-1">Chi tiết cấp 1 — {p.name}:</p>
+                    <p className="flex justify-between"><span>• Tổng số công việc:</span> <span className="font-bold">{p.total} tasks</span></p>
+                    <p className="flex justify-between text-green-300"><span>• Đã hoàn thành:</span> <span className="font-bold">{p.done} tasks</span></p>
+                    <p className="flex justify-between text-amber-300"><span>• Đang thực hiện:</span> <span className="font-bold">{p.doing} tasks</span></p>
+                    <p className="flex justify-between text-gray-300"><span>• Chưa thực hiện:</span> <span className="font-bold">{p.pending} tasks</span></p>
                   </div>
                 )}
               </div>
@@ -386,8 +481,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
         {/* CAPEX Summary Card (Includes Renovation & Rent Deposit) */}
         <div 
-          onClick={() => onNavigate('capex')}
-          onMouseEnter={() => setHoveredSection('capex_summary')}
+          onClick={() => onNavigate("capex")}
+          onMouseEnter={() => setHoveredSection("capex_summary")}
           onMouseLeave={() => setHoveredSection(null)}
           className="bg-white p-6 rounded-2xl shadow-sm border border-[#E8E6E1] hover:border-amber-400 cursor-pointer transition-all flex flex-col justify-between relative"
         >
@@ -428,13 +523,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
 
           {/* Level 1 Detail Tooltip */}
-          {hoveredSection === 'capex_summary' && (
-            <div className="absolute left-0 top-full mt-2 w-full bg-[#3D2B1A] text-white text-xs p-4 rounded-xl shadow-xl z-30 space-y-1.5 animate-in fade-in duration-150">
-              <p className="font-bold text-amber-300 border-b border-white/20 pb-1">Chi tiết 5 nhóm Ngân sách:</p>
+          {hoveredSection === "capex_summary" && (
+            <div className="absolute left-0 top-full mt-2 w-full bg-[#3D2B1A] text-white text-xs p-4 rounded-xl shadow-2xl z-40 space-y-1.5 animate-in fade-in duration-150 border border-amber-900/40">
+              <p className="font-bold text-amber-300 border-b border-white/20 pb-1">Chi tiết cấp 1 — 5 nhóm Ngân sách CAPEX:</p>
               {Object.entries(capexStats.groupTotals).map(([grp, amt]) => (
                 <p key={grp} className="flex justify-between">
-                  <span>{grp}:</span>
-                  <span className="font-bold">{amt.toLocaleString()} đ</span>
+                  <span>• {grp}:</span>
+                  <span className="font-bold text-amber-200">{amt.toLocaleString()} đ</span>
                 </p>
               ))}
             </div>
