@@ -89,6 +89,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   // Specific lists for level-1 details
   const completedList = useMemo(() => combinedTasks.filter(t => t.status === "Hoàn thành"), [combinedTasks]);
   const doingList = useMemo(() => combinedTasks.filter(t => t.status === "Đang thực hiện" || t.status === "Đang soạn thảo"), [combinedTasks]);
+  const overdueList = useMemo(() => combinedTasks.filter(t => t.status !== "Hoàn thành" && t.daysLeft < 0), [combinedTasks]);
 
   // Compute CAPEX Total & Group Breakdown
   const capexStats = useMemo(() => {
@@ -389,10 +390,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
               {hoveredSection === "donut_overdue" && (
                 <div className="absolute left-0 bottom-full mb-2 w-72 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-red-900/40">
-                  <p className="font-bold border-b border-white/20 pb-1 text-red-300">Chi tiết — Cần xử lý gấp ({urgentTasks.length}):</p>
-                  {urgentTasks.map(t => (
-                    <p key={t.id} className="text-red-200 truncate">• {t.title} ({t.dueDate})</p>
-                  ))}
+                  <p className="font-bold border-b border-white/20 pb-1 text-red-300">Chi tiết — Quá hạn ({taskStats.overdue}):</p>
+                  {overdueList.length > 0 ? (
+                    overdueList.map(t => (
+                      <p key={t.id} className="text-red-200 truncate">• {t.title} ({t.dueDate})</p>
+                    ))
+                  ) : (
+                    <p className="text-gray-300">• Không có việc quá hạn</p>
+                  )}
                 </div>
               )}
             </div>
