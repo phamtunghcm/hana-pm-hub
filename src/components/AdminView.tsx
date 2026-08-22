@@ -48,10 +48,28 @@ const AdminView: React.FC = () => {
     }
   };
 
-  const completed = tasks.filter(t => t.status === "Hoàn thành").length;
-  const totalTasks = tasks.length;
+  // Merge docs with tasks for unified system stats (37 main tasks + 9 internal docs = 46 total)
+  const combinedTasks = [
+    ...tasks,
+    ...docs.map(d => ({
+      id: `doc_${d.id}`,
+      title: `[Văn bản] ${d.title}`,
+      status: d.status,
+      pic: d.department,
+      dueDate: d.deadline,
+      daysLeft: d.status === "Hoàn thành" ? 0 : 10
+    }))
+  ];
+
+  const completed = combinedTasks.filter(t => t.status === "Hoàn thành").length;
+  const totalTasks = combinedTasks.length;
   const pct = Math.round((completed / totalTasks) * 100) || 0;
-  const urgentTasks = tasks.filter(t => t.status !== "Hoàn thành" && t.daysLeft < 15);
+  const urgentTasks = combinedTasks.filter(t => t.status !== "Hoàn thành" && t.daysLeft < 15);
+
+  const totalCapexAmount = capex.reduce((sum, c) => {
+    const val = typeof c.totalPrice === "number" ? c.totalPrice : parseFloat(String(c.totalPrice).replace(/,/g, "")) || 0;
+    return sum + val;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -396,16 +414,16 @@ const AdminView: React.FC = () => {
             <div className="bg-[#FAF8F5] p-4 rounded-xl text-xs font-mono whitespace-pre-wrap text-[#3D2B1A] leading-relaxed border border-gray-200">
               📌 BÁO CÁO TIẾN ĐỘ DỰ ÁN HANA WELLNESS PM HUB<br/>
               ⏰ Thời gian: 08:00 AM Hàng Ngày<br/>
-              🔗 Truy cập PM Hub: https://hanawellness-project.com/<br/><br/>
+              🔗 Truy cập PM Hub: {window.location.origin}/<br/><br/>
               📊 1. TỔNG QUAN TIẾN ĐỘ:<br/>
               • Tỷ lệ hoàn thành: {pct}% ({completed}/{totalTasks} công việc)<br/>
               • Ngày mục tiêu khai trương: {formData.targetDate}<br/>
-              • Ngân sách CAPEX: 513,740,000 VNĐ (gồm 110tr thi công + 100tr đặt cọc + mua sắm)<br/><br/>
+              • Ngân sách CAPEX: {totalCapexAmount.toLocaleString()} VNĐ (gồm 110tr thi công + 100tr đặt cọc + mua sắm)<br/><br/>
               🚨 2. CÔNG VIỆC CẦN XỬ LÝ GẤP ({urgentTasks.length} việc):<br/>
               {urgentTasks.slice(0, 4).map(u => (
                 <div key={u.id}>• {u.title} | Phụ trách: {u.pic} | Hạn: {u.dueDate}</div>
               ))}<br/>
-              👉 Bấm vào liên kết để xem chi tiết & cập nhật: https://hanawellness-project.com/
+              👉 Bấm vào liên kết để xem chi tiết & cập nhật: {window.location.origin}/
             </div>
             <div className="p-3 bg-amber-50 rounded-xl text-xs text-amber-900 border border-amber-200">
               💌 <strong>Địa chỉ gửi đến:</strong> {formData.reportEmail || "Chưa nhập Email"}

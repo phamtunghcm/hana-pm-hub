@@ -18,8 +18,13 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // 1. Google Gemini 1.5 Flash Proxy
     if (model === 'gemini') {
-      const apiKey = body.apiKey || env.GEMINI_API_KEY;
-      if (!apiKey) return new Response(JSON.stringify({ reply: 'Chưa cấu hình GEMINI_API_KEY' }), { status: 200 });
+      const apiKey = (body.apiKey || env.GEMINI_API_KEY || '').trim();
+      if (!apiKey) {
+        return new Response(JSON.stringify({ reply: 'Chưa cấu hình GEMINI_API_KEY. Vui lòng bấm vào icon Bánh răng ở góc trên để dán API Key.' }), { 
+          headers: { 'Content-Type': 'application/json' },
+          status: 200 
+        });
+      }
 
       const promptText = `${systemPrompt}\n\nUser Question:\n${userPrompt}`;
       const geminiResp = await fetch(
@@ -35,14 +40,42 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
 
       const geminiData = await geminiResp.json() as any;
-      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Không có phản hồi từ Gemini.';
-      return new Response(JSON.stringify({ reply: text }), { headers: { 'Content-Type': 'application/json' } });
+
+      if (!geminiResp.ok || geminiData.error) {
+        const errorMsg = geminiData.error?.message || `Lỗi HTTP ${geminiResp.status}`;
+        return new Response(JSON.stringify({ 
+          reply: `⚠️ Lỗi từ Google Gemini: ${errorMsg}. Vui lòng kiểm tra lại mã API Key trong phần Cài đặt.` 
+        }), { 
+          headers: { 'Content-Type': 'application/json' },
+          status: 200 
+        });
+      }
+
+      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        const reason = geminiData.candidates?.[0]?.finishReason || 'Unknown';
+        return new Response(JSON.stringify({ 
+          reply: `Google Gemini không trả về câu trả lời (Lý do: ${reason}). Vui lòng thử lại.` 
+        }), { 
+          headers: { 'Content-Type': 'application/json' },
+          status: 200 
+        });
+      }
+
+      return new Response(JSON.stringify({ reply: text }), { 
+        headers: { 'Content-Type': 'application/json' } 
+      });
     }
 
     // 2. Anthropic Claude 3.5 Sonnet Proxy
     if (model === 'claude') {
-      const apiKey = body.apiKey || env.ANTHROPIC_API_KEY;
-      if (!apiKey) return new Response(JSON.stringify({ reply: 'Chưa cấu hình ANTHROPIC_API_KEY' }), { status: 200 });
+      const apiKey = (body.apiKey || env.ANTHROPIC_API_KEY || '').trim();
+      if (!apiKey) {
+        return new Response(JSON.stringify({ reply: 'Chưa cấu hình ANTHROPIC_API_KEY. Vui lòng bấm vào icon Bánh răng để dán API Key.' }), { 
+          headers: { 'Content-Type': 'application/json' },
+          status: 200 
+        });
+      }
 
       const claudeMessages = messages
         .filter(m => m.role !== 'system')
@@ -64,12 +97,28 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       });
 
       const claudeData = await claudeResp.json() as any;
+
+      if (!claudeResp.ok || claudeData.error) {
+        const errorMsg = claudeData.error?.message || `Lỗi HTTP ${claudeResp.status}`;
+        return new Response(JSON.stringify({ 
+          reply: `⚠️ Lỗi từ Anthropic Claude: ${errorMsg}. Vui lòng kiểm tra lại API Key.` 
+        }), { 
+          headers: { 'Content-Type': 'application/json' },
+          status: 200 
+        });
+      }
+
       const text = claudeData.content?.[0]?.text || 'Không có phản hồi từ Claude.';
-      return new Response(JSON.stringify({ reply: text }), { headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ reply: text }), { 
+        headers: { 'Content-Type': 'application/json' } 
+      });
     }
 
     return new Response(JSON.stringify({ error: 'Model không hợp lệ' }), { status: 400 });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return new Response(JSON.stringify({ reply: `⚠️ Lỗi hệ thống máy chủ: ${error.message}` }), { 
+      headers: { 'Content-Type': 'application/json' },
+      status: 200 
+    });
   }
 }
