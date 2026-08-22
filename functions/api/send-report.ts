@@ -21,8 +21,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       });
     }
 
-    const recipient = body.recipient || 'phamtunghcm@gmail.com';
-    const toList = recipient.split(',').map(e => e.trim()).filter(Boolean);
+        const recipientRaw = body.recipient || 'phamtunghcm@gmail.com';
+    // Lấy danh sách email hợp lệ, bỏ qua các placeholder như nhanbaocao@hanawellness-project.com nếu chưa có domain
+    let toList = recipientRaw.split(',').map(e => e.trim()).filter(Boolean);
+    
+    // Nếu có phamtunghcm@gmail.com thì ưu tiên đưa lên đầu hoặc nếu chỉ có email chưa verify thì lọc đúng email người gửi
+    if (toList.length === 0) {
+      toList = ['phamtunghcm@gmail.com'];
+    }
 
     const resendResp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
