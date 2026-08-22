@@ -154,7 +154,7 @@ const AdminView: React.FC = () => {
                   className="w-full sm:w-auto px-4 py-2 bg-[#F5F0E6] hover:bg-amber-100 text-[#3D2B1A] border border-[#E7E0D6] rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5 text-[#8D6E63]" />
-                  <span>Gửi Thử Báo Cáo Mẫu Ngay</span>
+                  <span>Xem Trước Mẫu Báo Cáo CEO (Preview)</span>
                 </button>
 
                 <button
@@ -406,7 +406,7 @@ const AdminView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="font-bold text-[#3D2B1A] flex items-center gap-2">
                 <Mail className="w-5 h-5 text-[#8D6E63]" />
-                <span>Xem trước Báo cáo Mẫu 8:00 AM</span>
+                <span>Mẫu Báo Cáo Email Gửi Cho CEO (Preview)</span>
               </h3>
               <button onClick={() => setTestReportModal(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
             </div>
