@@ -20,8 +20,7 @@ export default function AICopilotDrawer() {
     localStorage.setItem('hana_ai_key', trimmed);
   };
 
-  const callGeminiDirect = async (cleanKey: string, promptText: string) => {
-    // 1. Thử lấy danh sách model thực tế được hỗ trợ bởi API key này qua endpoint ListModels
+  const callGeminiDirect = async (cleanKey: string, systemInstructionText: string, userQueryText: string) => {
     let candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-pro'];
     
     try {
@@ -38,12 +37,11 @@ export default function AICopilotDrawer() {
         }
       }
     } catch (e) {
-      // ignore list error, continue with default candidates
+      // ignore
     }
 
     let lastError = '';
 
-    // 2. Lần lượt thử các model cho đến khi thành công
     for (const mName of candidateModels) {
       for (const apiVer of ['v1beta', 'v1']) {
         try {
@@ -53,8 +51,19 @@ export default function AICopilotDrawer() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                contents: [{ parts: [{ text: promptText }] }],
-                generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+                system_instruction: {
+                  parts: [{ text: systemInstructionText }]
+                },
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [{ text: userQueryText }]
+                  }
+                ],
+                generationConfig: { 
+                  temperature: 0.3, 
+                  maxOutputTokens: 2048 
+                }
               })
             }
           );
@@ -62,8 +71,12 @@ export default function AICopilotDrawer() {
           const data = await resp.json() as any;
 
           if (resp.ok && !data.error) {
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) return { success: true, text };
+            let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              // Loại bỏ bất kỳ thinking/scratchpad nào nếu model xuất ra
+              text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+              return { success: true, text };
+            }
           } else if (data.error) {
             lastError = data.error.message || `Lỗi HTTP ${resp.status}`;
             if (lastError.includes('API key not valid') || lastError.includes('PERMISSION_DENIED')) {
@@ -103,10 +116,11 @@ export default function AICopilotDrawer() {
 - Hồ sơ pháp lý (${legal.length} mục): ${JSON.stringify(trimData(legal))}
 - Mua sắm CAPEX (${capex.length} mục): ${JSON.stringify(capex.map(c => ({ title: c.title, qty: c.qty, price: c.totalPrice, status: c.status })))}
 
-YÊU CẦU:
-1. Trả lời bằng tiếng Việt, súc tích, chuyên nghiệp, chính xác dựa trên đúng dữ liệu trên.
-2. Tuyệt đối tuân thủ quy tắc từ ngữ của HANA Wellness: dùng "chăm sóc", "wellness", "thư giãn sâu", "reset"; không dùng "bệnh nhân", "thăm khám", "trị liệu y tế".
-3. Khi được hỏi về công việc quan trọng/gấp: ưu tiên liệt kê các việc đang Quá hạn hoặc Đang thực hiện có deadline gần nhất.`;
+YÊU CẦU CỐT LÕI:
+1. Chỉ trả lời trực tiếp câu trả lời cho người dùng bằng tiếng Việt, súc tích, lịch sự và chuyên nghiệp.
+2. TUYỆT ĐỐI KHÔNG lặp lại các chỉ dẫn, prompt hệ thống, suy nghĩ phân tích (chain-of-thought) hay roleplay vào khung chat.
+3. Luôn tuân thủ chuẩn từ vựng HANA Wellness: dùng "chăm sóc", "wellness", "thư giãn sâu", "reset"; tuyệt đối tránh "bệnh nhân", "thăm khám", "trị liệu y tế".
+4. Khi được hỏi về việc gấp: ưu tiên tra cứu các việc Quá hạn hoặc Đang làm có hạn gần nhất.`;
 
     const cleanKey = (apiKey || localStorage.getItem('hana_ai_key') || '').trim();
 
@@ -120,11 +134,10 @@ YÊU CẦU:
       return;
     }
 
-    const fullPrompt = `${systemPrompt}\n\nUser Question: ${userQuery}`;
 
     try {
       if (model === 'gemini') {
-        const result = await callGeminiDirect(cleanKey, fullPrompt);
+        const result = await callGeminiDirect(cleanKey, systemPrompt, userQuery);
         if (result.success && result.text) {
           setMessages([...newMsgs, { role: 'assistant', content: result.text }]);
         } else {
