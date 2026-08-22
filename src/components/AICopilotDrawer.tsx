@@ -20,6 +20,65 @@ export default function AICopilotDrawer() {
     localStorage.setItem('hana_ai_key', trimmed);
   };
 
+  const callGeminiDirect = async (cleanKey: string, promptText: string) => {
+    // 1. Thử lấy danh sách model thực tế được hỗ trợ bởi API key này qua endpoint ListModels
+    let candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-pro'];
+    
+    try {
+      const listResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`);
+      if (listResp.ok) {
+        const listData = await listResp.json() as any;
+        if (listData.models && Array.isArray(listData.models)) {
+          const supported = listData.models
+            .filter((m: any) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+            .map((m: any) => m.name.replace('models/', ''));
+          if (supported.length > 0) {
+            candidateModels = supported;
+          }
+        }
+      }
+    } catch (e) {
+      // ignore list error, continue with default candidates
+    }
+
+    let lastError = '';
+
+    // 2. Lần lượt thử các model cho đến khi thành công
+    for (const mName of candidateModels) {
+      for (const apiVer of ['v1beta', 'v1']) {
+        try {
+          const resp = await fetch(
+            `https://generativelanguage.googleapis.com/${apiVer}/models/${mName}:generateContent?key=${cleanKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }],
+                generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+              })
+            }
+          );
+
+          const data = await resp.json() as any;
+
+          if (resp.ok && !data.error) {
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return { success: true, text };
+          } else if (data.error) {
+            lastError = data.error.message || `Lỗi HTTP ${resp.status}`;
+            if (lastError.includes('API key not valid') || lastError.includes('PERMISSION_DENIED')) {
+              return { success: false, error: `Mã API Key không hợp lệ: ${lastError}` };
+            }
+          }
+        } catch (err: any) {
+          lastError = err.message;
+        }
+      }
+    }
+
+    return { success: false, error: lastError || 'Không thể kết nối đến các model của Google Gemini' };
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     
@@ -49,89 +108,54 @@ YÊU CẦU:
 2. Tuyệt đối tuân thủ quy tắc từ ngữ của HANA Wellness: dùng "chăm sóc", "wellness", "thư giãn sâu", "reset"; không dùng "bệnh nhân", "thăm khám", "trị liệu y tế".
 3. Khi được hỏi về công việc quan trọng/gấp: ưu tiên liệt kê các việc đang Quá hạn hoặc Đang thực hiện có deadline gần nhất.`;
 
-    const cleanKey = apiKey.trim();
+    const cleanKey = (apiKey || localStorage.getItem('hana_ai_key') || '').trim();
+
+    if (!cleanKey) {
+      setShowSettings(true);
+      setMessages([...newMsgs, { 
+        role: 'assistant', 
+        content: '⚠️ Bạn chưa nhập mã API Key. Vui lòng bấm vào icon Bánh răng ⚙️ ở góc trên khung chat, dán mã API Key của bạn và bấm "Lưu Key".' 
+      }]);
+      setIsLoading(false);
+      return;
+    }
+
+    const fullPrompt = `${systemPrompt}\n\nUser Question: ${userQuery}`;
 
     try {
-      // 1. Thử gọi qua Cloudflare API Functions
-      const res = await fetch('/api/ai-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          messages: [{ role: 'system', content: systemPrompt }, ...newMsgs], 
-          model, 
-          apiKey: cleanKey 
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.reply) {
-          if (data.reply.includes('Chưa cấu hình') || data.reply.includes('API_KEY')) {
-            setShowSettings(true);
-          }
-          setMessages([...newMsgs, { role: 'assistant', content: data.reply }]);
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // 2. Fallback: Nếu Cloudflare Function không phản hồi hoặc trả về lỗi, gọi thẳng Google Gemini API trực tiếp từ trình duyệt
-      if (model === 'gemini' && cleanKey) {
-        const geminiDirectResp = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${userQuery}` }] }],
-              generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
-            })
-          }
-        );
-
-        const geminiDirectData = await geminiDirectResp.json() as any;
-        if (geminiDirectData.error) {
+      if (model === 'gemini') {
+        const result = await callGeminiDirect(cleanKey, fullPrompt);
+        if (result.success && result.text) {
+          setMessages([...newMsgs, { role: 'assistant', content: result.text }]);
+        } else {
           setShowSettings(true);
           setMessages([...newMsgs, { 
             role: 'assistant', 
-            content: `⚠️ Lỗi Google Gemini: ${geminiDirectData.error.message || 'Mã API Key không hợp lệ'}. Vui lòng bấm vào bánh răng cài đặt để dán lại Key chính xác.` 
+            content: `⚠️ Lỗi từ Google Gemini: ${result.error}. Vui lòng kiểm tra lại mã API Key trong phần Cài đặt.` 
           }]);
-        } else {
-          const directText = geminiDirectData.candidates?.[0]?.content?.parts?.[0]?.text || 'Không có phản hồi từ Gemini.';
-          setMessages([...newMsgs, { role: 'assistant', content: directText }]);
         }
       } else {
-        setShowSettings(true);
-        setMessages([...newMsgs, { 
-          role: 'assistant', 
-          content: cleanKey ? '⚠️ Lỗi kết nối đến máy chủ AI. Vui lòng thử lại.' : '⚠️ Chưa cấu hình API Key. Vui lòng bấm vào icon Bánh răng góc trên để dán mã API Key.' 
-        }]);
-      }
-    } catch (e: any) {
-      // 3. Fallback trực tiếp nếu fetch lỗi mạng
-      if (model === 'gemini' && cleanKey) {
-        try {
-          const directResp = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: `${systemPrompt}\n\nUser: ${userQuery}` }] }]
-              })
-            }
-          );
-          const directData = await directResp.json() as any;
-          const text = directData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            setMessages([...newMsgs, { role: 'assistant', content: text }]);
-            setIsLoading(false);
-            return;
+        // Claude Proxy
+        const res = await fetch('/api/ai-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            messages: [{ role: 'system', content: systemPrompt }, ...newMsgs], 
+            model, 
+            apiKey: cleanKey 
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reply) {
+            setMessages([...newMsgs, { role: 'assistant', content: data.reply }]);
           }
-        } catch (innerErr) {
-          // ignore
+        } else {
+          setMessages([...newMsgs, { role: 'assistant', content: 'Lỗi kết nối đến máy chủ Claude' }]);
         }
       }
+    } catch (e: any) {
       setMessages([...newMsgs, { role: 'assistant', content: `⚠️ Lỗi kết nối: ${e.message || 'Không thể gửi tin nhắn'}` }]);
     } finally {
       setIsLoading(false);
@@ -201,7 +225,7 @@ YÊU CẦU:
                 onChange={() => setModel('gemini')} 
                 className="text-teal-600 focus:ring-teal-500"
               />
-              Google Gemini 1.5
+              Google Gemini (Tự động chọn model tối ưu)
             </label>
             <label className="flex items-center gap-1.5 cursor-pointer font-medium text-gray-700">
               <input 
@@ -211,7 +235,7 @@ YÊU CẦU:
                 onChange={() => setModel('claude')} 
                 className="text-teal-600 focus:ring-teal-500"
               />
-              Claude 3.5 Sonnet
+              Claude 3.5
             </label>
           </div>
 
@@ -249,7 +273,7 @@ YÊU CẦU:
               </div>
               <div className="text-[11px] text-teal-900 leading-normal bg-white/70 p-2 rounded border border-teal-200">
                 {model === 'gemini' ? (
-                  <>✨ <strong>Tự động lưu:</strong> Khi bạn dán Key vào ô trên, hệ thống đã tự lưu vào máy. Bạn có thể bấm <strong>"Lưu Key"</strong> để yên tâm. Lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Google AI Studio</a>.</>
+                  <>✨ <strong>Lấy Key miễn phí:</strong> Truy cập <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Google AI Studio (Bấm vào đây)</a> để tạo key mới trong 5 giây.</>
                 ) : (
                   <>✨ Lấy mã tại <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Anthropic Console</a>.</>
                 )}
