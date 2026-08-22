@@ -18,14 +18,33 @@ const LegalView: React.FC = () => {
           <p className="text-[#8D6E63] mt-1">Quản lý giấy phép kép, PCCC, ANTT & đăng ký vận hành</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <a
-            href={DRIVE_LINKS.legal}
+            href={DRIVE_LINKS.legalSheet}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-4 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-200 transition-colors text-sm shadow-sm"
+            className="inline-flex items-center gap-1.5 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-3.5 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-100 transition-colors text-xs shadow-xs"
+            title="Bảng quản lý chung ANTT, PCCC"
           >
-            <ExternalLink size={16} /> File Gốc Google Sheets
+            <ExternalLink size={14} className="text-emerald-700" /> Bảng Quản Lý ANTT & PCCC
+          </a>
+          <a
+            href={DRIVE_LINKS.legalPcccFolder}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-3.5 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-100 transition-colors text-xs shadow-xs"
+            title="Folder hồ sơ PCCC (>100m2)"
+          >
+            <ExternalLink size={14} className="text-red-600" /> Folder Hồ Sơ PCCC
+          </a>
+          <a
+            href={DRIVE_LINKS.legalAnttFolder}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-3.5 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-100 transition-colors text-xs shadow-xs"
+            title="Folder hồ sơ ANTT"
+          >
+            <ExternalLink size={14} className="text-blue-600" /> Folder Hồ Sơ ANTT
           </a>
         </div>
       </div>

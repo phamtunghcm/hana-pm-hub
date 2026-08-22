@@ -18,14 +18,26 @@ const DocsView: React.FC = () => {
           <p className="text-[#8D6E63] mt-1">Quản lý điều lệ, nội quy lao động, thang bảng lương & quy chế tài chính</p>
         </div>
 
-        <a
-          href={DRIVE_LINKS.docs}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-4 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-200 transition-colors text-sm shadow-sm"
-        >
-          <ExternalLink size={16} /> File Gốc Google Sheets
-        </a>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <a
+            href={DRIVE_LINKS.docsSheet}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-3.5 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-100 transition-colors text-xs shadow-xs"
+            title="Bảng theo dõi văn bản nội bộ"
+          >
+            <ExternalLink size={14} className="text-emerald-700" /> Bảng Theo Dõi Văn Bản
+          </a>
+          <a
+            href={DRIVE_LINKS.docsFolder}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-3.5 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-100 transition-colors text-xs shadow-xs"
+            title="Folder của nhóm văn bản nội bộ"
+          >
+            <ExternalLink size={14} className="text-amber-700" /> Folder Văn Bản Gốc
+          </a>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-[#E8E6E1] overflow-hidden">
