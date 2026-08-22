@@ -9,6 +9,37 @@ interface DashboardViewProps {
 
 const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const { tasks, legal, docs, capex, settings } = useHana();
+
+  // Merge docs into tasks for global stats as requested: "VĂN BẢN NỘI BỘ CŨNG LÀ TASK"
+  const combinedTasks = useMemo(() => {
+    const parseDeadline = (deadline: string) => {
+      if (!deadline || deadline === "Đã hoàn thành") return 0;
+      const parts = deadline.split("/");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        const diff = d.getTime() - new Date().getTime();
+        return Math.ceil(diff / (1000 * 3600 * 24));
+      }
+      return 0;
+    };
+
+    const docTasks = docs.map(d => ({
+      id: `doc_${d.id}`,
+      type: "doc",
+      workstream: `Văn bản nội bộ: ${d.group}`,
+      title: `[Văn bản] ${d.title}`,
+      pic: d.department,
+      dueDate: d.deadline,
+      priority: d.level,
+      status: d.status,
+      daysLeft: parseDeadline(d.deadline),
+      percent: d.status === "Hoàn thành" ? "100%" : (d.status === "Đang soạn thảo" ? "50%" : "0%"),
+      note: d.content
+    } as any));
+
+    return [...tasks, ...docTasks];
+  }, [tasks, docs]);
+
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [selectedItemForEdit, setSelectedItemForEdit] = useState<any | null>(null);
 
@@ -21,6 +52,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     return diffDays > 0 ? diffDays : 0;
   }, [settings.targetDate]);
 
+  
   // Compute Task Status Stats
   const taskStats = useMemo(() => {
     let completed = 0;
@@ -28,9 +60,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     let overdue = 0;
     let pending = 0;
 
-    tasks.forEach(t => {
+    combinedTasks.forEach(t => {
       if (t.status === "Hoàn thành") completed++;
-      else if (t.status === "Đang thực hiện") {
+      else if (t.status === "Đang thực hiện" || t.status === "Đang soạn thảo") {
         inProgress++;
         if (t.daysLeft < 0) overdue++;
       } else {
@@ -39,9 +71,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       }
     });
 
-    const total = tasks.length || 1;
+    const total = combinedTasks.length || 1;
     return {
-      total: tasks.length,
+      total: combinedTasks.length,
       completed,
       inProgress,
       overdue,
@@ -51,11 +83,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       overduePct: Math.round((overdue / total) * 100),
       pendingPct: Math.round((pending / total) * 100),
     };
-  }, [tasks]);
+  }, [combinedTasks]);
+
 
   // Specific lists for level-1 details
-  const completedList = useMemo(() => tasks.filter(t => t.status === "Hoàn thành"), [tasks]);
-  const doingList = useMemo(() => tasks.filter(t => t.status === "Đang thực hiện"), [tasks]);
+  const completedList = useMemo(() => combinedTasks.filter(t => t.status === "Hoàn thành"), [combinedTasks]);
+  const doingList = useMemo(() => combinedTasks.filter(t => t.status === "Đang thực hiện" || t.status === "Đang soạn thảo"), [combinedTasks]);
 
   // Compute CAPEX Total & Group Breakdown
   const capexStats = useMemo(() => {
@@ -72,26 +105,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
   // Urgent tasks (daysLeft < 15 or overdue, not completed)
   const urgentTasks = useMemo(() => {
-    return tasks.filter(t => t.status !== "Hoàn thành").slice(0, 4);
-  }, [tasks]);
+    return combinedTasks.filter(t => t.status !== "Hoàn thành").slice(0, 4);
+  }, [combinedTasks]);
 
+  
   // Phase progress
   const phasesStats = useMemo(() => {
     const map: Record<string, { total: number; done: number; doing: number; pending: number }> = {
       "Trước khai trương": { total: 0, done: 0, doing: 0, pending: 0 },
       "Khai trương": { total: 0, done: 0, doing: 0, pending: 0 },
       "Hậu khai trương": { total: 0, done: 0, doing: 0, pending: 0 },
+      "Văn bản nội bộ": { total: 0, done: 0, doing: 0, pending: 0 },
     };
 
-    tasks.forEach(t => {
+    combinedTasks.forEach(t => {
       const ws = t.workstream || "";
       let phaseKey = "Trước khai trương";
       if (ws.includes("Khai trương chính thức") || ws.includes("Khai trương thử nghiệm")) phaseKey = "Khai trương";
       else if (ws.includes("Tháng thứ")) phaseKey = "Hậu khai trương";
+      else if (ws.includes("Văn bản nội bộ")) phaseKey = "Văn bản nội bộ";
 
       map[phaseKey].total++;
       if (t.status === "Hoàn thành") map[phaseKey].done++;
-      else if (t.status === "Đang thực hiện") map[phaseKey].doing++;
+      else if (t.status === "Đang thực hiện" || t.status === "Đang soạn thảo") map[phaseKey].doing++;
       else map[phaseKey].pending++;
     });
 
@@ -101,9 +137,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       done: data.done,
       doing: data.doing,
       pending: data.pending,
-      pct: data.total > 0 ? Math.round((data.done / data.total) * 100) : 0,
+      pct: data.total > 0 ? Math.round((data.done / data.total) * 100) : 0
     }));
-  }, [tasks]);
+  }, [combinedTasks]);
+
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] p-6 space-y-6 font-sans pb-32">
