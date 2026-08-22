@@ -58,11 +58,16 @@ const LegalView: React.FC = () => {
           >
             <div>
               <div className="flex justify-between items-start mb-4">
-                <span className={"px-2.5 py-1 text-xs rounded-full font-bold " + (["Đã hoàn thành", "Hoàn thành"].includes(item.status) ? "bg-[#D4EDDA] text-[#155724]" : ["Đã chuẩn bị"].includes(item.status) ? "bg-[#FFF3CD] text-[#856404]" : "bg-[#E2E3E5] text-[#383D41]")}>
-                  {item.status}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 text-[10px] rounded-md font-extrabold uppercase bg-amber-100 text-amber-900 border border-amber-200">
+                    {(item as any).group || "Pháp lý"}
+                  </span>
+                  <span className={"px-2.5 py-1 text-xs rounded-full font-bold " + (["Đã hoàn thành", "Hoàn thành"].includes(item.status) ? "bg-[#D4EDDA] text-[#155724]" : ["Đã chuẩn bị"].includes(item.status) ? "bg-[#FFF3CD] text-[#856404]" : "bg-[#E2E3E5] text-[#383D41]")}>
+                    {item.status}
+                  </span>
+                </div>
                 <span className="text-xs text-amber-800 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                  Sửa →
+                  Mở / Sửa →
                 </span>
               </div>
               <h3 className="text-lg font-bold text-[#3D2B1A] mb-4 group-hover:text-amber-800 transition-colors" title={item.title}>
