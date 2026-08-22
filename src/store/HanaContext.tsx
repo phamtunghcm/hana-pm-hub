@@ -20,6 +20,7 @@ export interface ProjectSettings {
   targetDate: string;
   reportEmail?: string;
   zaloWebhook?: string;
+  resendApiKey?: string;
 }
 
 const DEFAULT_USERS: UserPermission[] = [
@@ -61,7 +62,8 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     logoText: "H",
     targetDate: "2026-11-02",
     reportEmail: "phamtunghcm@gmail.com",
-    zaloWebhook: ""
+    zaloWebhook: "",
+    resendApiKey: ""
   });
 
   const [currentUser, setCurrentUser] = useState<UserPermission | null>(null);

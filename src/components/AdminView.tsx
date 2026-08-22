@@ -11,7 +11,8 @@ const AdminView: React.FC = () => {
     subTitle: settings.subTitle,
     targetDate: settings.targetDate,
     reportEmail: settings.reportEmail || "phamtunghcm@gmail.com",
-    zaloWebhook: settings.zaloWebhook || ""
+    zaloWebhook: settings.zaloWebhook || "",
+    resendApiKey: settings.resendApiKey || ""
   });
 
   const [newEmail, setNewEmail] = useState("");
@@ -130,6 +131,23 @@ const AdminView: React.FC = () => {
                 />
                 <span className="text-[11px] text-gray-500 mt-1 block">
                   * Có thể nhập 1 hoặc nhiều Email (phân cách bằng dấu phẩy). Báo cáo sẽ gửi trực tiếp vào Hộp thư đến 8:00 AM.
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#5D4037] mb-1.5 flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-emerald-600" />
+                  <span>Resend API Key (Để gửi thư qua Resend.com):</span>
+                </label>
+                <input
+                  type="password"
+                  value={formData.resendApiKey}
+                  onChange={(e) => setFormData({ ...formData, resendApiKey: e.target.value })}
+                  placeholder="re_123456789... (Dán API Key từ tài khoản Resend của bạn)"
+                  className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-sm font-mono text-[#3D2B1A] focus:outline-none focus:ring-2 focus:ring-[#8D6E63]"
+                />
+                <span className="text-[11px] text-gray-500 mt-1 block">
+                  * Lấy mã tại <a href="https://resend.com/api-keys" target="_blank" rel="noreferrer" className="underline font-bold text-[#8D6E63]">Resend.com/api-keys</a>. Sau khi dán và bấm "Lưu Cấu Hình", hệ thống sẽ lưu an toàn để gửi mail báo cáo.
                 </span>
               </div>
 
