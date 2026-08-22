@@ -51,7 +51,7 @@ export default function AICopilotDrawer() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                system_instruction: {
+                systemInstruction: {
                   parts: [{ text: systemInstructionText }]
                 },
                 contents: [
@@ -61,8 +61,11 @@ export default function AICopilotDrawer() {
                   }
                 ],
                 generationConfig: { 
-                  temperature: 0.3, 
-                  maxOutputTokens: 2048 
+                  temperature: 0.2, 
+                  maxOutputTokens: 2048,
+                  thinkingConfig: {
+                    thinkingBudget: 0
+                  }
                 }
               })
             }
@@ -73,25 +76,28 @@ export default function AICopilotDrawer() {
           if (resp.ok && !data.error) {
             let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (text) {
-              // 1. Loại bỏ các khối thẻ <think>...</think>
+              // Loại bỏ thẻ think nếu có
               text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
               
-              // 2. Nếu model xuất ra dạng planning (bắt đầu bằng * Role: hoặc * User says: hoặc * Goal:), trích xuất câu trả lời thực sự
-              if (text.includes('* Role:') || text.includes('* User says:') || text.includes('* Goal:') || text.includes('* Greeting:')) {
-                // Tìm đoạn text nằm trong dấu ngoặc kép hoặc sau các mục greeting
-                const quoteMatch = text.match(/"([^"]{10,})"/);
-                if (quoteMatch && quoteMatch[1]) {
-                  text = quoteMatch[1].trim();
+              // Nếu xuất hiện dạng phân tích câu hỏi (Chain-of-thought bullet points)
+              if (text.includes('* User Question:') || text.includes('* User says:') || text.includes('* Role:') || text.includes('* Current Date:') || text.includes('Wait, if I don')) {
+                // Trích xuất phần câu trả lời cuối cùng (thường sau dấu phân cách hoặc đoạn văn xuôi tiếng Việt thuần)
+                const paragraphs = text.split(/\n\s*\n/);
+                const nonBulletParas = paragraphs.filter((p: string) => {
+                  const t = p.trim();
+                  return !t.startsWith('*') && !t.startsWith('-') && !t.includes('User Question:') && !t.includes('Current Date:') && !t.includes('Wait, ');
+                });
+                
+                if (nonBulletParas.length > 0) {
+                  text = nonBulletParas.join('\n\n').trim();
                 } else {
-                  // Lấy các dòng không bắt đầu bằng dấu * hoặc gạch đầu dòng phân tích
+                  // Lọc từng dòng
                   const lines = text.split('\n');
                   const cleanLines = lines.filter((l: string) => {
                     const trimmed = l.trim();
-                    return !trimmed.startsWith('*') && !trimmed.startsWith('- Role') && !trimmed.startsWith('Role:') && !trimmed.startsWith('Goal:');
+                    return !trimmed.startsWith('*') && !trimmed.startsWith('-') && !trimmed.includes('Wait, ') && !trimmed.includes('User Question:');
                   });
-                  if (cleanLines.join('\n').trim()) {
-                    text = cleanLines.join('\n').trim();
-                  }
+                  text = cleanLines.join('\n').trim() || text;
                 }
               }
 
@@ -129,16 +135,14 @@ export default function AICopilotDrawer() {
       due: a.dueDate || a.deadline || a.timeEstimate 
     }));
     
-    const systemPrompt = `Bạn là trợ lý AI Copilot thông minh của dự án HANA Wellness PM Hub.
-Dữ liệu dự án gồm:
+    const todayStr = new Date().toLocaleDateString('vi-VN');
+    const systemPrompt = `Bạn là trợ lý AI của dự án HANA Wellness PM Hub. Hôm nay là ngày ${todayStr}.
+Dữ liệu dự án:
 - Công việc (${tasks.length + docs.length} việc): ${JSON.stringify(trimData(tasks).concat(trimData(docs)))}
 - Pháp lý (${legal.length} mục): ${JSON.stringify(trimData(legal))}
 - Mua sắm CAPEX (${capex.length} mục): ${JSON.stringify(capex.map(c => ({ title: c.title, qty: c.qty, price: c.totalPrice, status: c.status })))}
 
-Nguyên tắc:
-- Trả lời tự nhiên, thân thiện bằng tiếng Việt.
-- Dùng từ ngữ wellness ("chăm sóc", "thư giãn sâu", "reset"), không dùng từ ngữ bệnh viện ("bệnh nhân", "thăm khám").
-- Chỉ đưa ra câu trả lời trực tiếp cuối cùng, không kèm bất kỳ ghi chú phân tích đề bài nào.`;
+Chỉ trả lời câu hỏi của người dùng bằng tiếng Việt, ngắn gọn, đi thẳng vào vấn đề. Tuyệt đối không viết nháp, không giải thích quá trình suy nghĩ.`;
 
     const cleanKey = (apiKey || localStorage.getItem('hana_ai_key') || '').trim();
 
