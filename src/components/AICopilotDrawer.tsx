@@ -78,6 +78,8 @@ export default function AICopilotDrawer() {
             if (text) {
               // Loại bỏ thẻ think nếu có
               text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+              // Làm sạch các dấu markdown rườm rà như ###, **...**
+              text = text.replace(/###\s*/g, '').replace(/\*\*\s*\*\*/g, '');
               
               // Nếu xuất hiện dạng phân tích câu hỏi (Chain-of-thought bullet points)
               if (text.includes('* User Question:') || text.includes('* User says:') || text.includes('* Role:') || text.includes('* Current Date:') || text.includes('Wait, if I don')) {
@@ -136,13 +138,16 @@ export default function AICopilotDrawer() {
     }));
     
     const todayStr = new Date().toLocaleDateString('vi-VN');
-    const systemPrompt = `Bạn là trợ lý AI của dự án HANA Wellness PM Hub. Hôm nay là ngày ${todayStr}.
-Dữ liệu dự án:
+    const systemPrompt = `Bạn là trợ lý AI Copilot dự án HANA Wellness PM Hub. Hôm nay là ${todayStr}.
+Dữ liệu:
 - Công việc (${tasks.length + docs.length} việc): ${JSON.stringify(trimData(tasks).concat(trimData(docs)))}
 - Pháp lý (${legal.length} mục): ${JSON.stringify(trimData(legal))}
-- Mua sắm CAPEX (${capex.length} mục): ${JSON.stringify(capex.map(c => ({ title: c.title, qty: c.qty, price: c.totalPrice, status: c.status })))}
+- CAPEX (${capex.length} mục): ${JSON.stringify(capex.map(c => ({ title: c.title, qty: c.qty, price: c.totalPrice, status: c.status })))}
 
-Chỉ trả lời câu hỏi của người dùng bằng tiếng Việt, ngắn gọn, đi thẳng vào vấn đề. Tuyệt đối không viết nháp, không giải thích quá trình suy nghĩ.`;
+YÊU CẦU TRÌNH BÀY:
+1. Trình bày cực kỳ ngắn gọn, mạch lạc, đi thẳng vào trọng tâm.
+2. TUYỆT ĐỐI HẠN CHẾ các dấu in đậm ** hoặc markdown rườm rà (###, * **). Trình bày dạng danh sách gạch đầu dòng rõ ràng, dễ đọc trên điện thoại.
+3. Luôn kèm theo gợi ý truy cập nhanh vào các mục liên quan (ví dụ: Xem chi tiết tại tab "Bảng Công việc" hoặc "Hồ sơ Pháp lý").`;
 
     const cleanKey = (apiKey || localStorage.getItem('hana_ai_key') || '').trim();
 
