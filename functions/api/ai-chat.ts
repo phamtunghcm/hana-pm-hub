@@ -16,7 +16,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const systemPrompt = messages.find(m => m.role === 'system')?.content || '';
     const userPrompt = messages[messages.length - 1]?.content || '';
 
-    // 1. Google Gemini 1.5 Flash Proxy
+        // 1. Google Gemini Proxy (Tự động thử các model: gemini-1.5-flash, gemini-1.5-flash-latest, gemini-2.0-flash, gemini-1.5-pro)
     if (model === 'gemini') {
       const apiKey = (body.apiKey || env.GEMINI_API_KEY || '').trim();
       if (!apiKey) {
@@ -26,44 +26,59 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         });
       }
 
-      const promptText = `${systemPrompt}\n\nUser Question:\n${userPrompt}`;
-      const geminiResp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
-          })
+      const promptText = `${systemPrompt}
+
+User Question:
+${userPrompt}`;
+      const candidateModels = [
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-2.0-flash',
+        'gemini-1.5-pro',
+        'gemini-pro'
+      ];
+
+      let lastError = '';
+      for (const modelName of candidateModels) {
+        try {
+          const geminiResp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }],
+                generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+              })
+            }
+          );
+
+          const geminiData = await geminiResp.json() as any;
+
+          if (geminiResp.ok && !geminiData.error) {
+            const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              return new Response(JSON.stringify({ reply: text }), { 
+                headers: { 'Content-Type': 'application/json' } 
+              });
+            }
+          } else {
+            lastError = geminiData.error?.message || `HTTP ${geminiResp.status}`;
+            // If error is invalid API key, no need to retry other models
+            if (lastError.includes('API key not valid') || lastError.includes('PERMISSION_DENIED')) {
+              break;
+            }
+          }
+        } catch (err: any) {
+          lastError = err.message;
         }
-      );
-
-      const geminiData = await geminiResp.json() as any;
-
-      if (!geminiResp.ok || geminiData.error) {
-        const errorMsg = geminiData.error?.message || `Lỗi HTTP ${geminiResp.status}`;
-        return new Response(JSON.stringify({ 
-          reply: `⚠️ Lỗi từ Google Gemini: ${errorMsg}. Vui lòng kiểm tra lại mã API Key trong phần Cài đặt.` 
-        }), { 
-          headers: { 'Content-Type': 'application/json' },
-          status: 200 
-        });
       }
 
-      const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) {
-        const reason = geminiData.candidates?.[0]?.finishReason || 'Unknown';
-        return new Response(JSON.stringify({ 
-          reply: `Google Gemini không trả về câu trả lời (Lý do: ${reason}). Vui lòng thử lại.` 
-        }), { 
-          headers: { 'Content-Type': 'application/json' },
-          status: 200 
-        });
-      }
-
-      return new Response(JSON.stringify({ reply: text }), { 
-        headers: { 'Content-Type': 'application/json' } 
+      return new Response(JSON.stringify({ 
+        reply: `⚠️ Lỗi từ Google Gemini: ${lastError}. Vui lòng kiểm tra lại mã API Key trong phần Cài đặt.` 
+      }), { 
+        headers: { 'Content-Type': 'application/json' },
+        status: 200 
       });
     }
 

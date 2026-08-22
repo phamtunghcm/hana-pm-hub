@@ -217,25 +217,41 @@ YÊU CẦU:
 
           {/* Settings Panel for API Key */}
           {showSettings && (
-            <div className="p-4 bg-teal-50/70 border-b border-teal-200 text-xs space-y-2 animate-in fade-in">
+            <div className="p-4 bg-teal-50/90 border-b border-teal-200 text-xs space-y-2.5 animate-in fade-in">
               <div className="flex justify-between items-center">
-                <label className="font-bold text-teal-900 block">
-                  Cấu hình {model === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'} API Key:
+                <label className="font-bold text-teal-950 block">
+                  🔑 Cấu hình {model === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'} API Key:
                 </label>
-                <button onClick={() => setShowSettings(false)} className="text-teal-700 font-bold hover:underline">Đóng</button>
+                <button onClick={() => setShowSettings(false)} className="text-teal-700 font-bold hover:underline">✕ Đóng</button>
               </div>
-              <input 
-                type="password" 
-                value={apiKey} 
-                onChange={e => saveApiKey(e.target.value)} 
-                placeholder="AIzaSy... (Dán mã API Key vào đây)"
-                className="w-full bg-white border border-teal-300 rounded-lg px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-teal-500"
-              />
-              <div className="text-[11px] text-teal-800 leading-normal">
+              <div className="flex gap-2">
+                <input 
+                  type="password" 
+                  value={apiKey} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    setApiKey(val);
+                    localStorage.setItem('hana_ai_key', val.trim());
+                  }} 
+                  placeholder="AIzaSy... (Dán mã API Key vào đây)"
+                  className="flex-1 bg-white border border-teal-300 rounded-lg px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-teal-500 shadow-xs"
+                />
+                <button 
+                  onClick={() => {
+                    saveApiKey(apiKey);
+                    alert("Đã lưu API Key thành công trên trình duyệt của bạn!");
+                    setShowSettings(false);
+                  }}
+                  className="px-3 py-2 bg-teal-800 hover:bg-teal-900 text-white rounded-lg font-bold shadow-xs cursor-pointer whitespace-nowrap"
+                >
+                  Lưu Key
+                </button>
+              </div>
+              <div className="text-[11px] text-teal-900 leading-normal bg-white/70 p-2 rounded border border-teal-200">
                 {model === 'gemini' ? (
-                  <>👉 Lấy mã miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Google AI Studio (Click vào đây)</a>. Key lưu tại máy của bạn.</>
+                  <>✨ <strong>Tự động lưu:</strong> Khi bạn dán Key vào ô trên, hệ thống đã tự lưu vào máy. Bạn có thể bấm <strong>"Lưu Key"</strong> để yên tâm. Lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Google AI Studio</a>.</>
                 ) : (
-                  <>👉 Lấy mã tại <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Anthropic Console (Click vào đây)</a>.</>
+                  <>✨ Lấy mã tại <a href="https://console.anthropic.com/" target="_blank" rel="noreferrer" className="underline font-bold text-teal-900">Anthropic Console</a>.</>
                 )}
               </div>
             </div>
