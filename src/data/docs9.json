@@ -7,7 +7,9 @@
     "content": "- Tên, địa chỉ, ngành nghề kinh doanh, vốn điều lệ. - Tỷ lệ góp vốn, quyền và nghĩa vụ của các thành viên/cổ đông. - Cơ cấu tổ chức. - Người đại diện pháp luật.",
     "department": "Ban Giám đốc / Pháp chế",
     "deadline": "Đã hoàn thành",
-    "status": "Hoàn thành"
+    "status": "Hoàn thành",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 2,
@@ -17,7 +19,9 @@
     "content": "- Thông tin nhân sự. - Chuyên môn, Vị trí việc làm, Bậc lương. - Loại hợp đồng, quá trình BHXH.",
     "department": "Hành chính Nhân sự",
     "deadline": "15/09/2026",
-    "status": "Chưa bắt đầu"
+    "status": "Chưa bắt đầu",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 3,
@@ -27,7 +31,9 @@
     "content": "- Thời giờ làm việc, nghỉ ngơi. - Trật tự, An toàn lao động. - Các hành vi vi phạm và hình thức kỷ luật.",
     "department": "Hành chính Nhân sự",
     "deadline": "10/09/2026",
-    "status": "Đang soạn thảo"
+    "status": "Đang soạn thảo",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 4,
@@ -37,7 +43,9 @@
     "content": "- Nguyên tắc xây dựng lương. - Phân ngạch, Chia bậc và hệ số lương cho từng vị trí.",
     "department": "Kế toán / Nhân sự",
     "deadline": "15/09/2026",
-    "status": "Chưa bắt đầu"
+    "status": "Chưa bắt đầu",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 5,
@@ -47,7 +55,9 @@
     "content": "- Nội dung người lao động được biết, tham gia ý kiến. - Đối thoại định kỳ, Hội nghị người lao động.",
     "department": "Hành chính Nhân sự",
     "deadline": "20/09/2026",
-    "status": "Chưa bắt đầu"
+    "status": "Chưa bắt đầu",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 6,
@@ -57,7 +67,9 @@
     "content": "- Cấu trúc thu nhập. - Các loại phụ cấp (quan trọng cho thuế). - Cơ chế tính KPI, thưởng Lễ, Tết. - Chế độ phúc lợi.",
     "department": "Kế toán / Nhân sự",
     "deadline": "15/09/2026",
-    "status": "Chưa bắt đầu"
+    "status": "Chưa bắt đầu",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 7,
@@ -67,7 +79,9 @@
     "content": "- Phân cấp phê duyệt chi phí. - Định mức công tác phí. - Tạm ứng, hoàn ứng. - Hồ sơ thanh toán hợp lệ.",
     "department": "Kế toán",
     "deadline": "20/09/2026",
-    "status": "Chưa bắt đầu"
+    "status": "Chưa bắt đầu",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 8,
@@ -77,7 +91,9 @@
     "content": "- Định nghĩa thông tin bảo mật. - Quyền và nghĩa vụ của nhân viên. - Chế tài xử lý và bồi thường.",
     "department": "Ban Giám đốc / Pháp chế",
     "deadline": "25/09/2026",
-    "status": "Chưa bắt đầu"
+    "status": "Chưa bắt đầu",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   },
   {
     "id": 9,
@@ -87,6 +103,8 @@
     "content": "- Sơ đồ bộ máy. - Chức năng phòng ban. - JD cho từng chức danh: Chi tiết công việc, quyền hạn, KPI.",
     "department": "Ban Giám đốc",
     "deadline": "05/09/2026",
-    "status": "Đang soạn thảo"
+    "status": "Đang soạn thảo",
+    "fileLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link&ouid=112807505253419172495&rtpof=true&sd=true"
   }
 ]
