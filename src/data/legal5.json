@@ -7,7 +7,8 @@
     "status": "Đã chuẩn bị",
     "note": "QUY TRÌNH CHUẨN (>100m2): Diện tích cơ sở >100m2 bắt buộc phải lập bản vẽ thẩm duyệt PCCC, trang bị hệ thống báo cháy tự động, bình chữa cháy, đèn Exit/sự cố và xin nghiệm thu từ Công an PCCC trước khi mở cửa.",
     "fileLink": "https://drive.google.com/drive/folders/1RNDnyFSPis2NGIpEtSOsHvq5IZrwY4dV?usp=drive_link",
-    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing&ouid=112807505253419172495&rtpof=true&sd=true"
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing",
+    "folderLink": "https://drive.google.com/drive/folders/1RNDnyFSPis2NGIpEtSOsHvq5IZrwY4dV?usp=drive_link"
   },
   {
     "id": 2,
@@ -16,8 +17,9 @@
     "timeEstimate": "1 - 3 tháng",
     "status": "Chưa bắt đầu",
     "note": "Bắt buộc đối với toàn bộ kỹ thuật viên trực tiếp làm massage và cầm máy DDS. Đăng ký học sớm vì cần thời gian đào tạo và thi lấy bằng.",
-    "fileLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link",
-    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing&ouid=112807505253419172495&rtpof=true&sd=true"
+    "fileLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing",
+    "folderLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link"
   },
   {
     "id": 3,
@@ -26,8 +28,9 @@
     "timeEstimate": "1 ngày",
     "status": "Đã hoàn thành",
     "note": "Mẫu Giấy khám sức khỏe đã được chuẩn bị sẵn tại: 1. Hồ sơ An ninh trật tự (ANTT)/ANTT - 04 - Mẫu Giấy khám sức khỏe.docx",
-    "fileLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link",
-    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing&ouid=112807505253419172495&rtpof=true&sd=true"
+    "fileLink": "https://docs.google.com/document/d/1-eNoxj3KXhzdlICsfjf57PdvS70OIbAb/edit?usp=drivesdk",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing",
+    "folderLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link"
   },
   {
     "id": 4,
@@ -36,8 +39,9 @@
     "timeEstimate": "5 ngày làm việc",
     "status": "Đã chuẩn bị",
     "note": "Hồ sơ xin ANTT đã được điền sẵn thông tin chuẩn từ VNeID tại thư mục: 1. Hồ sơ An ninh trật tự (ANTT)",
-    "fileLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link",
-    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing&ouid=112807505253419172495&rtpof=true&sd=true"
+    "fileLink": "https://docs.google.com/document/d/1S4UQ1Nkq9ejjF31v1W_oIyekzpMQqRcM/edit?usp=drivesdk",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing",
+    "folderLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link"
   },
   {
     "id": 5,
@@ -47,6 +51,7 @@
     "status": "Chưa bắt đầu",
     "note": "Mang bản sao Giấy ANTT và danh sách nhân sự (hợp đồng lao động, CMND/CCCD, giấy khám SK, chứng chỉ) qua Công an Phường để báo cáo hoạt động.",
     "fileLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link",
-    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing&ouid=112807505253419172495&rtpof=true&sd=true"
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing",
+    "folderLink": "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link"
   }
 ]
