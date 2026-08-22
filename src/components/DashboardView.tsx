@@ -352,7 +352,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 <div className="absolute left-0 bottom-full mb-2 w-64 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-green-900/40">
                   <p className="font-bold border-b border-white/20 pb-1 text-green-300">Chi tiết — Đã hoàn thành ({taskStats.completed}):</p>
                   {completedList.length > 0 ? (
-                    completedList.map(t => <p key={t.id} className="text-green-100 truncate">• {t.title}</p>)
+                    completedList.map(t => <p key={t.id} onClick={() => setSelectedItemForEdit(t)} className="text-green-100 truncate cursor-pointer hover:text-white hover:underline">• {t.title}</p>)
                   ) : (
                     <p className="text-gray-300">• Chưa có mục hoàn thành</p>
                   )}
@@ -373,7 +373,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 <div className="absolute right-0 bottom-full mb-2 w-72 bg-[#3D2B1A] text-white text-xs p-3 rounded-xl shadow-2xl z-40 space-y-1 animate-in fade-in duration-150 border border-amber-900/40">
                   <p className="font-bold border-b border-white/20 pb-1 text-amber-300">Chi tiết — Đang thực hiện ({taskStats.inProgress}):</p>
                   {doingList.slice(0, 5).map(t => (
-                    <p key={t.id} className="text-amber-100 truncate">• {t.title}</p>
+                    <p key={t.id} onClick={() => setSelectedItemForEdit(t)} className="text-amber-100 truncate cursor-pointer hover:text-white hover:underline">• {t.title}</p>
                   ))}
                 </div>
               )}
@@ -393,7 +393,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   <p className="font-bold border-b border-white/20 pb-1 text-red-300">Chi tiết — Quá hạn ({taskStats.overdue}):</p>
                   {overdueList.length > 0 ? (
                     overdueList.map(t => (
-                      <p key={t.id} className="text-red-200 truncate">• {t.title} ({t.dueDate})</p>
+                      <p key={t.id} onClick={() => setSelectedItemForEdit(t)} className="text-red-200 truncate cursor-pointer hover:text-white hover:underline">• {t.title} ({t.dueDate})</p>
                     ))
                   ) : (
                     <p className="text-gray-300">• Không có việc quá hạn</p>
