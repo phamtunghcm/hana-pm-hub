@@ -21,6 +21,7 @@ def load_json(filename):
 def generate_report_data():
     tasks = load_json("tasks36.json")
     docs = load_json("docs9.json")
+    legal = load_json("legal5.json")
     capex = load_json("capex30.json")
 
     doc_tasks = [
@@ -37,7 +38,8 @@ def generate_report_data():
     ]
     all_tasks = tasks + doc_tasks
 
-    completed_list = [t for t in all_tasks if t.get("status") == "Hoàn thành"]
+    # Hoàn thành gồm: 'Hoàn thành', 'Đã hoàn thành', 'Đã ban hành'
+    completed_list = [t for t in all_tasks if t.get("status") in ["Hoàn thành", "Đã hoàn thành", "Đã ban hành"]]
     completed = len(completed_list)
     total_tasks = len(all_tasks)
     pct = round((completed / total_tasks * 100)) if total_tasks else 0

@@ -79,7 +79,7 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>(DEFAULT_USERS);
 
   useEffect(() => {
-    // Load overrides and settings from localStorage
+    // 1. Khởi tạo dữ liệu cơ bản
     const savedOverrides = JSON.parse(localStorage.getItem("hana_status_overrides") || "{}");
     const savedItemEdits = JSON.parse(localStorage.getItem("hana_item_edits") || "{}");
     const savedNewItems = JSON.parse(localStorage.getItem("hana_new_items") || "[]");
@@ -91,9 +91,9 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     if (savedUser) setCurrentUser(savedUser);
     if (savedPerms && savedPerms.length > 0) setUserPermissions(savedPerms);
 
-    const mapData = (data: any[], type: string) => data.map(item => {
+    const mapData = (data: any[], type: string, serverEdits: any = {}) => data.map(item => {
       const editKey = type + "_" + item.id;
-      const edits = savedItemEdits[editKey] || {};
+      const edits = serverEdits[editKey] || savedItemEdits[editKey] || {};
       return {
         ...item,
         type,
@@ -118,6 +118,22 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     setLegal(initialLegal);
     setDocs(initialDocs);
     setCapex(initialCapex);
+
+    // 2. Tự động đồng bộ với Cloud Database (/api/data)
+    fetch('/api/data')
+      .then(res => res.json())
+      .then(resData => {
+        if (resData.success && resData.data) {
+          const cloud = resData.data;
+          if (cloud.tasks) setTasks(cloud.tasks);
+          if (cloud.legal) setLegal(cloud.legal);
+          if (cloud.docs) setDocs(cloud.docs);
+          if (cloud.capex) setCapex(cloud.capex);
+          if (cloud.settings) setSettings(cloud.settings);
+          if (cloud.userPermissions) setUserPermissions(cloud.userPermissions);
+        }
+      })
+      .catch(err => console.log("[Cloud DB Sync Info]:", err));
   }, []);
 
   const login = (email: string) => {
@@ -181,16 +197,49 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     updateItem(type, id, { status: newStatus });
   };
 
+  const syncToCloudDB = (newTasks: any, newLegal: any, newDocs: any, newCapex: any, newSettings: any) => {
+    try {
+      fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tasks: newTasks,
+          legal: newLegal,
+          docs: newDocs,
+          capex: newCapex,
+          settings: newSettings,
+          userPermissions
+        })
+      }).catch(() => {});
+    } catch (_) {}
+  };
+
   const updateItem = (type: string, id: string | number, updatedFields: Partial<AnyItem>) => {
     const editKey = type + "_" + id;
     const savedEdits = JSON.parse(localStorage.getItem("hana_item_edits") || "{}");
     savedEdits[editKey] = { ...(savedEdits[editKey] || {}), ...updatedFields };
     localStorage.setItem("hana_item_edits", JSON.stringify(savedEdits));
 
-    if (type === "task") setTasks(prev => prev.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t));
-    else if (type === "legal") setLegal(prev => prev.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t));
-    else if (type === "doc") setDocs(prev => prev.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t));
-    else if (type === "capex") setCapex(prev => prev.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t));
+    let updatedTasks = tasks;
+    let updatedLegal = legal;
+    let updatedDocs = docs;
+    let updatedCapex = capex;
+
+    if (type === "task") {
+      updatedTasks = tasks.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      setTasks(updatedTasks);
+    } else if (type === "legal") {
+      updatedLegal = legal.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      setLegal(updatedLegal);
+    } else if (type === "doc") {
+      updatedDocs = docs.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      setDocs(updatedDocs);
+    } else if (type === "capex") {
+      updatedCapex = capex.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      setCapex(updatedCapex);
+    }
+
+    syncToCloudDB(updatedTasks, updatedLegal, updatedDocs, updatedCapex, settings);
   };
 
   const addItem = (item: AnyItem) => {
