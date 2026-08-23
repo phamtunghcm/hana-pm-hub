@@ -129,7 +129,9 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
           // Trộn dữ liệu từ Cloud với Local Storage (ưu tiên Local nếu có thay đổi chưa đẩy lên mây)
           const mergeData = (cloudData: any[], localData: any[], type: string) => {
              if (!cloudData || cloudData.length === 0) return localData;
-             return cloudData.map(cItem => {
+             
+             // Xử lý các task từ Cloud (cập nhật với localEdits nếu có)
+             const merged = cloudData.map(cItem => {
                 const editKey = type + "_" + cItem.id;
                 const localEdits = savedItemEdits[editKey] || {};
                 const localStatusOverride = savedOverrides[editKey];
@@ -140,6 +142,15 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
                    status: localEdits.status || localStatusOverride || cItem.status
                 };
              });
+
+             // Thêm các task cục bộ (được tạo mới - nằm trong localData nhưng chưa có trên Cloud)
+             localData.forEach(lItem => {
+                if (!merged.find(m => m.id === lItem.id)) {
+                   merged.push(lItem);
+                }
+             });
+
+             return merged;
           };
 
           const mergedTasks = mergeData(cloud.tasks, initialTasks, "task");
@@ -168,6 +179,12 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
                 settings: cloud.settings || savedSettings || settings,
                 userPermissions: cloud.userPermissions || savedPerms || []
               })
+            }).then(() => {
+                // Đánh dấu để Toast hiển thị một lần duy nhất
+                if (!sessionStorage.getItem("sync_toast_shown")) {
+                    alert("✅ Đã kết nối và đồng bộ hoàn tất dữ liệu từ thiết bị này lên Cloud Database!");
+                    sessionStorage.setItem("sync_toast_shown", "true");
+                }
             }).catch(() => {});
           } catch (_) {}
         }
