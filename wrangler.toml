@@ -5,3 +5,6 @@ pages_build_output_dir = "dist"
 [[kv_namespaces]]
 binding = "HANA_CONFIG"
 id = "1d33202ecfe64043a2ae31df61903c09"
+
+[triggers]
+crons = ["0 1 * * *"]
