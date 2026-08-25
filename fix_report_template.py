@@ -1,4 +1,6 @@
-# Thư viện gửi báo cáo tự động HANA PM Hub (Gmail SMTP, Resend.com & Zalo)
+# 1. Update scripts/send_daily_report.py to generate a stunning, executive HTML email with clean styling, responsive layout, KPI highlights, overdue/urgent task table, and fallback plain text.
+
+email_script = """# Thư viện gửi báo cáo tự động HANA PM Hub (Resend.com API, Email SMTP & Zalo)
 import json
 import os
 import smtplib
@@ -6,7 +8,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import urllib.request
 from datetime import datetime
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "src", "data")
@@ -21,9 +22,9 @@ def load_json(filename):
 def generate_report_data():
     tasks = load_json("tasks36.json")
     docs = load_json("docs9.json")
-    legal = load_json("legal5.json")
     capex = load_json("capex30.json")
 
+    # Merge docs into tasks (Văn bản nội bộ cũng là Task)
     doc_tasks = [
         {
             "id": f"doc_{d.get('id')}",
@@ -38,8 +39,7 @@ def generate_report_data():
     ]
     all_tasks = tasks + doc_tasks
 
-    # Hoàn thành gồm: 'Hoàn thành', 'Đã hoàn thành', 'Đã ban hành'
-    completed_list = [t for t in all_tasks if t.get("status") in ["Hoàn thành", "Đã hoàn thành", "Đã ban hành"]]
+    completed_list = [t for t in all_tasks if t.get("status") == "Hoàn thành"]
     completed = len(completed_list)
     total_tasks = len(all_tasks)
     pct = round((completed / total_tasks * 100)) if total_tasks else 0
@@ -52,6 +52,7 @@ def generate_report_data():
 
     total_capex = sum(float(str(c.get("totalPrice", 0)).replace(",", "")) for c in capex)
 
+    # Days to opening (target 02-Nov-2026)
     target_date = datetime(2026, 11, 2)
     today = datetime.now()
     days_left = max(0, (target_date - today).days)
@@ -75,34 +76,30 @@ def generate_html_email(data):
     overdue_rows = ""
     if data["overdue_list"]:
         for t in data["overdue_list"]:
-            title = t.get("title", "")
-            pic = t.get("pic", "")
-            due = t.get("dueDate", "")
-            overdue_rows += f"""
+            overdue_rows += f\"\"\"
             <tr style="border-bottom: 1px solid #fee2e2; background-color: #fff5f5;">
-                <td style="padding: 10px 12px; font-weight: 600; color: #991b1b;">{title}</td>
+                <td style="padding: 10px 12px; font-weight: 600; color: #991b1b;">{t.get('title')}</td>
                 <td style="padding: 10px 12px; color: #7f1d1d; text-align: center;"><span style="background: #fecaca; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Quá hạn</span></td>
-                <td style="padding: 10px 12px; color: #4b5563; font-size: 12px;">{pic}</td>
-                <td style="padding: 10px 12px; color: #dc2626; font-weight: bold; font-size: 12px; text-align: right;">{due}</td>
-            </tr>"""
+                <td style="padding: 10px 12px; color: #4b5563; font-size: 12px;">{t.get('pic')}</td>
+                <td style="padding: 10px 12px; color: #dc2626; font-weight: bold; font-size: 12px; text-align: right;">{t.get('dueDate')}</td>
+            </tr>
+            \"\"\"
     else:
         overdue_rows = '<tr><td colspan="4" style="padding: 12px; text-align: center; color: #16a34a; font-weight: 500;">✓ Không có công việc nào bị quá hạn</td></tr>'
 
     urgent_rows = ""
     for t in data["urgent_list"][:5]:
-        title = t.get("title", "")
-        pic = t.get("pic", "")
-        due = t.get("dueDate", "")
-        st = t.get("status", "")
-        urgent_rows += f"""
+        urgent_rows += f\"\"\"
         <tr style="border-bottom: 1px solid #f3f4f6;">
-            <td style="padding: 10px 12px; font-weight: 500; color: #1f2937;">{title}</td>
-            <td style="padding: 10px 12px; color: #d97706; text-align: center;"><span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">{st}</span></td>
-            <td style="padding: 10px 12px; color: #4b5563; font-size: 12px;">{pic}</td>
-            <td style="padding: 10px 12px; color: #d97706; font-weight: 600; font-size: 12px; text-align: right;">{due}</td>
-        </tr>"""
+            <td style="padding: 10px 12px; font-weight: 500; color: #1f2937;">{t.get('title')}</td>
+            <td style="padding: 10px 12px; color: #d97706; text-align: center;"><span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">{t.get('status')}</span></td>
+            <td style="padding: 10px 12px; color: #4b5563; font-size: 12px;">{t.get('pic')}</td>
+            <td style="padding: 10px 12px; color: #d97706; font-weight: 600; font-size: 12px; text-align: right;">{t.get('dueDate')}</td>
+        </tr>
+        \"\"\"
 
-    html = f"""<!DOCTYPE html>
+    html = f\"\"\"
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -181,7 +178,7 @@ def generate_html_email(data):
 
                             <!-- Overdue & Urgent Section -->
                             <div style="margin-bottom: 24px;">
-                                <div style="font-size: 12px; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+                                <div style="font-size: 12px; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center;">
                                     🚨 2. Hạng mục Cần Giám đốc Xử lý & Đôn đốc:
                                 </div>
                                 <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse; font-size: 13px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
@@ -222,32 +219,9 @@ def generate_html_email(data):
         </tr>
     </table>
 </body>
-</html>"""
+</html>
+    \"\"\"
     return html
-
-def send_smtp_email(user, password, recipient, subject, html_content, text_content):
-    if not user or not password:
-        return False
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"HANA Wellness PM Hub <{user}>"
-        msg["To"] = recipient
-
-        part1 = MIMEText(text_content, "plain", "utf-8")
-        part2 = MIMEText(html_content, "html", "utf-8")
-        msg.attach(part1)
-        msg.attach(part2)
-
-        to_list = [r.strip() for r in recipient.split(",") if r.strip()]
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(user, password)
-            server.sendmail(user, to_list, msg.as_string())
-        print(f"[Gmail SMTP] Gửi email thành công đến {recipient} qua {user}!")
-        return True
-    except Exception as e:
-        print("[Gmail SMTP Error]:", e)
-        return False
 
 def send_resend_email(resend_api_key, recipient_email, subject, html_content, text_content):
     if not resend_api_key:
@@ -296,7 +270,8 @@ if __name__ == "__main__":
     data = generate_report_data()
     html_report = generate_html_email(data)
     
-    plain_text = f"""📌 BÁO CÁO TIẾN ĐỘ DỰ ÁN HANA WELLNESS PM HUB
+    plain_text = f\"\"\"
+📌 BÁO CÁO TIẾN ĐỘ DỰ ÁN HANA WELLNESS PM HUB
 ⏰ Thời gian: 08:00 AM Hàng Ngày ({data['date_str']})
 🔗 Truy cập: {data['site_url']}
 
@@ -306,40 +281,29 @@ if __name__ == "__main__":
 • Ngân sách CAPEX: {data['total_capex']:,.0f} VNĐ
 
 🚨 2. CÔNG VIỆC CẦN XỬ LÝ GẤP:
-"""
+\"\"\"
     for t in (data["overdue_list"] + data["urgent_list"])[:6]:
-        t_title = t.get("title", "")
-        t_pic = t.get("pic", "")
-        t_due = t.get("dueDate", "")
-        t_status = t.get("status", "")
-        plain_text += "• " + str(t_title) + " | Phụ trách: " + str(t_pic) + " | Hạn: " + str(t_due) + " (" + str(t_status) + ")\n"
+        plain_text += f"• {t.get('title')} | Phụ trách: {t.get('pic')} | Hạn: {t.get('dueDate')} ({t.get('status')})\n"
     
-    plain_text += "\n👉 Xem chi tiết tại: " + str(data["site_url"]) + "\n"
+    plain_text += f"\n👉 Xem chi tiết tại: {data['site_url']}\n"
 
-    smtp_user = os.getenv("SMTP_USER", "hanawellness.official@gmail.com")
-    smtp_pass = os.getenv("SMTP_PASS", "vykfjngcvcwwmbjl")
     resend_key = os.getenv("RESEND_API_KEY", "")
-    # Forcefully include both emails to ensure they always receive the report
-    env_recipient = os.getenv("REPORT_RECIPIENT_EMAIL", "")
-    recipient = "phamtunghcm@gmail.com, hanawellness.official@gmail.com"
-    if env_recipient and env_recipient not in recipient:
-        recipient += ", " + env_recipient
+    recipient = os.getenv("REPORT_RECIPIENT_EMAIL", "phamtunghcm@gmail.com")
     zalo_url = os.getenv("ZALO_WEBHOOK_URL", "")
 
-    subject = f"📌 [HANA PM Hub] Báo cáo Điều hành Dự án - 08:00 AM ({data['date_str']})"
-
-    print("=== BÁO CÁO KẾT NỐI EMAIL & ZALO ===")
+    print("=== BÁO CÁO KẾT NỐI RESEND.COM & ZALO ===")
     print(plain_text)
     
-    email_sent = False
-    if smtp_user and smtp_pass:
-        email_sent = send_smtp_email(smtp_user, smtp_pass, recipient, subject, html_report, plain_text)
-
-    if not email_sent and resend_key:
-        email_sent = send_resend_email(resend_key, recipient, subject, html_report, plain_text)
+    if resend_key and recipient:
+        send_resend_email(resend_key, recipient, f"📌 [HANA PM Hub] Báo cáo Điều hành Dự án - 08:00 AM ({data['date_str']})", html_report, plain_text)
+    else:
+        print("💡 Lưu ý: Cần cung cấp RESEND_API_KEY trong GitHub Secrets hoặc Cloudflare Settings để tự động gửi qua Resend.com.")
     
-    if not email_sent:
-        print("⚠️ Chưa thể gửi email (Kiểm tra lại cấu hình SMTP hoặc Resend).")
-
     if zalo_url:
         send_zalo_webhook(zalo_url, plain_text)
+"""
+
+with open("scripts/send_daily_report.py", "w") as f:
+    f.write(email_script)
+
+print("scripts/send_daily_report.py updated with executive HTML email template!")

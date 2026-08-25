@@ -1,12 +1,8 @@
-# Thư viện gửi báo cáo tự động HANA PM Hub (Gmail SMTP, Resend.com & Zalo)
+script = '''# Thư viện gửi báo cáo tự động HANA PM Hub (Resend.com API & Zalo Webhook)
 import json
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import urllib.request
 from datetime import datetime
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "src", "data")
@@ -21,7 +17,6 @@ def load_json(filename):
 def generate_report_data():
     tasks = load_json("tasks36.json")
     docs = load_json("docs9.json")
-    legal = load_json("legal5.json")
     capex = load_json("capex30.json")
 
     doc_tasks = [
@@ -38,8 +33,7 @@ def generate_report_data():
     ]
     all_tasks = tasks + doc_tasks
 
-    # Hoàn thành gồm: 'Hoàn thành', 'Đã hoàn thành', 'Đã ban hành'
-    completed_list = [t for t in all_tasks if t.get("status") in ["Hoàn thành", "Đã hoàn thành", "Đã ban hành"]]
+    completed_list = [t for t in all_tasks if t.get("status") == "Hoàn thành"]
     completed = len(completed_list)
     total_tasks = len(all_tasks)
     pct = round((completed / total_tasks * 100)) if total_tasks else 0
@@ -225,30 +219,6 @@ def generate_html_email(data):
 </html>"""
     return html
 
-def send_smtp_email(user, password, recipient, subject, html_content, text_content):
-    if not user or not password:
-        return False
-    try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"HANA Wellness PM Hub <{user}>"
-        msg["To"] = recipient
-
-        part1 = MIMEText(text_content, "plain", "utf-8")
-        part2 = MIMEText(html_content, "html", "utf-8")
-        msg.attach(part1)
-        msg.attach(part2)
-
-        to_list = [r.strip() for r in recipient.split(",") if r.strip()]
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(user, password)
-            server.sendmail(user, to_list, msg.as_string())
-        print(f"[Gmail SMTP] Gửi email thành công đến {recipient} qua {user}!")
-        return True
-    except Exception as e:
-        print("[Gmail SMTP Error]:", e)
-        return False
-
 def send_resend_email(resend_api_key, recipient_email, subject, html_content, text_content):
     if not resend_api_key:
         print("[Resend] Chưa cấu hình RESEND_API_KEY.")
@@ -308,38 +278,27 @@ if __name__ == "__main__":
 🚨 2. CÔNG VIỆC CẦN XỬ LÝ GẤP:
 """
     for t in (data["overdue_list"] + data["urgent_list"])[:6]:
-        t_title = t.get("title", "")
-        t_pic = t.get("pic", "")
-        t_due = t.get("dueDate", "")
-        t_status = t.get("status", "")
-        plain_text += "• " + str(t_title) + " | Phụ trách: " + str(t_pic) + " | Hạn: " + str(t_due) + " (" + str(t_status) + ")\n"
+        plain_text += f"• {t.get('title')} | Phụ trách: {t.get('pic')} | Hạn: {t.get('dueDate')} ({t.get('status')})\n"
     
-    plain_text += "\n👉 Xem chi tiết tại: " + str(data["site_url"]) + "\n"
+    plain_text += f"\n👉 Xem chi tiết tại: {data['site_url']}\n"
 
-    smtp_user = os.getenv("SMTP_USER", "hanawellness.official@gmail.com")
-    smtp_pass = os.getenv("SMTP_PASS", "vykfjngcvcwwmbjl")
     resend_key = os.getenv("RESEND_API_KEY", "")
-    # Forcefully include both emails to ensure they always receive the report
-    env_recipient = os.getenv("REPORT_RECIPIENT_EMAIL", "")
-    recipient = "phamtunghcm@gmail.com, hanawellness.official@gmail.com"
-    if env_recipient and env_recipient not in recipient:
-        recipient += ", " + env_recipient
+    recipient = os.getenv("REPORT_RECIPIENT_EMAIL", "phamtunghcm@gmail.com")
     zalo_url = os.getenv("ZALO_WEBHOOK_URL", "")
 
-    subject = f"📌 [HANA PM Hub] Báo cáo Điều hành Dự án - 08:00 AM ({data['date_str']})"
-
-    print("=== BÁO CÁO KẾT NỐI EMAIL & ZALO ===")
+    print("=== BÁO CÁO KẾT NỐI RESEND.COM & ZALO ===")
     print(plain_text)
     
-    email_sent = False
-    if smtp_user and smtp_pass:
-        email_sent = send_smtp_email(smtp_user, smtp_pass, recipient, subject, html_report, plain_text)
-
-    if not email_sent and resend_key:
-        email_sent = send_resend_email(resend_key, recipient, subject, html_report, plain_text)
+    if resend_key and recipient:
+        send_resend_email(resend_key, recipient, f"📌 [HANA PM Hub] Báo cáo Điều hành Dự án - 08:00 AM ({data['date_str']})", html_report, plain_text)
+    else:
+        print("💡 Lưu ý: Cần cấu hình RESEND_API_KEY trong GitHub Secrets để tự động gửi email.")
     
-    if not email_sent:
-        print("⚠️ Chưa thể gửi email (Kiểm tra lại cấu hình SMTP hoặc Resend).")
-
     if zalo_url:
         send_zalo_webhook(zalo_url, plain_text)
+'''
+
+with open("scripts/send_daily_report.py", "w") as f:
+    f.write(script)
+
+print("scripts/send_daily_report.py successfully generated!")

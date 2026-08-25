@@ -1,0 +1,7 @@
+name = "hana-pm-hub"
+compatibility_date = "2024-03-29"
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "HANA_CONFIG"
+id = "1d33202ecfe64043a2ae31df61903c09"
