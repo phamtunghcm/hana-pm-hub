@@ -1,0 +1,27 @@
+name: Send Daily Report at 8 AM
+
+on:
+  schedule:
+    # 7:30 AM GMT+7 is 00:30 UTC (Giảm tải hàng đợi của GitHub để mail đến kịp 8h)
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Daily Report Script
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ZALO_WEBHOOK_URL: ${{ secrets.ZALO_WEBHOOK_URL }}
+        run: python scripts/send_daily_report.py
