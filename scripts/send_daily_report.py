@@ -319,7 +319,7 @@ if __name__ == "__main__":
     smtp_user = os.getenv("SMTP_USER", "hanawellness.official@gmail.com")
     smtp_pass = os.getenv("SMTP_PASS", "vykfjngcvcwwmbjl")
     resend_key = os.getenv("RESEND_API_KEY", "")
-    recipient = os.getenv("REPORT_RECIPIENT_EMAIL", "phamtunghcm@gmail.com")
+    recipient = os.getenv("REPORT_RECIPIENT_EMAIL", "phamtunghcm@gmail.com, hanawellness.official@gmail.com")
     zalo_url = os.getenv("ZALO_WEBHOOK_URL", "")
 
     subject = f"📌 [HANA PM Hub] Báo cáo Điều hành Dự án - 08:00 AM ({data['date_str']})"
