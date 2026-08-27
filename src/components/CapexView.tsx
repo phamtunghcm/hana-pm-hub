@@ -5,10 +5,13 @@ import EditModal from './EditModal';
 
 const CapexView: React.FC = () => {
   const { capex } = useHana();
+  const [viewMode, setViewMode] = useState<'group' | 'zone'>('group');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'Chi phí Cố định Ban đầu': true,
     'Nội thất & Vật tư cơ bản': true,
     'Thiết bị chuyên môn': true,
+    'Sảnh Lễ tân': true,
+    'Phòng Trị liệu': true,
   });
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
@@ -24,7 +27,7 @@ const CapexView: React.FC = () => {
     const groups: Record<string, { items: typeof capex, total: number }> = {};
 
     capex.forEach(item => {
-      const g = item.group || 'Khác';
+      let g = viewMode === 'zone' ? (item.zone || 'Chưa phân khu vực') : (item.group || 'Khác');
       if (!groups[g]) {
         groups[g] = { items: [], total: 0 };
       }
@@ -36,7 +39,7 @@ const CapexView: React.FC = () => {
     });
 
     return { groupedCapex: groups, totalGrandAmount: grandTotal };
-  }, [capex]);
+  }, [capex, viewMode]);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] p-6 space-y-6 font-sans pb-32">
@@ -63,6 +66,21 @@ const CapexView: React.FC = () => {
             <ExternalLink size={16} /> File Gốc Google Sheets
           </a>
         </div>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => setViewMode('group')}
+          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${viewMode === 'group' ? 'bg-[#3D2B1A] text-white' : 'bg-white text-[#3D2B1A] border border-[#E8E6E1] hover:bg-[#F5F0E6]'}`}
+        >
+          Nhóm theo Chủng loại
+        </button>
+        <button
+          onClick={() => setViewMode('zone')}
+          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${viewMode === 'zone' ? 'bg-[#3D2B1A] text-white' : 'bg-white text-[#3D2B1A] border border-[#E8E6E1] hover:bg-[#F5F0E6]'}`}
+        >
+          Nhóm theo Khu vực
+        </button>
       </div>
 
       <div className="space-y-4">

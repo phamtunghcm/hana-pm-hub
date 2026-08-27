@@ -7,7 +7,8 @@
     "unitPrice": 110000000,
     "totalPrice": 110000000,
     "status": "Đã chi / Đang thi công",
-    "note": "Hạng mục 1.1 trong CSV CAPEX gốc"
+    "note": "Hạng mục 1.1 trong CSV CAPEX gốc",
+    "zone": "Toàn bộ cơ sở"
   },
   {
     "id": "capex_0_2",
@@ -17,7 +18,8 @@
     "unitPrice": 100000000,
     "totalPrice": 100000000,
     "status": "Đã hoàn thành",
-    "note": "Hạng mục 1.2 trong CSV CAPEX gốc"
+    "note": "Hạng mục 1.2 trong CSV CAPEX gốc",
+    "zone": "Toàn bộ cơ sở"
   },
   {
     "id": 1,
@@ -27,7 +29,8 @@
     "unitPrice": 6000000,
     "totalPrice": 30000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 2,
@@ -37,7 +40,8 @@
     "unitPrice": 500000,
     "totalPrice": 2500000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 3,
@@ -47,7 +51,8 @@
     "unitPrice": 300000,
     "totalPrice": 1500000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 4,
@@ -57,7 +62,8 @@
     "unitPrice": 5000000,
     "totalPrice": 5000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 5,
@@ -67,7 +73,8 @@
     "unitPrice": 8000000,
     "totalPrice": 8000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Sảnh Lễ tân"
   },
   {
     "id": 6,
@@ -77,7 +84,8 @@
     "unitPrice": 20000000,
     "totalPrice": 60000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 7,
@@ -87,7 +95,8 @@
     "unitPrice": 40000000,
     "totalPrice": 120000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 8,
@@ -97,7 +106,8 @@
     "unitPrice": 50000,
     "totalPrice": 2500000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 9,
@@ -107,7 +117,8 @@
     "unitPrice": 30000,
     "totalPrice": 600000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 10,
@@ -117,7 +128,8 @@
     "unitPrice": 11000000,
     "totalPrice": 11000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 11,
@@ -127,7 +139,8 @@
     "unitPrice": 3000000,
     "totalPrice": 9000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 12,
@@ -137,7 +150,8 @@
     "unitPrice": 11000000,
     "totalPrice": 11000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 13,
@@ -147,7 +161,8 @@
     "unitPrice": 7000000,
     "totalPrice": 7000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 14,
@@ -157,7 +172,8 @@
     "unitPrice": 3610000,
     "totalPrice": 14440000,
     "status": "Cần mua",
-    "note": "380k/m2"
+    "note": "380k/m2",
+    "zone": "Khu vực chung"
   },
   {
     "id": 15,
@@ -167,7 +183,8 @@
     "unitPrice": 250000,
     "totalPrice": 12500000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 16,
@@ -177,7 +194,8 @@
     "unitPrice": 600000,
     "totalPrice": 6000000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 17,
@@ -187,7 +205,8 @@
     "unitPrice": 500000,
     "totalPrice": 1500000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 18,
@@ -197,7 +216,8 @@
     "unitPrice": 400000,
     "totalPrice": 1200000,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 19,
@@ -207,7 +227,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 20,
@@ -217,7 +238,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 21,
@@ -227,7 +249,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 22,
@@ -237,7 +260,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 23,
@@ -247,7 +271,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 24,
@@ -257,7 +282,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 25,
@@ -267,7 +293,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   },
   {
     "id": 26,
@@ -277,7 +304,8 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Khu vực chung"
   },
   {
     "id": 27,
@@ -287,6 +315,7 @@
     "unitPrice": 0,
     "totalPrice": 0,
     "status": "Cần mua",
-    "note": ""
+    "note": "",
+    "zone": "Phòng Trị liệu"
   }
 ]

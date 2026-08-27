@@ -37,6 +37,7 @@ export interface DocItem extends BaseItem {
 export interface CapexItem extends BaseItem {
   type: 'capex';
   group: string;
+  zone?: string;
   qty: number | string;
   unitPrice: number | string;
   totalPrice: number | string;
