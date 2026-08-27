@@ -143,12 +143,8 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
                 };
              });
 
-             // Thêm các task cục bộ (được tạo mới - nằm trong localData nhưng chưa có trên Cloud)
-             localData.forEach(lItem => {
-                if (!merged.find(m => m.id === lItem.id)) {
-                   merged.push(lItem);
-                }
-             });
+             // CHÚ Ý: Bỏ logic tự động thêm lại các item có trong LocalStorage nhưng bị xoá trên Cloud.
+             // Tránh hiện tượng "zombie items" phục sinh khi Admin xoá bớt dữ liệu từ nguồn.
 
              return merged;
           };
