@@ -1,270 +1,152 @@
 # Báo cáo Chi tiết Chỉ số Video Facebook Reels & TikTok 08:00 AM Hàng Ngày
-# Thiết kế chuẩn UX/UI Meta Business Suite & Facebook Pro Dash
+# KẾT NỐI TRỰC TIẾP META GRAPH API THẬT — TUYỆT ĐỐI KHÔNG DÙNG DỮ LIỆU GIẢ
 import json
 import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import urllib.request
+import urllib.parse
 from datetime import datetime
 
-def load_facebook_clips_data():
-    """Dữ liệu chi tiết từng video clip kết nối từ hệ thống Content Hub & Meta Graph API."""
-    return [
-        {
-            "id": 1,
-            "tt": "01",
-            "title": "Vòng Lặp Của Nỗi Đau — Tại sao massage cứ hết tiền lại đau lại?",
-            "file": "hana_wellness_loop_of_pain.mp4",
-            "post_date": "28/08/2026",
-            "views": "14,820",
-            "reach": "18,450",
-            "retention_3s": "68.2%",
-            "retention_70": "18.4%",
-            "avg_watch_time": "19.8s / 42s",
-            "likes": 248,
-            "comments": 42,
-            "shares": 38,
-            "saves": 95,
-            "dm_leads": 12,
-            "status_grade": "A",
-            "hook_diagnosis": "Hook bóc mẽ vòng lặp giữ chân 3s tốt (68.2%). Nhưng đoạn 3D kéo dài làm tụt người xem ở giây 18.",
-            "action_recommendation": "Rút ngắn 3D từ 12s xuống 6s, thêm Save-Bait ở giây thứ 10."
-        },
-        {
-            "id": 2,
-            "tt": "02",
-            "title": "Hàn Khí Máy Lạnh 4h Chiều — Thủ phạm co thắt 60% mạch máu cổ",
-            "file": "hana_wellness_cold_neck_deep_dive.mp4",
-            "post_date": "29/08/2026",
-            "views": "26,450",
-            "reach": "32,100",
-            "retention_3s": "74.5%",
-            "retention_70": "31.2%",
-            "avg_watch_time": "25.6s / 46s",
-            "likes": 580,
-            "comments": 89,
-            "shares": 112,
-            "saves": 230,
-            "dm_leads": 28,
-            "status_grade": "A+",
-            "hook_diagnosis": "TOP VIRAL: Cảnh báo 'ướp lạnh vai gáy 4h chiều' đánh trúng tâm lý dân văn phòng. Tỷ lệ Lưu video (Save) cao kỷ lục.",
-            "action_recommendation": "Nhân bản kịch bản này thành chuỗi '7 Ngày Trục Hàn Vai Gáy' để kéo lượt Follow kênh."
-        },
-        {
-            "id": 3,
-            "tt": "03",
-            "title": "Tại Sao HANA Cần 10 Phút Chuẩn Bị Kỹ Lưỡng Để Tiếp Đón Bạn?",
-            "file": "hana_wellness_10min_prep_ritual.mp4",
-            "post_date": "30/08/2026",
-            "views": "9,640",
-            "reach": "11,800",
-            "retention_3s": "54.1%",
-            "retention_70": "14.2%",
-            "avg_watch_time": "15.1s / 44s",
-            "likes": 115,
-            "comments": 18,
-            "shares": 14,
-            "saves": 32,
-            "dm_leads": 8,
-            "status_grade": "B",
-            "hook_diagnosis": "Hook giới thiệu quy trình còn hiền, người xem lướt qua nhanh ở 2 giây đầu (tỷ lệ 3s chỉ đạt 54.1%).",
-            "action_recommendation": "Đổi Hook mở đầu sang dạng tò mò: 'Bí mật đằng sau cánh cửa phòng chăm sóc lúc bạn chưa bước vào...'"
-        },
-        {
-            "id": 4,
-            "tt": "04",
-            "title": "Cúi Đầu 45 Độ Gánh Nặng 22kg Đè Lên Đốt Sống C7 & Gù Lưng Rụt Cổ",
-            "file": "hana_wellness_deep_fascia_solution.mp4",
-            "post_date": "31/08/2026",
-            "views": "18,900",
-            "reach": "22,600",
-            "retention_3s": "71.0%",
-            "retention_70": "26.8%",
-            "avg_watch_time": "22.4s / 51s",
-            "likes": 410,
-            "comments": 64,
-            "shares": 76,
-            "saves": 165,
-            "dm_leads": 19,
-            "status_grade": "A",
-            "hook_diagnosis": "Con số 22kg tạo ấn tượng mạnh thị giác. Đoạn bóc tách cơ êm ái tạo cảm giác dễ chịu.",
-            "action_recommendation": "Gài bài tập test cổ 3 giây ở đầu video để tăng thời lượng xem >70%."
+FB_PAGE_ID = os.getenv("FB_PAGE_ID", "61592723278646")
+FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
+
+def fetch_real_facebook_page_insights(page_id, access_token):
+    """
+    Gọi trực tiếp Meta Graph API (v19.0/v20.0) để lấy danh sách bài đăng Reels & chỉ số Insights thật.
+    """
+    if not access_token:
+        print("⚠️ [Meta Graph API] Chưa cấu hình FB_PAGE_ACCESS_TOKEN.")
+        return {
+            "success": False,
+            "error": "Chưa cấu hình FB_PAGE_ACCESS_TOKEN trên hệ thống.",
+            "clips": []
         }
-    ]
 
-def generate_facebook_insights_html(clips, date_str):
-    total_views = sum(int(c["views"].replace(",", "")) for c in clips)
-    total_reach = sum(int(c["reach"].replace(",", "")) for c in clips)
-    total_likes = sum(c["likes"] for c in clips)
-    total_dms = sum(c["dm_leads"] for c in clips)
-    avg_3s = round(sum(float(c["retention_3s"].replace("%", "")) for c in clips) / len(clips), 1)
+    url = f"https://graph.facebook.com/v20.0/{page_id}/published_posts"
+    fields = "id,message,created_time,permalink_url,shares,reactions.summary(true),comments.summary(true),insights.metric(post_impressions,post_engaged_users,post_video_views,post_video_views_organic,post_video_avg_time_watched)"
+    params = urllib.parse.urlencode({
+        "fields": fields,
+        "access_token": access_token,
+        "limit": 10
+    })
 
-    cards_html = ""
-    for c in clips:
-        grade_color = "#16a34a" if "A" in c["status_grade"] else "#ca8a04"
-        cards_html += f"""
-        <div style="background-color: #ffffff; border: 1px solid #e4e6eb; border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                <div>
-                    <span style="display: inline-block; background-color: #e7f3ff; color: #1877f2; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-bottom: 6px;">
-                        REELS CLIP {c['tt']} • {c['post_date']}
-                    </span>
-                    <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #050505; line-height: 1.35;">
-                        {c['title']}
-                    </h3>
-                </div>
-                <div style="background-color: {grade_color}15; color: {grade_color}; font-weight: 800; font-size: 13px; padding: 4px 10px; border-radius: 8px; border: 1px solid {grade_color}40; white-space: nowrap; margin-left: 10px;">
-                    Hạng {c['status_grade']}
-                </div>
-            </div>
+    try:
+        req = urllib.request.Request(f"{url}?{params}", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            posts = data.get("data", [])
+            
+            real_clips = []
+            for idx, post in enumerate(posts):
+                post_id = post.get("id", "")
+                message = post.get("message", "Video không có caption")
+                title = message.split("\n")[0][:80] if message else f"Reels Clip #{idx+1}"
+                created_time = post.get("created_time", "")
+                date_formatted = created_time[:10] if created_time else "Mới đăng"
+                
+                # Extract Reactions, Comments, Shares
+                reactions_count = post.get("reactions", {}).get("summary", {}).get("total_count", 0)
+                comments_count = post.get("comments", {}).get("summary", {}).get("total_count", 0)
+                shares_count = post.get("shares", {}).get("count", 0)
 
-            <!-- Metrics Grid -->
-            <table width="100%" cellspacing="0" cellpadding="0" style="margin: 12px 0; background-color: #f7f8fa; border-radius: 8px; padding: 10px; font-size: 12px;">
-                <tr>
-                    <td width="25%" align="center" style="padding: 6px; border-right: 1px solid #e4e6eb;">
-                        <div style="color: #65676b; font-size: 10px; text-transform: uppercase;">Lượt xem Reels</div>
-                        <div style="font-size: 15px; font-weight: 800; color: #1877f2; margin-top: 2px;">{c['views']}</div>
-                    </td>
-                    <td width="25%" align="center" style="padding: 6px; border-right: 1px solid #e4e6eb;">
-                        <div style="color: #65676b; font-size: 10px; text-transform: uppercase;">Giữ chân 3s</div>
-                        <div style="font-size: 15px; font-weight: 800; color: #16a34a; margin-top: 2px;">{c['retention_3s']}</div>
-                    </td>
-                    <td width="25%" align="center" style="padding: 6px; border-right: 1px solid #e4e6eb;">
-                        <div style="color: #65676b; font-size: 10px; text-transform: uppercase;">Xem >70%</div>
-                        <div style="font-size: 15px; font-weight: 800; color: #dc2626; margin-top: 2px;">{c['retention_70']}</div>
-                    </td>
-                    <td width="25%" align="center" style="padding: 6px;">
-                        <div style="color: #65676b; font-size: 10px; text-transform: uppercase;">Lưu / Đặt lịch</div>
-                        <div style="font-size: 15px; font-weight: 800; color: #d4af37; margin-top: 2px;">{c['saves']} / {c['dm_leads']}</div>
-                    </td>
-                </tr>
-            </table>
+                # Extract Insights metrics
+                insights_data = post.get("insights", {}).get("data", [])
+                metrics_map = {}
+                for m in insights_data:
+                    m_name = m.get("name")
+                    m_values = m.get("values", [{}])
+                    if m_values:
+                        metrics_map[m_name] = m_values[0].get("value", 0)
 
-            <!-- Retention & Watch Time -->
-            <div style="font-size: 12px; color: #65676b; margin-bottom: 8px;">
-                ⏱️ <b>Thời lượng xem TB:</b> <span style="color: #050505; font-weight: 700;">{c['avg_watch_time']}</span> &nbsp;•&nbsp; 
-                👍 <b>Thích:</b> {c['likes']} &nbsp;•&nbsp; 
-                💬 <b>Bình luận:</b> {c['comments']} &nbsp;•&nbsp; 
-                ↗️ <b>Chia sẻ:</b> {c['shares']}
-            </div>
+                views = metrics_map.get("post_video_views", 0) or metrics_map.get("post_impressions", 0)
+                engaged = metrics_map.get("post_engaged_users", 0)
+                avg_time_ms = metrics_map.get("post_video_avg_time_watched", 0)
+                avg_time_sec = round(avg_time_ms / 1000, 1) if avg_time_ms > 100 else avg_time_ms
 
-            <!-- AI Diagnosis & Action -->
-            <div style="background-color: #fff9e6; border-left: 3px solid #d4af37; padding: 8px 12px; border-radius: 4px; font-size: 11.5px; color: #78350f; margin-top: 8px; line-height: 1.45;">
-                <b>🎯 Chẩn đoán AI:</b> {c['hook_diagnosis']}<br>
-                <b>🚀 Rút kinh nghiệm số sau:</b> {c['action_recommendation']}
-            </div>
-        </div>
-        """
+                real_clips.append({
+                    "id": post_id,
+                    "tt": f"{idx+1:02d}",
+                    "title": title,
+                    "post_date": date_formatted,
+                    "views": f"{views:,}",
+                    "raw_views": views,
+                    "reach": f"{metrics_map.get('post_impressions', views):,}",
+                    "avg_watch_time": f"{avg_time_sec}s",
+                    "likes": reactions_count,
+                    "comments": comments_count,
+                    "shares": shares_count,
+                    "engaged": engaged,
+                    "permalink": post.get("permalink_url", f"https://facebook.com/{post_id}")
+                })
 
-    html = f"""<!DOCTYPE html>
+            return {
+                "success": True,
+                "clips": real_clips,
+                "error": None
+            }
+
+    except urllib.error.HTTPError as he:
+        err_body = he.read().decode('utf-8')
+        print(f"❌ [Meta Graph API Error {he.code}]:", err_body)
+        return {
+            "success": False,
+            "error": f"Lỗi Meta Graph API ({he.code}): {err_body}",
+            "clips": []
+        }
+    except Exception as e:
+        print("❌ [Network/API Error]:", e)
+        return {
+            "success": False,
+            "error": str(e),
+            "clips": []
+        }
+
+def generate_real_insights_html(api_result, date_str):
+    success = api_result.get("success", False)
+    clips = api_result.get("clips", [])
+    error_msg = api_result.get("error")
+
+    if not success or not clips:
+        # Template thông báo chưa kết nối Token thật / Token cần cấp
+        return f"""<!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Báo Cáo Facebook Insights - HANA Wellness</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #050505;">
-    <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f0f2f5; padding: 24px 0;">
+<head><meta charset="UTF-8"><title>Báo Cáo Facebook Insights Thật</title></head>
+<body style="margin: 0; padding: 24px; background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #050505;">
+    <table width="100%" cellspacing="0" cellpadding="0">
         <tr>
             <td align="center">
-                <table width="640" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid #e4e6eb;">
-                    
-                    <!-- Facebook Meta Header -->
+                <table width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e4e6eb; box-shadow: 0 4px 12px rgba(0,0,0,0.06);">
                     <tr>
-                        <td style="background: linear-gradient(135deg, #1877f2 0%, #0c56be 100%); padding: 24px 28px; text-align: left;">
-                            <table width="100%" cellspacing="0" cellpadding="0">
-                                <tr>
-                                    <td>
-                                        <div style="display: inline-block; background-color: rgba(255,255,255,0.2); color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-                                            📊 Meta Business Suite • Content Insights
-                                        </div>
-                                        <h1 style="margin: 0; color: #ffffff; font-size: 21px; font-weight: 800; letter-spacing: -0.5px;">
-                                            Báo Cáo Hiệu Quả Video Clip Hàng Ngày
-                                        </h1>
-                                        <p style="margin: 6px 0 0 0; color: #e7f3ff; font-size: 13px;">
-                                            ⏰ Định kỳ 08:00 AM ({date_str}) • Theo dõi Retention & Tối ưu Kịch Bản
-                                        </p>
-                                    </td>
-                                    <td align="right" valign="middle">
-                                        <div style="width: 48px; height: 48px; background-color: #ffffff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; text-align: center; line-height: 48px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
-                                            🌿
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
+                        <td style="background-color: #1877f2; padding: 20px 24px; color: #ffffff;">
+                            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">📊 Meta Graph API • Live Data Connect</div>
+                            <h2 style="margin: 0; font-size: 19px; font-weight: 800;">Báo Cáo Facebook Insights Thật (08:00 AM)</h2>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #e7f3ff;">Ngày: {date_str} • Page ID: <code>{FB_PAGE_ID}</code></p>
                         </td>
                     </tr>
-
-                    <!-- Executive Overview Cards -->
                     <tr>
-                        <td style="padding: 24px 24px 8px 24px;">
-                            <div style="font-size: 12px; font-weight: 800; color: #65676b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                                📈 1. TỔNG QUAN TĂNG TRƯỞNG FACEBOOK REELS TOÀN TRANG:
-                            </div>
-                            <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 16px;">
-                                <tr>
-                                    <td width="23%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 10px; padding: 12px 8px; text-align: center;">
-                                        <div style="font-size: 10px; color: #65676b; font-weight: 700; text-transform: uppercase;">Tổng Lượt Xem</div>
-                                        <div style="font-size: 18px; font-weight: 800; color: #1877f2; margin-top: 4px;">{total_views:,.0f}</div>
-                                    </td>
-                                    <td width="2%"></td>
-                                    <td width="23%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 10px; padding: 12px 8px; text-align: center;">
-                                        <div style="font-size: 10px; color: #65676b; font-weight: 700; text-transform: uppercase;">Giữ Chân 3s TB</div>
-                                        <div style="font-size: 18px; font-weight: 800; color: #16a34a; margin-top: 4px;">{avg_3s}%</div>
-                                    </td>
-                                    <td width="2%"></td>
-                                    <td width="23%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 10px; padding: 12px 8px; text-align: center;">
-                                        <div style="font-size: 10px; color: #65676b; font-weight: 700; text-transform: uppercase;">Tổng Tương Tác</div>
-                                        <div style="font-size: 18px; font-weight: 800; color: #ec4899; margin-top: 4px;">{total_likes + 240}</div>
-                                    </td>
-                                    <td width="2%"></td>
-                                    <td width="23%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 10px; padding: 12px 8px; text-align: center;">
-                                        <div style="font-size: 10px; color: #65676b; font-weight: 700; text-transform: uppercase;">Khách Đặt Hẹn</div>
-                                        <div style="font-size: 18px; font-weight: 800; color: #d4af37; margin-top: 4px;">{total_dms} Leads</div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- Detailed Video List -->
-                    <tr>
-                        <td style="padding: 0 24px 16px 24px;">
-                            <div style="font-size: 12px; font-weight: 800; color: #65676b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                                🎬 2. BẢNG PHÂN TÍCH CHI TIẾT TỪNG VIDEO CLIP & RÚT KINH NGHIỆM:
-                            </div>
-                            {cards_html}
-                        </td>
-                    </tr>
-
-                    <!-- Key Strategy Recommendations -->
-                    <tr>
-                        <td style="padding: 0 24px 24px 24px;">
-                            <div style="background-color: #f0f7ff; border: 1px solid #cce4ff; border-radius: 12px; padding: 16px;">
-                                <div style="font-size: 12px; font-weight: 800; color: #0055b3; text-transform: uppercase; margin-bottom: 8px;">
-                                    🧠 BÀI HỌC CỐT LÕI CHO CÁC KỊCH BẢN TIẾP THEO:
+                        <td style="padding: 24px;">
+                            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                                <div style="font-weight: 800; color: #991b1b; font-size: 14px; margin-bottom: 6px;">⚠️ CẦN KẾT NỐI FACEBOOK PAGE ACCESS TOKEN ĐỂ LẤY DỮ LIỆU THẬT 100%</div>
+                                <div style="font-size: 13px; color: #7f1d1d; line-height: 1.5;">
+                                    <b>Trạng thái:</b> {error_msg if error_msg else "Chưa có Page Access Token trong môi trường."}<br><br>
+                                    Hệ thống tuân thủ nguyên tắc <b>TRUNG THỰC & CHỈ BÁO CÁO DỮ LIỆU THẬT</b>, không tự động sinh số liệu giả.
                                 </div>
-                                <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #1e3a8a; line-height: 1.5;">
-                                    <li><b>Tối ưu thời lượng 28 giây:</b> Không để clip dài quá 32 giây. Càng ngắn thì tỷ lệ xem hết >70% càng tăng vọt.</li>
-                                    <li><b>Bắt buộc cài Save-Bait ở giây 10:</b> Hướng dẫn 1 động tác bấm huyệt tự làm để khán giả bấm Lưu ngay.</li>
-                                    <li><b>Gài Series Loop ở giây 26:</b> Hứa hẹn tập ngày mai để chuyển đổi người xem thành người Follow.</li>
-                                </ul>
                             </div>
-
-                            <!-- CTA Portal Link -->
-                            <div style="text-align: center; margin-top: 20px;">
-                                <a href="https://hana-content-hub.pages.dev/" target="_blank" style="display: inline-block; background-color: #1877f2; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; padding: 12px 28px; border-radius: 8px; box-shadow: 0 2px 8px rgba(24,119,242,0.3);">
-                                    Truy Cập HANA Content Hub Studio →
-                                </a>
-                                <p style="font-size: 11px; color: #8a8d91; margin-top: 10px;">Báo cáo gửi tự động lúc 08:00 AM hàng ngày dành riêng cho Giám Đốc Điều Hành.</p>
+                            <div style="font-size: 13px; color: #4b5563; line-height: 1.6;">
+                                <b>📌 Cách kích hoạt để nhận số liệu thật mỗi sáng:</b>
+                                <ol style="padding-left: 20px; margin-top: 8px;">
+                                    <li>Truy cập <b>Meta Business Suite / Graph API Explorer</b>.</li>
+                                    <li>Lấy <b>Page Access Token</b> của Trang <code>Hana Wellness</code> (ID: <code>61592723278646</code>).</li>
+                                    <li>Gán token vào biến <code>FB_PAGE_ACCESS_TOKEN</code> trên hệ thống (hoặc gửi token cho AI).</li>
+                                </ol>
                             </div>
                         </td>
                     </tr>
-
-                    <!-- Footer -->
                     <tr>
-                        <td style="background-color: #f7f8fa; border-top: 1px solid #e4e6eb; padding: 16px 24px; text-align: center; font-size: 11px; color: #8a8d91;">
-                            © 2026 HANA Wellness Vietnam • 107/18 Trương Định, Q.3, TP.HCM • Meta Business Suite Automated Insights.
+                        <td style="background-color: #f7f8fa; padding: 14px 24px; text-align: center; font-size: 11px; color: #65676b; border-top: 1px solid #e4e6eb;">
+                            © 2026 HANA Wellness Vietnam • Hệ thống đối soát dữ liệu thật.
                         </td>
                     </tr>
                 </table>
@@ -273,7 +155,87 @@ def generate_facebook_insights_html(clips, date_str):
     </table>
 </body>
 </html>"""
-    return html
+
+    # Nếu đã có dữ liệu thật từ Meta API:
+    total_views = sum(c["raw_views"] for c in clips)
+    total_likes = sum(c["likes"] for c in clips)
+    total_comments = sum(c["comments"] for c in clips)
+    total_shares = sum(c["shares"] for c in clips)
+
+    cards_html = ""
+    for c in clips:
+        cards_html += f"""
+        <div style="background-color: #ffffff; border: 1px solid #e4e6eb; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+            <div style="font-size: 11px; font-weight: 800; color: #1877f2; text-transform: uppercase;">CLIP {c['tt']} • {c['post_date']}</div>
+            <h4 style="margin: 4px 0 8px 0; font-size: 14px; color: #050505;">{c['title']}</h4>
+            <table width="100%" style="background-color: #f7f8fa; border-radius: 6px; padding: 8px; font-size: 12px;">
+                <tr>
+                    <td align="center"><b>Lượt Xem (Views):</b> <span style="color: #1877f2; font-weight: 800;">{c['views']}</span></td>
+                    <td align="center"><b>Thời gian xem TB:</b> <span style="color: #16a34a; font-weight: 800;">{c['avg_watch_time']}</span></td>
+                    <td align="center"><b>Like/Tim:</b> {c['likes']}</td>
+                    <td align="center"><b>Bình luận:</b> {c['comments']}</td>
+                    <td align="center"><b>Share:</b> {c['shares']}</td>
+                </tr>
+            </table>
+            <div style="margin-top: 8px; text-align: right;">
+                <a href="{c['permalink']}" target="_blank" style="color: #1877f2; font-size: 11.5px; text-decoration: none; font-weight: 700;">Xem bài đăng trên Facebook →</a>
+            </div>
+        </div>
+        """
+
+    return f"""<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="UTF-8"><title>Báo Cáo Facebook Insights Thật</title></head>
+<body style="margin: 0; padding: 24px; background-color: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #050505;">
+    <table width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+            <td align="center">
+                <table width="640" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e4e6eb; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1877f2 0%, #0c56be 100%); padding: 24px 28px; color: #ffffff;">
+                            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">📊 Meta Graph API • LIVE DATA 100%</div>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 800;">Báo Cáo Hiệu Quả Video Facebook Thật</h1>
+                            <p style="margin: 4px 0 0 0; font-size: 12.5px; color: #e7f3ff;">08:00 AM ({date_str}) • Dữ liệu kéo trực tiếp từ Trang Hana Wellness</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px 24px;">
+                            <div style="font-size: 12px; font-weight: 800; color: #65676b; text-transform: uppercase; margin-bottom: 10px;">📈 TỔNG QUAN CHỈ SỐ THẬT TOÀN TRANG:</div>
+                            <table width="100%" style="margin-bottom: 16px; font-size: 13px;">
+                                <tr>
+                                    <td width="25%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 8px; padding: 10px; text-align: center;">
+                                        <div style="font-size: 10px; color: #65676b;">TỔNG VIEWS</div>
+                                        <div style="font-size: 16px; font-weight: 800; color: #1877f2; margin-top: 2px;">{total_views:,}</div>
+                                    </td>
+                                    <td width="25%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 8px; padding: 10px; text-align: center;">
+                                        <div style="font-size: 10px; color: #65676b;">TỔNG LIKES</div>
+                                        <div style="font-size: 16px; font-weight: 800; color: #16a34a; margin-top: 2px;">{total_likes}</div>
+                                    </td>
+                                    <td width="25%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 8px; padding: 10px; text-align: center;">
+                                        <div style="font-size: 10px; color: #65676b;">BÌNH LUẬN</div>
+                                        <div style="font-size: 16px; font-weight: 800; color: #ca8a04; margin-top: 2px;">{total_comments}</div>
+                                    </td>
+                                    <td width="25%" style="background-color: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 8px; padding: 10px; text-align: center;">
+                                        <div style="font-size: 10px; color: #65676b;">CHIA SẺ</div>
+                                        <div style="font-size: 16px; font-weight: 800; color: #9333ea; margin-top: 2px;">{total_shares}</div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div style="font-size: 12px; font-weight: 800; color: #65676b; text-transform: uppercase; margin-bottom: 10px;">🎬 CHI TIẾT TỪNG VIDEO CLIP ĐÃ ĐĂNG:</div>
+                            {cards_html}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f7f8fa; border-top: 1px solid #e4e6eb; padding: 14px 24px; text-align: center; font-size: 11px; color: #8a8d91;">
+                            © 2026 HANA Wellness Vietnam • Dữ liệu thật từ Meta Graph API v20.0.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>"""
 
 def send_facebook_report_email(user, password, recipient, subject, html_content, text_content):
     if not user or not password:
@@ -281,7 +243,7 @@ def send_facebook_report_email(user, password, recipient, subject, html_content,
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"HANA Wellness Insights <{user}>"
+        msg["From"] = f"HANA Wellness Real Insights <{user}>"
         msg["To"] = recipient
 
         part1 = MIMEText(text_content, "plain", "utf-8")
@@ -293,7 +255,7 @@ def send_facebook_report_email(user, password, recipient, subject, html_content,
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(user, password)
             server.sendmail(user, to_list, msg.as_string())
-        print(f"[Gmail SMTP] Gửi Báo Cáo Facebook Insights thành công đến {recipient} qua {user}!")
+        print(f"[Gmail SMTP] Gửi email Báo Cáo Facebook Insights THẬT thành công đến {recipient}!")
         return True
     except Exception as e:
         print("[Gmail SMTP Error]:", e)
@@ -301,32 +263,26 @@ def send_facebook_report_email(user, password, recipient, subject, html_content,
 
 if __name__ == "__main__":
     date_str = datetime.now().strftime("%d/%m/%Y")
-    clips = load_facebook_clips_data()
-    html_report = generate_facebook_insights_html(clips, date_str)
     
-    plain_text = f"""📊 [HANA WELLNESS] BÁO CÁO CHI TIẾT VIDEO FACEBOOK REELS & TIKTOK
-⏰ Định kỳ: 08:00 AM Hàng Ngày ({date_str})
-🔗 Hệ thống: https://hana-content-hub.pages.dev
-
-📈 TỔNG QUAN HIỆU SUẤT REELS:
-• Tổng lượt xem: {sum(int(c['views'].replace(',', '')) for c in clips):,.0f} plays
-• Giữ chân 3s TB: {round(sum(float(c['retention_3s'].replace('%', '')) for c in clips) / len(clips), 1)}%
-• Khách đặt hẹn: {sum(c['dm_leads'] for c in clips)} leads về ERP
-
-🎬 CHI TIẾT TỪNG VIDEO:
+    # 1. Kéo dữ liệu THẬT 100% từ Meta Graph API
+    api_result = fetch_real_facebook_page_insights(FB_PAGE_ID, FB_PAGE_ACCESS_TOKEN)
+    
+    # 2. Sinh HTML Báo Cáo
+    html_report = generate_real_insights_html(api_result, date_str)
+    
+    plain_text = f"""📊 [HANA WELLNESS] BÁO CÁO FACEBOOK INSIGHTS THẬT (08:00 AM - {date_str})
+🔗 Page ID: {FB_PAGE_ID}
 """
-    for c in clips:
-        plain_text += f"\n• [{c['tt']}] {c['title']}\n"
-        plain_text += f"  Lượt xem: {c['views']} | 3s Rate: {c['retention_3s']} | >70% Rate: {c['retention_70']} | Lưu: {c['saves']}\n"
-        plain_text += f"  Rút kinh nghiệm: {c['action_recommendation']}\n"
+    if api_result.get("success"):
+        for c in api_result.get("clips", []):
+            plain_text += f"• [{c['tt']}] {c['title']} | Views: {c['views']} | Watch: {c['avg_watch_time']} | Likes: {c['likes']} | Comments: {c['comments']}\n"
+    else:
+        plain_text += f"\n⚠️ Chưa kết nối Token Facebook thật: {api_result.get('error')}\n"
 
     smtp_user = os.getenv("SMTP_USER", "hanawellness.official@gmail.com")
     smtp_pass = os.getenv("SMTP_PASS", "vykfjngcvcwwmbjl")
     recipient = "phamtunghcm@gmail.com, hanawellness.official@gmail.com"
-    subject = f"📊 [Meta Insights] Báo Cáo Hiệu Quả Video Clip Hàng Ngày - 08:00 AM ({date_str})"
-
-    print("=== NỘI DUNG EMAIL FACEBOOK INSIGHTS ===")
-    print(plain_text)
+    subject = f"📊 [Meta Real Insights] Báo Cáo Hiệu Quả Video Clip Hàng Ngày - 08:00 AM ({date_str})"
 
     if smtp_user and smtp_pass:
         send_facebook_report_email(smtp_user, smtp_pass, recipient, subject, html_report, plain_text)
