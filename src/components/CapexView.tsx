@@ -59,10 +59,16 @@ const CapexView: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
           <div className="text-right">
             <p className="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Tổng ngân sách dự kiến</p>
-            <p className="text-2xl font-black text-amber-700">
-              {totalGrandAmount.toLocaleString()} đ
-            </p>
+            <p className="text-2xl font-black text-amber-700">{totalGrandAmount.toLocaleString()} đ</p>
           </div>
+          <a
+            href={DRIVE_LINKS.capex}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#F5F0E6] text-[#3D2B1A] font-bold px-4 py-2 rounded-xl border border-[#E7E0D6] hover:bg-amber-200 transition-colors text-sm shadow-sm"
+          >
+            <ExternalLink size={16} /> File Gốc Google Sheets
+          </a>
         </div>
       </div>
 

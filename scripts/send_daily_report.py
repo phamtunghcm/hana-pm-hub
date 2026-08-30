@@ -10,13 +10,31 @@ from datetime import datetime
 def load_live_data():
     url = "https://hana-pm-hub.pages.dev/api/data"
     try:
-        req = urllib.request.Request(url, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req) as resp:
+        req = urllib.request.Request(
+            url, 
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Content-Type": "application/json"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
             resp_data = json.loads(resp.read().decode('utf-8'))
             if resp_data.get('success') and resp_data.get('data'):
+                print("✅ Đã lấy dữ liệu live từ Cloudflare KV thành công!")
                 return resp_data['data']
     except Exception as e:
-        print("Failed to fetch live data from KV:", e)
+        print("⚠️ Failed to fetch live data from KV over HTTP:", e)
+        
+    # Fallback to local backup files if available
+    for fallback_file in ["live_final.json", "live_data.json", "full_capex_correct.json"]:
+        if os.path.exists(fallback_file):
+            try:
+                with open(fallback_file, "r", encoding="utf-8") as f:
+                    local_data = json.load(f)
+                    print(f"✅ Đã tải dữ liệu dự phòng từ file cục bộ: {fallback_file}")
+                    return local_data
+            except Exception as fe:
+                pass
     return None
 
 def generate_report_data(live_data):
