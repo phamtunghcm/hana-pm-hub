@@ -1,0 +1,26 @@
+name: Send Daily Facebook Video Insights Report at 8 AM
+
+on:
+  schedule:
+    # 8:00 AM GMT+7 is 01:00 AM UTC everyday
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  facebook-insights-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Facebook Insights Daily Report Script
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: python scripts/send_daily_facebook_insights_report.py
