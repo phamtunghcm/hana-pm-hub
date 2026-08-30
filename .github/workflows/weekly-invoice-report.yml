@@ -1,0 +1,26 @@
+name: Send Weekly Invoice Report on Monday 8 AM
+
+on:
+  schedule:
+    # 8:00 AM GMT+7 is 01:00 AM UTC every Monday
+    - cron: '0 1 * * 1'
+  workflow_dispatch:
+
+jobs:
+  invoice-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Weekly Invoice Report Script
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: python scripts/send_weekly_invoice_report.py
