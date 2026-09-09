@@ -9,7 +9,7 @@ import { upsertItem } from "../lib/supabase";
 export const DRIVE_LINKS = {
   tasks: "https://docs.google.com/spreadsheets/d/1TxIBBRPTftXJP4oqmyDXidr-8mDFoybQZFpo6NBJsm8/edit?pli=1#gid=139259394",
   // Bảng quản lý chung ANTT, PCCC
-  legalSheet: "https://docs.google.com/spreadsheets/d/1lUWL9RtJeCllRgMQDUpSfPVQHmdrd38i/edit?usp=sharing&ouid=112807505253419172495&rtpof=true&sd=true",
+  legalSheet: "https://docs.google.com/spreadsheets/d/1XpU-5goVpdFNgYGpV6wkVYznTA8KDsz5/edit?gid=2104154183#gid=2104154183",
   // Folder hồ sơ ANTT
   legalAnttFolder: "https://drive.google.com/drive/folders/1v-OwDDMRek50o6RVcz9QISUtc4wMKghm?usp=drive_link",
   // Folder hồ sơ PCCC (>100m2)
@@ -19,7 +19,7 @@ export const DRIVE_LINKS = {
   // Folder của nhóm văn bản nội bộ
   docsFolder: "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
   // Bảng tính mua sắm & CAPEX
-  capex: "https://docs.google.com/spreadsheets/d/1TxIBBRPTftXJP4oqmyDXidr-8mDFoybQZFpo6NBJsm8/edit?pli=1#gid=139259394"
+  capex: "https://docs.google.com/spreadsheets/d/17abDmjThWZ-kQdW2cVPl2Kp8BfEz2v7trtebELIkD_s/edit?gid=1002#gid=1002"
 };
 
 export interface ProjectSettings {
