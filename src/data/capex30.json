@@ -1,29 +1,5 @@
 [
   {
-    "id": "capex_0_1",
-    "group": "Chi phí Cố định Ban đầu",
-    "title": "Thi công thô & Sửa chữa cơ sở",
-    "qty": 1,
-    "unitPrice": 110000000,
-    "totalPrice": 110000000,
-    "status": "Đã chi / Đang thi công",
-    "note": "Hạng mục cố định ngoài Google Sheets",
-    "zone": "Toàn bộ cơ sở",
-    "type": "capex"
-  },
-  {
-    "id": "capex_0_2",
-    "group": "Chi phí Cố định Ban đầu",
-    "title": "Đặt cọc thuê mặt bằng",
-    "qty": 1,
-    "unitPrice": 100000000,
-    "totalPrice": 100000000,
-    "status": "Đã hoàn thành",
-    "note": "Hạng mục cố định ngoài Google Sheets",
-    "zone": "Toàn bộ cơ sở",
-    "type": "capex"
-  },
-  {
     "id": "capex_lt_1",
     "group": "Sảnh Lễ tân & Mặt tiền",
     "zone": "Mặt tiền",

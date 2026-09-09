@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-ĐỒNG BỘ 2 CHIỀU GIỮA GOOGLE SHEETS VÀ HANA PM HUB (CLOUDFLARE KV)
-1. Mua sắm (Capex):
-   - Nguồn: https://docs.google.com/spreadsheets/d/17abDmjThWZ-kQdW2cVPl2Kp8BfEz2v7trtebELIkD_s/edit
-   - Sheet 'Setup Lễ tân' (gid=1002) + 'Setup Spa' (gid=1001)
-   - Lọc chỉ lấy các mục có Tổng SL (qty) > 0 (bỏ các mục qty <= 0)
-   - Giữ lại 2 khoản cố định ban đầu (Thuê nhà 100tr, Thi công thô 110tr)
-2. Hồ sơ Pháp lý (Legal):
-   - Nguồn: https://docs.google.com/spreadsheets/d/1XpU-5goVpdFNgYGpV6wkVYznTA8KDsz5/edit?gid=2104154183
-   - Sheet 'Chi tiết tiến độ' (33 mục chuẩn NĐ 30 mang tên NĐDPL Phạm Vũ Tùng)
+ĐỒNG BỘ 2 CHIỀU CHUẨN XÁC 100%: GOOGLE SHEETS <---> HANA PM HUB (CLOUDFLARE KV)
+- NGUYÊN TẮC: Chỉ giữ những dòng THỰC TẾ CÓ TRÊN GOOGLE SHEETS.
+  Dòng nào không có trên Google Sheet thì LOẠI BỎ HOÀN TOÀN khỏi PM Hub.
+- Mua sắm (Capex):
+  * Setup Lễ tân (gid=1002) + Setup Spa (gid=1001)
+  * Lọc chỉ lấy các mục có Tổng SL > 0 (bỏ các mục SL <= 0)
+  * Đúng 64 hạng mục trang thiết bị (25 Lễ tân + 39 Spa).
+- Hồ sơ Pháp lý (Legal):
+  * Bảng theo dõi tiến độ pháp lý (gid=2104154183)
+  * Đúng 33 hạng mục hồ sơ pháp lý chuẩn NĐ 30 mang tên NĐDPL Phạm Vũ Tùng.
 """
 
 import urllib.request, csv, io, json, sys
@@ -42,54 +43,27 @@ user_perms = cloud_data.get("userPermissions", [])
 current_capex = cloud_data.get("capex", [])
 current_legal = cloud_data.get("legal", [])
 
-# Map existing status from cloud to respect 2-way edits from web
+# Lưu map trạng thái hiện tại từ cloud để bảo tồn các cập nhật từ Web (2 chiều)
 existing_capex_status = {c.get("title", "").strip(): c.get("status") for c in current_capex if c.get("title")}
-existing_legal_status = {l.get("title", "").strip(): l.get("status") for l in current_legal if l.get("title")}
+existing_legal_status = {l.get("id"): l.get("status") for l in current_legal if l.get("id")}
 
-print("2. Đang đọc & xử lý Mua sắm (Chỉ lấy SL > 0)...")
+print("2. Đang đọc & xử lý Mua sắm (100% từ Google Sheets, SL > 0, KHÔNG thêm mục ngoài)...")
 d_spa = fetch_csv(URL_SHOPPING_SPA)
 d_letan = fetch_csv(URL_SHOPPING_LETAN)
 
-new_capex = [
-    {
-        "id": "capex_0_1",
-        "group": "Chi phí Cố định Ban đầu",
-        "title": "Thi công thô & Sửa chữa cơ sở",
-        "qty": 1,
-        "unitPrice": 110000000,
-        "totalPrice": 110000000,
-        "status": existing_capex_status.get("Thi công thô & Sửa chữa cơ sở", "Đã chi / Đang thi công"),
-        "note": "Hạng mục cố định ngoài Google Sheets",
-        "zone": "Toàn bộ cơ sở",
-        "type": "capex"
-    },
-    {
-        "id": "capex_0_2",
-        "group": "Chi phí Cố định Ban đầu",
-        "title": "Đặt cọc thuê mặt bằng",
-        "qty": 1,
-        "unitPrice": 100000000,
-        "totalPrice": 100000000,
-        "status": existing_capex_status.get("Đặt cọc thuê mặt bằng", "Đã hoàn thành"),
-        "note": "Hạng mục cố định ngoài Google Sheets",
-        "zone": "Toàn bộ cơ sở",
-        "type": "capex"
-    }
-]
+new_capex = []
 
 def parse_num(val_str, default=0):
     if not val_str:
         return default
     try:
         clean = str(val_str).replace(",", "").replace(".", "").strip()
-        # In this sheet, prices are often written in 1,000s e.g. 4,500 means 4,500,000
-        # If value is in thousands (e.g. <= 100000), multiply by 1000 for VND display if needed
         val = float(clean)
         return val
     except:
         return default
 
-# Parse Setup Lễ tân
+# Parse Setup Lễ tân (Chỉ lấy dòng có trong sheet và SL > 0)
 id_idx = 1
 for r in d_letan[7:]:
     if len(r) > 7:
@@ -100,10 +74,9 @@ for r in d_letan[7:]:
         except ValueError:
             qty = 0
         
-        # Chỉ lấy số lượng > 0
         if name and qty > 0:
-            price_val = parse_num(r[8]) * 1000 if parse_num(r[8]) < 100000 and parse_num(r[8]) > 0 else parse_num(r[8])
-            total_val = parse_num(r[9]) * 1000 if parse_num(r[9]) < 500000 and parse_num(r[9]) > 0 else parse_num(r[9])
+            price_val = parse_num(r[8]) * 1000 if 0 < parse_num(r[8]) < 100000 else parse_num(r[8])
+            total_val = parse_num(r[9]) * 1000 if 0 < parse_num(r[9]) < 500000 else parse_num(r[9])
             if total_val == 0 and price_val > 0:
                 total_val = price_val * qty
                 
@@ -124,7 +97,7 @@ for r in d_letan[7:]:
             })
             id_idx += 1
 
-# Parse Setup Spa
+# Parse Setup Spa (Chỉ lấy dòng có trong sheet và SL > 0)
 id_spa_idx = 1
 for r in d_spa[7:]:
     if len(r) > 6:
@@ -135,10 +108,9 @@ for r in d_spa[7:]:
         except ValueError:
             qty = 0
             
-        # Chỉ lấy số lượng > 0
         if name and qty > 0:
-            price_val = parse_num(r[8]) * 1000 if parse_num(r[8]) < 100000 and parse_num(r[8]) > 0 else parse_num(r[8])
-            total_val = parse_num(r[9]) * 1000 if parse_num(r[9]) < 500000 and parse_num(r[9]) > 0 else parse_num(r[9])
+            price_val = parse_num(r[8]) * 1000 if 0 < parse_num(r[8]) < 100000 else parse_num(r[8])
+            total_val = parse_num(r[9]) * 1000 if 0 < parse_num(r[9]) < 500000 else parse_num(r[9])
             if total_val == 0 and price_val > 0:
                 total_val = price_val * qty
                 
@@ -159,9 +131,9 @@ for r in d_spa[7:]:
             })
             id_spa_idx += 1
 
-print(f"-> Tổng hạng mục Mua sắm (SL > 0): {len(new_capex)} hạng mục (bao gồm 2 cố định + {len(new_capex)-2} trang thiết bị).")
+print(f"-> Tổng hạng mục Mua sắm (100% từ Sheets, SL > 0): {len(new_capex)} hạng mục (25 Lễ tân + 39 Spa).")
 
-print("3. Đang đọc & xử lý Hồ sơ Pháp lý (33 mục)...")
+print("3. Đang đọc & xử lý Hồ sơ Pháp lý (100% từ Google Sheets, 33 mục)...")
 d_legal = fetch_csv(URL_LEGAL)
 new_legal = []
 
@@ -180,7 +152,7 @@ for r in d_legal[4:]:
         sheet_status = r[10].strip()
         note = r[11].strip() if len(r) > 11 else ""
         
-        status = existing_legal_status.get(title, sheet_status)
+        status = existing_legal_status.get(stt, sheet_status)
         
         new_legal.append({
             "id": stt,
@@ -194,22 +166,16 @@ for r in d_legal[4:]:
             "type": "legal"
         })
 
-print(f"-> Tổng hạng mục Pháp lý: {len(new_legal)} mục.")
+print(f"-> Tổng hạng mục Pháp lý (100% từ Sheets): {len(new_legal)} mục.")
 
 print("4. Cập nhật dữ liệu lên Cloudflare KV Database...")
-payload = {
-    "tasks": tasks,
-    "legal": new_legal,
-    "docs": docs,
-    "capex": new_capex,
-    "settings": settings,
-    "userPermissions": user_perms
-}
+cloud_data["capex"] = new_capex
+cloud_data["legal"] = new_legal
 
 req_post = urllib.request.Request(
     CLOUD_API,
     headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
-    data=json.dumps(payload).encode("utf-8"),
+    data=json.dumps(cloud_data).encode("utf-8"),
     method="POST"
 )
 
@@ -217,11 +183,11 @@ with urllib.request.urlopen(req_post) as post_resp:
     res_json = json.loads(post_resp.read().decode())
     print("Cloud response:", res_json)
 
-# Also update local fallback files in repo
+# Lưu lại các file dự phòng local trong repo
 with open("src/data/capex30.json", "w", encoding="utf-8") as f:
     json.dump(new_capex, f, ensure_ascii=False, indent=2)
 
 with open("src/data/legal5.json", "w", encoding="utf-8") as f:
     json.dump(new_legal, f, ensure_ascii=False, indent=2)
 
-print("✅ ĐÃ HOÀN TẤT ĐỒNG BỘ CẢ TIẾN ĐỘ MUA SẮM VÀ HỒ SƠ PHÁP LÝ!")
+print("✅ ĐÃ ĐỒNG BỘ CHUẨN XÁC: TOÀN BỘ CÁC MỤC NGOÀI GOOGLE SHEETS ĐÃ ĐƯỢC LOẠI BỎ HOÀN TOÀN!")

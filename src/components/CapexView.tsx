@@ -37,9 +37,7 @@ const CapexView: React.FC = () => {
       const val = typeof item.totalPrice === 'number' ? item.totalPrice : parseFloat(String(item.totalPrice).replace(/,/g, '')) || 0;
       groups[g].total += val;
       grandTotal += val;
-      if (!item.id.toString().startsWith("capex_0_")) {
-          itemCount++;
-      }
+      itemCount++;
     });
 
     return { groupedCapex: groups, totalGrandAmount: grandTotal, totalItems: itemCount };
@@ -53,7 +51,7 @@ const CapexView: React.FC = () => {
             <ShoppingCart className="text-amber-800" size={24} />
             <h1 className="text-2xl font-bold text-[#3D2B1A]">Ngân sách CAPEX Ban đầu</h1>
           </div>
-          <p className="text-[#8D6E63] mt-1">Đã bao gồm: Đặt cọc thuê nhà (100tr), Thi công thô (110tr) & {totalItems} danh mục mua sắm</p>
+          <p className="text-[#8D6E63] mt-1">Đồng bộ trực tiếp từ Google Sheets: {totalItems} danh mục mua sắm (Số lượng &gt; 0)</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-4">
