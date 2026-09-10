@@ -135,12 +135,12 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
                 const editKey = type + "_" + cItem.id;
                 const localEdits = savedItemEdits[editKey] || {};
                 const localStatusOverride = savedOverrides[editKey];
-                
-                return {
-                   ...cItem,
-                   ...localEdits,
-                   status: localEdits.status || localStatusOverride || cItem.status
-                };
+                                return {
+                    ...cItem,
+                    type,
+                    ...localEdits,
+                    status: localEdits.status || localStatusOverride || cItem.status
+                 };
              });
 
              // CHÚ Ý: Bỏ logic tự động thêm lại các item có trong LocalStorage nhưng bị xoá trên Cloud.
@@ -266,11 +266,18 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     } catch (_) {}
   };
 
-  const updateItem = (type: string, id: string | number, updatedFields: Partial<AnyItem>) => {
+  const updateItem = (rawType: string, id: string | number, updatedFields: Partial<AnyItem>) => {
+    const type = (!rawType || rawType === 'undefined') ? 'task' : rawType;
     const editKey = type + "_" + id;
     const savedEdits = JSON.parse(localStorage.getItem("hana_item_edits") || "{}");
     savedEdits[editKey] = { ...(savedEdits[editKey] || {}), ...updatedFields };
     localStorage.setItem("hana_item_edits", JSON.stringify(savedEdits));
+
+    if (updatedFields.status) {
+      const savedOverrides = JSON.parse(localStorage.getItem("hana_status_overrides") || "{}");
+      savedOverrides[editKey] = updatedFields.status;
+      localStorage.setItem("hana_status_overrides", JSON.stringify(savedOverrides));
+    }
 
     let updatedTasks = tasks;
     let updatedLegal = legal;
@@ -278,16 +285,16 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     let updatedCapex = capex;
 
     if (type === "task") {
-      updatedTasks = tasks.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      updatedTasks = tasks.map(t => String(t.id) === String(id) ? ({ ...t, ...updatedFields, type: "task" } as any) : t);
       setTasks(updatedTasks);
     } else if (type === "legal") {
-      updatedLegal = legal.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      updatedLegal = legal.map(t => String(t.id) === String(id) ? ({ ...t, ...updatedFields, type: "legal" } as any) : t);
       setLegal(updatedLegal);
     } else if (type === "doc") {
-      updatedDocs = docs.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      updatedDocs = docs.map(t => String(t.id) === String(id) ? ({ ...t, ...updatedFields, type: "doc" } as any) : t);
       setDocs(updatedDocs);
     } else if (type === "capex") {
-      updatedCapex = capex.map(t => t.id === id ? ({ ...t, ...updatedFields } as any) : t);
+      updatedCapex = capex.map(t => String(t.id) === String(id) ? ({ ...t, ...updatedFields, type: "capex" } as any) : t);
       setCapex(updatedCapex);
     }
 

@@ -28,6 +28,7 @@ const TaskListView: React.FC = () => {
     // Original tasks
     tasks.forEach(t => list.push({
       ...t,
+      type: 'task',
       macroPhase: getMacroPhase(t.workstream),
       _raw: t
     }));

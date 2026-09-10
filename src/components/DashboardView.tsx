@@ -37,7 +37,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       note: d.content
     } as any));
 
-    return [...tasks, ...docTasks];
+    const standardTasks = tasks.map(t => ({ ...t, type: "task" }));
+    return [...standardTasks, ...docTasks];
   }, [tasks, docs]);
 
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);

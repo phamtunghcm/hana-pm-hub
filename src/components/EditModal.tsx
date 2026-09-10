@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, AlertTriangle, ExternalLink } from 'lucide-react';
+import { X, Save, AlertTriangle, ExternalLink, CheckCircle } from 'lucide-react';
 import { useHana, DRIVE_LINKS } from '../store/HanaContext';
 
 interface EditModalProps {
@@ -9,6 +9,15 @@ interface EditModalProps {
 
 const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
   const { updateItem } = useHana();
+
+  // Tự động nhận diện type an toàn nếu item bị thiếu type
+  const itemType = item.type || (
+    item.agency || item.timeEstimate ? 'legal' :
+    item.department || item.deadline ? 'doc' :
+    ((item.unitPrice !== undefined || item.qty !== undefined) && !item.workstream) ? 'capex' :
+    'task'
+  );
+
   const [formData, setFormData] = useState({
     title: item.title || '',
     status: item.status || 'Chưa bắt đầu',
@@ -23,17 +32,18 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
   });
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-    // Lấy link file gốc trực tiếp từ item nếu có, hoặc fallback theo phân hệ
+  // Lấy link file gốc trực tiếp từ item nếu có, hoặc fallback theo phân hệ
   const fileDirectLink = item.fileLink || (
-    item.type === 'doc' ? DRIVE_LINKS.docsFolder :
-    item.type === 'legal' ? (item.title.includes('PCCC') ? DRIVE_LINKS.legalPcccFolder : DRIVE_LINKS.legalAnttFolder) :
+    itemType === 'doc' ? DRIVE_LINKS.docsFolder :
+    itemType === 'legal' ? (item.title?.includes('PCCC') ? DRIVE_LINKS.legalPcccFolder : DRIVE_LINKS.legalAnttFolder) :
     DRIVE_LINKS.tasks
   );
 
   const sheetDirectLink = item.sheetLink || (
-    item.type === 'doc' ? DRIVE_LINKS.docsSheet :
-    item.type === 'legal' ? DRIVE_LINKS.legalSheet :
+    itemType === 'doc' ? DRIVE_LINKS.docsSheet :
+    itemType === 'legal' ? DRIVE_LINKS.legalSheet :
     DRIVE_LINKS.tasks
   );
 
@@ -49,38 +59,53 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
       note: formData.note,
     };
 
-    if (item.type === 'task') {
+    if (itemType === 'task') {
       updates.workstream = formData.workstream;
       updates.pic = formData.pic;
       updates.dueDate = formData.dueDate;
       updates.priority = formData.priority;
-    } else if (item.type === 'legal') {
+    } else if (itemType === 'legal') {
       updates.agency = formData.pic;
       updates.timeEstimate = formData.dueDate;
-    } else if (item.type === 'doc') {
+    } else if (itemType === 'doc') {
       updates.department = formData.pic;
       updates.deadline = formData.dueDate;
       updates.level = formData.priority;
       updates.content = formData.note;
-    } else if (item.type === 'capex') {
+    } else if (itemType === 'capex') {
       updates.qty = Number(formData.qty);
       updates.unitPrice = Number(formData.unitPrice);
       updates.totalPrice = Number(formData.unitPrice) * Number(formData.qty);
     }
 
-    updateItem(item.type, item.id, updates);
+    // Đảm bảo updateItem nhận đúng type và id
+    updateItem(itemType, item.id, updates);
     setShowConfirm(false);
-    onClose();
+    setSaveSuccess(true);
+    setTimeout(() => {
+      onClose();
+    }, 600);
   };
 
   return (
     <div className="fixed inset-0 bg-[#3D2B1A]/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-[#E8E6E1]">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-[#E8E6E1] relative">
+        {/* Toast thông báo lưu thành công */}
+        {saveSuccess && (
+          <div className="absolute inset-0 bg-white/95 z-70 flex flex-col items-center justify-center p-6 space-y-3 text-center animate-in fade-in duration-200">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center shadow-xs">
+              <CheckCircle size={32} />
+            </div>
+            <h3 className="text-lg font-bold text-[#155724]">Đã lưu thay đổi thành công!</h3>
+            <p className="text-xs text-[#8D6E63]">Trạng thái và thông tin đã được đồng bộ lên Cloud Database.</p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-[#E8E6E1] bg-[#F5F0E6]">
           <div>
             <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {item.type === 'task' ? 'Công việc' : item.type === 'legal' ? 'Hồ sơ Pháp lý' : item.type === 'doc' ? 'Văn bản Nội bộ' : 'Mua sắm CAPEX'}
+              {itemType === 'task' ? 'Công việc' : itemType === 'legal' ? 'Hồ sơ Pháp lý' : itemType === 'doc' ? 'Văn bản Nội bộ' : 'Mua sắm CAPEX'}
             </span>
             <h2 className="text-lg font-bold text-[#3D2B1A] mt-1">Chi tiết & Cập nhật</h2>
           </div>
@@ -109,7 +134,7 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
                 className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold bg-[#3D2B1A] text-white px-3.5 py-2 rounded-lg hover:bg-[#2C1F13] shadow-xs transition-colors"
                 title="Mở trực tiếp file Word / Google Docs của văn bản này"
               >
-                <ExternalLink size={13} className="text-amber-300" /> Mở File Gốc ({item.type === 'doc' ? 'Google Docs' : 'Hồ sơ thật'})
+                <ExternalLink size={13} className="text-amber-300" /> Mở File Gốc ({itemType === 'doc' ? 'Google Docs' : itemType === 'legal' ? 'Hồ sơ thật' : itemType === 'task' ? 'Tiến độ Task' : 'Vật tư'})
               </a>
               <a 
                 href={sheetDirectLink} 
@@ -151,7 +176,7 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
             </select>
           </div>
 
-          {item.type === 'task' && (
+          {itemType === 'task' && (
             <div>
               <label className="block text-sm font-bold text-[#5D4037] mb-1">Nhóm / Giai đoạn</label>
               <input 
@@ -166,7 +191,7 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-[#5D4037] mb-1">
-                {item.type === 'legal' ? 'Cơ quan thụ lý' : item.type === 'doc' ? 'Phòng ban' : 'Người phụ trách'}
+                {itemType === 'legal' ? 'Cơ quan thụ lý' : itemType === 'doc' ? 'Phòng ban' : itemType === 'capex' ? 'Phụ trách' : 'Người phụ trách'}
               </label>
               <input 
                 type="text" 
@@ -177,7 +202,7 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
             </div>
             <div>
               <label className="block text-sm font-bold text-[#5D4037] mb-1">
-                {item.type === 'legal' ? 'Thời gian' : item.type === 'doc' ? 'Hạn chót' : 'Hạn chót'}
+                {itemType === 'legal' ? 'Thời gian' : itemType === 'doc' ? 'Hạn chót' : 'Hạn chót'}
               </label>
               <input 
                 type="text" 
@@ -188,7 +213,7 @@ const EditModal: React.FC<EditModalProps> = ({ item, onClose }) => {
             </div>
           </div>
 
-          {item.type === 'capex' && (
+          {itemType === 'capex' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-[#5D4037] mb-1">Số lượng</label>
