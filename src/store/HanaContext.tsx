@@ -3,7 +3,8 @@ import tasksData from "../data/tasks36.json";
 import legalData from "../data/legal5.json";
 import docsData from "../data/docs9.json";
 import capexData from "../data/capex30.json";
-import type { TaskItem, LegalItem, DocItem, CapexItem, AnyItem, UserPermission } from "../types";
+import invoicesSeedData from "../data/invoices.json";
+import type { TaskItem, LegalItem, DocItem, CapexItem, AnyItem, UserPermission, InvoiceItem, NonInvoiceExpenseItem, InvoiceSummaryMonth, InvoiceSettings } from "../types";
 import { upsertItem } from "../lib/supabase";
 
 export const DRIVE_LINKS = {
@@ -19,7 +20,22 @@ export const DRIVE_LINKS = {
   // Folder của nhóm văn bản nội bộ
   docsFolder: "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link",
   // Bảng tính mua sắm & CAPEX
-  capex: "https://docs.google.com/spreadsheets/d/17abDmjThWZ-kQdW2cVPl2Kp8BfEz2v7trtebELIkD_s/edit?gid=1002#gid=1002"
+  capex: "https://docs.google.com/spreadsheets/d/17abDmjThWZ-kQdW2cVPl2Kp8BfEz2v7trtebELIkD_s/edit?gid=1002#gid=1002",
+  // Thư mục Dữ liệu kế toán & Hóa đơn chi phí
+  invoicesFolder: "https://drive.google.com/drive/folders/1sO3ev6apoDAINQRR1d5bQ1WHDaIA09lu"
+};
+
+export const DEFAULT_INVOICE_SETTINGS: InvoiceSettings = {
+  driveFolderUrl: "https://drive.google.com/drive/folders/1sO3ev6apoDAINQRR1d5bQ1WHDaIA09lu",
+  driveRemotePath: "hanawellness:Dữ liệu kế toán",
+  localFolderPath: "/Users/tungpv/.gemini/antigravity/scratch/Dữ liệu kế toán",
+  reportFileName: "Báo cáo hoá đơn tổng hợp.xlsx",
+  emailUser: "hanawellness.official@gmail.com",
+  emailPass: "",
+  searchKeywords: "hóa đơn, hoá đơn, invoice, hd",
+  scanLimit: 100,
+  notificationEmail: "phamtunghcm@gmail.com",
+  autoMarkSeen: true
 };
 
 export interface ProjectSettings {
@@ -44,6 +60,10 @@ interface HanaContextType {
   legal: LegalItem[];
   docs: DocItem[];
   capex: CapexItem[];
+  invoices: InvoiceItem[];
+  nonInvoices: NonInvoiceExpenseItem[];
+  invoiceSummary: InvoiceSummaryMonth[];
+  invoiceSettings: InvoiceSettings;
   settings: ProjectSettings;
   currentUser: UserPermission | null;
   userPermissions: UserPermission[];
@@ -51,6 +71,7 @@ interface HanaContextType {
   updateItem: (type: string, id: string | number, updatedFields: Partial<AnyItem>) => void;
   addItem: (item: AnyItem) => void;
   updateSettings: (newSettings: Partial<ProjectSettings>) => void;
+  updateInvoiceSettings: (newSettings: Partial<InvoiceSettings>) => void;
   login: (email: string) => { success: boolean; message?: string };
   logout: () => void;
   addUserPermission: (email: string, role: "admin" | "user", name?: string) => void;
@@ -65,6 +86,10 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
   const [legal, setLegal] = useState<LegalItem[]>([]);
   const [docs, setDocs] = useState<DocItem[]>([]);
   const [capex, setCapex] = useState<CapexItem[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceItem[]>(invoicesSeedData.invoices as InvoiceItem[]);
+  const [nonInvoices, setNonInvoices] = useState<NonInvoiceExpenseItem[]>(invoicesSeedData.nonInvoices as NonInvoiceExpenseItem[]);
+  const [invoiceSummary, setInvoiceSummary] = useState<InvoiceSummaryMonth[]>(invoicesSeedData.summary as InvoiceSummaryMonth[]);
+  const [invoiceSettings, setInvoiceSettings] = useState<InvoiceSettings>(DEFAULT_INVOICE_SETTINGS);
   const [settings, setSettings] = useState<ProjectSettings>({
     brandName: "HANA Wellness",
     subTitle: "PM HUB",
@@ -86,10 +111,18 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     const savedSettings = JSON.parse(localStorage.getItem("hana_settings") || "null");
     const savedUser = JSON.parse(localStorage.getItem("hana_current_user") || "null");
     const savedPerms = JSON.parse(localStorage.getItem("hana_user_permissions") || "null");
+    const savedInvoiceSettings = JSON.parse(localStorage.getItem("hana_invoice_settings") || "null");
+    const savedInvoices = JSON.parse(localStorage.getItem("hana_invoices") || "null");
+    const savedNonInvoices = JSON.parse(localStorage.getItem("hana_non_invoices") || "null");
+    const savedInvoiceSummary = JSON.parse(localStorage.getItem("hana_invoice_summary") || "null");
 
     if (savedSettings) setSettings(savedSettings);
     if (savedUser) setCurrentUser(savedUser);
     if (savedPerms && savedPerms.length > 0) setUserPermissions(savedPerms);
+    if (savedInvoiceSettings) setInvoiceSettings(savedInvoiceSettings);
+    if (savedInvoices) setInvoices(savedInvoices);
+    if (savedNonInvoices) setNonInvoices(savedNonInvoices);
+    if (savedInvoiceSummary) setInvoiceSummary(savedInvoiceSummary);
 
     const mapData = (data: any[], type: string, serverEdits: any = {}) => data.map(item => {
       const editKey = type + "_" + item.id;
@@ -143,9 +176,6 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
                  };
              });
 
-             // CHÚ Ý: Bỏ logic tự động thêm lại các item có trong LocalStorage nhưng bị xoá trên Cloud.
-             // Tránh hiện tượng "zombie items" phục sinh khi Admin xoá bớt dữ liệu từ nguồn.
-
              return merged;
           };
 
@@ -161,6 +191,22 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
 
           if (cloud.settings) setSettings(cloud.settings);
           if (cloud.userPermissions && cloud.userPermissions.length > 0) setUserPermissions(cloud.userPermissions);
+          if (cloud.invoiceSettings) {
+            setInvoiceSettings(cloud.invoiceSettings);
+            localStorage.setItem("hana_invoice_settings", JSON.stringify(cloud.invoiceSettings));
+          }
+          if (cloud.invoices && cloud.invoices.length > 0) {
+            setInvoices(cloud.invoices);
+            localStorage.setItem("hana_invoices", JSON.stringify(cloud.invoices));
+          }
+          if (cloud.nonInvoices && cloud.nonInvoices.length > 0) {
+            setNonInvoices(cloud.nonInvoices);
+            localStorage.setItem("hana_non_invoices", JSON.stringify(cloud.nonInvoices));
+          }
+          if (cloud.invoiceSummary && cloud.invoiceSummary.length > 0) {
+            setInvoiceSummary(cloud.invoiceSummary);
+            localStorage.setItem("hana_invoice_summary", JSON.stringify(cloud.invoiceSummary));
+          }
 
           // Force push merged data back to cloud to ensure it matches browser state
           try {
@@ -173,7 +219,11 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
                 docs: mergedDocs,
                 capex: mergedCapex,
                 settings: cloud.settings || savedSettings || settings,
-                userPermissions: cloud.userPermissions || savedPerms || []
+                userPermissions: cloud.userPermissions || savedPerms || [],
+                invoiceSettings: cloud.invoiceSettings || savedInvoiceSettings || DEFAULT_INVOICE_SETTINGS,
+                invoices: cloud.invoices || savedInvoices || invoicesSeedData.invoices,
+                nonInvoices: cloud.nonInvoices || savedNonInvoices || invoicesSeedData.nonInvoices,
+                invoiceSummary: cloud.invoiceSummary || savedInvoiceSummary || invoicesSeedData.summary
               })
             }).then(() => {
                 // Đánh dấu để Toast hiển thị một lần duy nhất
@@ -249,7 +299,17 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     updateItem(type, id, { status: newStatus });
   };
 
-  const syncToCloudDB = (newTasks: any, newLegal: any, newDocs: any, newCapex: any, newSettings: any) => {
+  const syncToCloudDB = (
+    newTasks: any, 
+    newLegal: any, 
+    newDocs: any, 
+    newCapex: any, 
+    newSettings: any,
+    newInvoiceSettings: any = invoiceSettings,
+    newInvoices: any = invoices,
+    newNonInvoices: any = nonInvoices,
+    newInvoiceSummary: any = invoiceSummary
+  ) => {
     try {
       fetch('/api/data', {
         method: 'POST',
@@ -260,7 +320,11 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
           docs: newDocs,
           capex: newCapex,
           settings: newSettings,
-          userPermissions
+          userPermissions,
+          invoiceSettings: newInvoiceSettings,
+          invoices: newInvoices,
+          nonInvoices: newNonInvoices,
+          invoiceSummary: newInvoiceSummary
         })
       }).catch(() => {});
     } catch (_) {}
@@ -316,6 +380,16 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     setSettings(prev => {
       const updated = { ...prev, ...newSettings };
       localStorage.setItem("hana_settings", JSON.stringify(updated));
+      syncToCloudDB(tasks, legal, docs, capex, updated);
+      return updated;
+    });
+  };
+
+  const updateInvoiceSettings = (newSettings: Partial<InvoiceSettings>) => {
+    setInvoiceSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      localStorage.setItem("hana_invoice_settings", JSON.stringify(updated));
+      syncToCloudDB(tasks, legal, docs, capex, settings, updated);
       return updated;
     });
   };
@@ -326,6 +400,10 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
       legal, 
       docs, 
       capex, 
+      invoices,
+      nonInvoices,
+      invoiceSummary,
+      invoiceSettings,
       settings, 
       currentUser, 
       userPermissions,
@@ -333,6 +411,7 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
       updateItem, 
       addItem, 
       updateSettings,
+      updateInvoiceSettings,
       login,
       logout,
       addUserPermission,

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useHana } from "../store/HanaContext";
-import { Settings, Save, Database, Calendar, Type, RefreshCw, CheckCircle2, UserPlus, Trash2, Users, ShieldCheck, Mail, Send, Bell } from "lucide-react";
+import { Settings, Save, Database, Calendar, Type, RefreshCw, CheckCircle2, UserPlus, Trash2, Users, ShieldCheck, Mail, Send, Bell, Receipt, ExternalLink, FolderOpen } from "lucide-react";
 
 const AdminView: React.FC = () => {
-  const { settings, updateSettings, tasks, legal, docs, capex, userPermissions, addUserPermission, removeUserPermission, updateUserRole } = useHana();
+  const { settings, updateSettings, tasks, legal, docs, capex, userPermissions, addUserPermission, removeUserPermission, updateUserRole, invoiceSettings } = useHana();
   
   const [formData, setFormData] = useState({
     logoText: settings.logoText,
@@ -255,6 +255,34 @@ const AdminView: React.FC = () => {
                   <span>Lưu Cấu Hình Báo Cáo 8:00 AM</span>
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Invoice & Drive Settings Quick Link */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#EFEBE6]">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-[#3D2B1A] flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-[#8D6E63]" />
+                <span>Rà Soát Hóa Đơn & Lưu File Google Drive</span>
+              </h2>
+              <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                Đã kết nối
+              </span>
+            </div>
+            <p className="text-xs text-[#8D6E63] mb-4">
+              Quản lý tham số quét Gmail tự động, bóc tách hóa đơn XML/PDF Thông tư 78 và link đường dẫn lưu file Drive tại menu <strong>Hóa đơn & Chi phí</strong>.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={invoiceSettings?.driveFolderUrl || "https://drive.google.com/drive/folders/1sO3ev6apoDAINQRR1d5bQ1WHDaIA09lu"}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 bg-[#F5F0E6] hover:bg-amber-100 text-[#3D2B1A] rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-[#E7E0D6] cursor-pointer"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-[#8D6E63]" />
+                <span>Mở Thư Mục Google Drive</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
             </div>
           </div>
 

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { LayoutDashboard, ListTodo, Scale, FileText, ShoppingCart, UserCircle, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ListTodo, Scale, FileText, ShoppingCart, UserCircle, Settings, LogOut, Receipt } from "lucide-react";
 import DashboardView from "./components/DashboardView";
 import TaskListView from "./components/TaskListView";
 import LegalView from "./components/LegalView";
 import DocsView from "./components/DocsView";
 import CapexView from "./components/CapexView";
+import InvoiceManagementView from "./components/InvoiceManagementView";
 import AdminView from "./components/AdminView";
 import SettingsModal from "./components/SettingsModal";
 import LoginView from "./components/LoginView";
@@ -29,6 +30,7 @@ export default function App() {
       case "legal": return <LegalView />;
       case "docs": return <DocsView />;
       case "capex": return <CapexView />;
+      case "invoices": return <InvoiceManagementView />;
       case "admin": return isAdmin ? <AdminView /> : <DashboardView onNavigate={setActiveTab} />;
       default: return <DashboardView onNavigate={setActiveTab} />;
     }
@@ -40,6 +42,7 @@ export default function App() {
     { id: "legal", label: "Hồ sơ Pháp lý", icon: Scale },
     { id: "docs", label: "Văn bản Nội bộ", icon: FileText },
     { id: "capex", label: "Mua sắm CAPEX", icon: ShoppingCart },
+    { id: "invoices", label: "Hóa đơn & Chi phí", icon: Receipt },
   ];
 
   if (isAdmin) {

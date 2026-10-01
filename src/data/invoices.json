@@ -1,0 +1,316 @@
+{
+  "summary": [
+    {
+      "month": "Tháng 08-2026",
+      "monthKey": "2026-08",
+      "invoiceCount": 4,
+      "preTax": 12006598.0,
+      "vat": 488528.0,
+      "total": 12495126.0,
+      "nonInvoiceCount": 4,
+      "nonInvoiceTotal": 76000000.0
+    },
+    {
+      "month": "Tháng 09-2026",
+      "monthKey": "2026-09",
+      "invoiceCount": 10,
+      "preTax": 49846396.0,
+      "vat": 4367720.0,
+      "total": 54214108.0,
+      "nonInvoiceCount": 2,
+      "nonInvoiceTotal": 0.0
+    }
+  ],
+  "invoices": [
+    {
+      "id": "inv_2026-08_1",
+      "month": "2026-08",
+      "stt": 1,
+      "date": "13/08/2026",
+      "invoiceNo": "775",
+      "taxCode": "0319154692",
+      "supplier": "CÔNG TY TNHH DỆT MAY THIÊN NGUYÊN",
+      "preTaxAmount": 2840000.0,
+      "vatAmount": 227200.0,
+      "totalAmount": 3067200.0,
+      "folderName": "2026-08-13 CÔNG TY TNHH DỆT MAY THIÊN NGUYÊN",
+      "files": [
+        "0319154692-1C26TTN-0000775.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-08_2",
+      "month": "2026-08",
+      "stt": 2,
+      "date": "13/08/2026",
+      "invoiceNo": "15727",
+      "taxCode": "0315689538",
+      "supplier": "CÔNG TY TNHH Ô TÔ VĨNH CỬU",
+      "preTaxAmount": 3266598.0,
+      "vatAmount": 261328.0,
+      "totalAmount": 3527926.0,
+      "folderName": "2026-08-13 CÔNG TY TNHH Ô TÔ VĨNH CỬU",
+      "files": [
+        "C26TVC15727.xml",
+        "C26TVC15727.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-08_3",
+      "month": "2026-08",
+      "stt": 3,
+      "date": "15/08/2026",
+      "invoiceNo": "133390",
+      "taxCode": "3401122716",
+      "supplier": "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ XĂNG DẦU TÁNH LINH",
+      "preTaxAmount": 900000.0,
+      "vatAmount": 0.0,
+      "totalAmount": 900000.0,
+      "folderName": "2026-08-15 CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ XĂNG DẦU TÁNH LINH",
+      "files": [
+        "900k.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-08_4",
+      "month": "2026-08",
+      "stt": 4,
+      "date": "15/08/2026",
+      "invoiceNo": "27",
+      "taxCode": "079205015687",
+      "supplier": "HỘ KINH DOANH DỊCH VỤ CHO THUÊ XE THÀNH NHÂN TRA VEL",
+      "preTaxAmount": 5000000.0,
+      "vatAmount": 0.0,
+      "totalAmount": 5000000.0,
+      "folderName": "2026-08-15 HỘ KINH DOANH DỊCH VỤ CHO THUÊ XE THÀNH NHÂN TRA VEL",
+      "files": [
+        "079205015687-C26TTN27.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_1",
+      "month": "2026-09",
+      "stt": 1,
+      "date": "11/09/2026",
+      "invoiceNo": "00000857",
+      "taxCode": "0106636469",
+      "supplier": "CÔNG TY CỔ PHẦN THƯƠNG MẠI AHK VIỆT NAM",
+      "preTaxAmount": 2640000.0,
+      "vatAmount": 211200.0,
+      "totalAmount": 2851200.0,
+      "folderName": "2026-09-11 CÔNG TY CỔ PHẦN THƯƠNG MẠI AHK VIỆT NAM",
+      "files": [
+        "1C26TDD_00000857.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_2",
+      "month": "2026-09",
+      "stt": 2,
+      "date": "12/09/2026",
+      "invoiceNo": "92",
+      "taxCode": "0319231386",
+      "supplier": "CÔNG TY TNHH PHÁT TRIỂN CÔNG NGHỆ NVC",
+      "preTaxAmount": 6600000.0,
+      "vatAmount": 528000.0,
+      "totalAmount": 7128000.0,
+      "folderName": "2026-09-12 CÔNG TY TNHH PHÁT TRIỂN CÔNG NGHỆ NVC",
+      "files": [
+        "0319231386_1C26TYY_92_0319655931_12-09-2026.xml",
+        "0319231386_1C26TYY_92_0319655931_12-09-2026.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_3",
+      "month": "2026-09",
+      "stt": 3,
+      "date": "14/09/2026",
+      "invoiceNo": "89874",
+      "taxCode": "03022862810302286281",
+      "supplier": "CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM",
+      "preTaxAmount": 8.0,
+      "vatAmount": 8.0,
+      "totalAmount": 8.0,
+      "folderName": "2026-09-14 CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM",
+      "files": [
+        "0302286281_1_C26MYY_89874.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_4",
+      "month": "2026-09",
+      "stt": 4,
+      "date": "14/09/2026",
+      "invoiceNo": "00012689",
+      "taxCode": "0402267250",
+      "supplier": "CÔNG TY TNHH CÔNG NGHỆ B1F VIỆT NAM",
+      "preTaxAmount": 730462.0,
+      "vatAmount": 58438.0,
+      "totalAmount": 788900.0,
+      "folderName": "2026-09-14 CÔNG TY TNHH CÔNG NGHỆ B1F VIỆT NAM",
+      "files": [
+        "27048 CÔNG TY TNHH HANA WELLNESS_ 1C26MVN_00012689_1.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_5",
+      "month": "2026-09",
+      "stt": 5,
+      "date": "17/09/2026",
+      "invoiceNo": "0909779590",
+      "taxCode": "0300954529",
+      "supplier": "CÔNG TY TNHH",
+      "preTaxAmount": 0.0,
+      "vatAmount": 0.0,
+      "totalAmount": 0.0,
+      "folderName": "2026-09-17 CÔNG TY TNHH",
+      "files": [
+        "00409596-HCMLD03216814-CÔNG TY TNHH HANA WELLNESS.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_6",
+      "month": "2026-09",
+      "stt": 6,
+      "date": "21/09/2026",
+      "invoiceNo": "42",
+      "taxCode": "0312240575",
+      "supplier": "CÔNG TY TNHH ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ QUẢNG CÁO TẤN PHÁT",
+      "preTaxAmount": 9200000.0,
+      "vatAmount": 736000.0,
+      "totalAmount": 9936000.0,
+      "folderName": "2026-09-21 CÔNG TY TNHH ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ QUẢNG CÁO TẤN PHÁT",
+      "files": [
+        "0312240575-C26TTP42.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_7",
+      "month": "2026-09",
+      "stt": 7,
+      "date": "22/09/2026",
+      "invoiceNo": "103724",
+      "taxCode": "0302286281",
+      "supplier": "CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM",
+      "preTaxAmount": 4342593.0,
+      "vatAmount": 347407.0,
+      "totalAmount": 4690000.0,
+      "folderName": "2026-09-22 CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM",
+      "files": [
+        "0302286281_1C26MYY_103724.pdf",
+        "0302286281_1C26MYY_103724.xml"
+      ]
+    },
+    {
+      "id": "inv_2026-09_8",
+      "month": "2026-09",
+      "stt": 8,
+      "date": "23/09/2026",
+      "invoiceNo": "0912251884",
+      "taxCode": "0105935681",
+      "supplier": "CÔNG TY CỔ PHẦN TƯ VẤN VÀ HỖ TRỢ NGHỀ VIỆT NAM",
+      "preTaxAmount": 19000000.0,
+      "vatAmount": 1900000.0,
+      "totalAmount": 20900000.0,
+      "folderName": "2026-09-23 CÔNG TY CỔ PHẦN TƯ VẤN VÀ HỖ TRỢ NGHỀ VIỆT NAM",
+      "files": [
+        "1C26TVN_00000761_0319655931.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_9",
+      "month": "2026-09",
+      "stt": 9,
+      "date": "25/09/2026",
+      "invoiceNo": "1552249",
+      "taxCode": "0302249586028362229090302249586",
+      "supplier": "CÔNG TY TNHH MM MEGA MARKET",
+      "preTaxAmount": 0.0,
+      "vatAmount": 0.0,
+      "totalAmount": 0.0,
+      "folderName": "2026-09-25 CÔNG TY TNHH MM MEGA MARKET",
+      "files": [
+        "1_C26MAA_1552249.pdf"
+      ]
+    },
+    {
+      "id": "inv_2026-09_10",
+      "month": "2026-09",
+      "stt": 10,
+      "date": "28/09/2026",
+      "invoiceNo": "1844",
+      "taxCode": "0304228535",
+      "supplier": "CÔNG TY TNHH CUỘC SỐNG ẤM ÁP",
+      "preTaxAmount": 7333333.0,
+      "vatAmount": 586667.0,
+      "totalAmount": 7920000.0,
+      "folderName": "2026-09-28 CÔNG TY TNHH CUỘC SỐNG ẤM ÁP",
+      "files": [
+        "C26TCS1844.xml",
+        "C26TCS1844.pdf"
+      ]
+    }
+  ],
+  "nonInvoices": [
+    {
+      "id": "non_inv_2026-08_1",
+      "month": "2026-08",
+      "stt": 1,
+      "date": "01/08/2026",
+      "transactionName": "Cho mượn xe Kia",
+      "attachedDocs": "Hợp đồng vho mượn xe Kia.docx, Quyết định Mượn Xe Ô tô - Công ty Hana.docx",
+      "recordedAmount": 0.0,
+      "folderName": "2026-08-01 Cho mượn xe Kia"
+    },
+    {
+      "id": "non_inv_2026-08_2",
+      "month": "2026-08",
+      "stt": 2,
+      "date": "01/08/2026",
+      "transactionName": "Hợp đồng thi công trụ sở",
+      "attachedDocs": "Bao gia nha pho Truong Dinh - Mr Tung copy.pdf, Hợp đồng thi công trụ sở.docx, CCCD2, CCCD1, UNC tạm ứng 33 triệu.jpg",
+      "recordedAmount": 33000000.0,
+      "folderName": "2026-08-01 Hợp đồng thi công trụ sở"
+    },
+    {
+      "id": "non_inv_2026-08_3",
+      "month": "2026-08",
+      "stt": 3,
+      "date": "01/08/2026",
+      "transactionName": "Hợp đồng thuê nhà 107.18 Trương Định",
+      "attachedDocs": "Hợp đồng thuê nhà - Hana Wellness.docx, 1785055454979_2007668138516991804_6485726335487366113_48175f34ccf2ba038d37d29cc2224db3.jpg, 1785055454989_2007668138516991804_6485726335487366113_e4482011a33ee5c0d56e3ca09ea52dbb.jpg, 1785055454927_2007668138516991804_6485726335487366113_86398a52295decfaf9f29ec0f2f773ff.jpg, 1785055454957_2007668138516991804_6485726335487366113_09d11d5050f3aefac3e1356312681c6e.jpg, 1785055454969_2007668138516991804_6485726335487366113_2e516c68bffb88ca787e92d8f6046090.jpg, 1785055455005_2007668138516991804_6485726335487366113_56516f32c016810416712829f365a85d.jpg, 1785055454943_2007668138516991804_6485726335487366113_c2160b64c4536314483fca8d79861f46.jpg, 1785055454997_2007668138516991804_6485726335487366113_710151922fbe0e9a48e5f6cecd6c9af4.jpg, 1785055454901_2007668138516991804_6485726335487366113_49197bf34cccec9a53add82ea9dec2be.jpg",
+      "recordedAmount": 25000000.0,
+      "folderName": "2026-08-01 Hợp đồng thuê nhà 107.18 Trương Định"
+    },
+    {
+      "id": "non_inv_2026-08_4",
+      "month": "2026-08",
+      "stt": 4,
+      "date": "13/08/2026",
+      "transactionName": "Hợp đồng mua máy lạnh cũ",
+      "attachedDocs": "UNC thanh toán 18 triệu máy lạnh cũ.jpg, Hợp đồng mua 2 máy lạnh.docx, CCCD Đặng Xuân Vinh 2.jpg, CCCD Đặng Xuân Vinh 1.jpg",
+      "recordedAmount": 18000000.0,
+      "folderName": "2026-08-13 Hợp đồng mua máy lạnh cũ"
+    },
+    {
+      "id": "non_inv_2026-09_1",
+      "month": "2026-09",
+      "stt": 1,
+      "date": "15/09/2026",
+      "transactionName": "CÔNG TY TNHH ĐIỆN MÁY GIA KHANG 0312460468 26 Đường",
+      "attachedDocs": "63047_1C26TGK_0312460468.pdf",
+      "recordedAmount": 0.0,
+      "folderName": "2026-09-15 CÔNG TY TNHH ĐIỆN MÁY GIA KHANG 0312460468 26 Đường"
+    },
+    {
+      "id": "non_inv_2026-09_2",
+      "month": "2026-09",
+      "stt": 2,
+      "date": "29/09/2026",
+      "transactionName": "Nha Cung Cap Chua Xac Dinh",
+      "attachedDocs": "Thông báo về việc chấp nhận đăng ký sử dụng hóa đơn điện tử.pdf",
+      "recordedAmount": 0.0,
+      "folderName": "2026-09-29 Nha Cung Cap Chua Xac Dinh"
+    }
+  ]
+}

@@ -45,11 +45,65 @@ export interface CapexItem extends BaseItem {
 
 export type AnyItem = TaskItem | LegalItem | DocItem | CapexItem;
 
+export interface InvoiceItem {
+  id: string | number;
+  month: string;
+  stt: number;
+  date: string;
+  invoiceNo: string;
+  taxCode: string;
+  supplier: string;
+  preTaxAmount: number;
+  vatAmount: number;
+  totalAmount: number;
+  folderName: string;
+  driveLink?: string;
+  files?: string[];
+}
+
+export interface NonInvoiceExpenseItem {
+  id: string | number;
+  month: string;
+  stt: number;
+  date: string;
+  transactionName: string;
+  attachedDocs: string;
+  recordedAmount: number;
+  folderName: string;
+  driveLink?: string;
+}
+
+export interface InvoiceSummaryMonth {
+  month: string;
+  monthKey: string;
+  invoiceCount: number;
+  preTax: number;
+  vat: number;
+  total: number;
+  nonInvoiceCount: number;
+  nonInvoiceTotal: number;
+}
+
+export interface InvoiceSettings {
+  driveFolderUrl: string;
+  driveRemotePath: string;
+  localFolderPath: string;
+  reportFileName: string;
+  emailUser: string;
+  emailPass?: string;
+  searchKeywords: string;
+  scanLimit: number;
+  notificationEmail: string;
+  autoMarkSeen: boolean;
+}
+
 export interface AppState {
   tasks: TaskItem[];
   legal: LegalItem[];
   docs: DocItem[];
   capex: CapexItem[];
+  invoices?: InvoiceItem[];
+  nonInvoices?: NonInvoiceExpenseItem[];
 }
 
 export interface UserPermission {
@@ -66,4 +120,6 @@ export interface ProjectSettings {
   targetDate: string;
   reportEmail?: string;
   zaloWebhook?: string;
+  resendApiKey?: string;
+  invoiceSettings?: InvoiceSettings;
 }

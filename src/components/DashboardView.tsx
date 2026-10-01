@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useHana, DRIVE_LINKS } from "../store/HanaContext";
-import { Calendar, AlertTriangle, ArrowRight, CheckCircle2, Clock, PieChart, BarChart3, Wallet, FileText, Scale } from "lucide-react";
+import { Calendar, AlertTriangle, ArrowRight, CheckCircle2, Clock, PieChart, BarChart3, Wallet, FileText, Scale, Receipt } from "lucide-react";
 import EditModal from "./EditModal";
 
 interface DashboardViewProps {
@@ -8,7 +8,7 @@ interface DashboardViewProps {
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const { tasks, legal, docs, capex, settings } = useHana();
+  const { tasks, legal, docs, capex, settings, invoices, invoiceSettings } = useHana();
 
   // Merge docs into tasks for global stats as requested: "VĂN BẢN NỘI BỘ CŨNG LÀ TASK"
   const combinedTasks = useMemo(() => {
@@ -593,6 +593,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button 
+            onClick={() => onNavigate("invoices")} 
+            className="text-xs font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 px-3 py-2 rounded-lg border border-amber-300 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Quản lý và rà soát hóa đơn chi phí"
+          >
+            <Receipt size={14} /> Hóa Đơn Chi Phí ({invoices.length})
+          </button>
+          <a href={invoiceSettings?.driveFolderUrl || DRIVE_LINKS.invoicesFolder} target="_blank" rel="noreferrer" className="text-xs font-bold bg-[#F5F0E6] text-[#3D2B1A] hover:bg-amber-200 px-3 py-2 rounded-lg border border-[#E7E0D6] flex items-center gap-1.5" title="Thư mục Google Drive lưu trữ Hóa đơn & Chứng từ kế toán">
+            <Receipt size={14} /> Drive Hóa Đơn & Chứng Từ
+          </a>
           <a href={DRIVE_LINKS.tasks} target="_blank" rel="noreferrer" className="text-xs font-bold bg-[#F5F0E6] text-[#3D2B1A] hover:bg-amber-200 px-3 py-2 rounded-lg border border-[#E7E0D6] flex items-center gap-1.5" title="Bảng tính 46 Tasks & Mua sắm">
             <FileText size={14} /> Sheets Tasks
           </a>
