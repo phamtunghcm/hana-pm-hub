@@ -13,7 +13,8 @@
       "vatAmount": 227200.0,
       "totalAmount": 3067200.0,
       "status": "attached",
-      "drivePath": "Tháng 08-2026/2026-08-13 CÔNG TY TNHH DỆT MAY THIÊN NGUYÊN"
+      "drivePath": "Tháng 08-2026/2026-08-13 CÔNG TY TNHH DỆT MAY THIÊN NGUYÊN",
+      "description": "May đồng phục spa (5 bộ: 4 bộ thường + 1 bộ vải linen)"
     },
     {
       "id": "inv-2026-08-2",
@@ -28,7 +29,8 @@
       "vatAmount": 261328.0,
       "totalAmount": 3527926.0,
       "status": "attached",
-      "drivePath": "Tháng 08-2026/2026-08-13 CÔNG TY TNHH Ô TÔ VĨNH CỬU"
+      "drivePath": "Tháng 08-2026/2026-08-13 CÔNG TY TNHH Ô TÔ VĨNH CỬU",
+      "description": "Bảo dưỡng định kỳ xe ô tô (thay dầu, lọc gió, dẫn hướng)"
     },
     {
       "id": "inv-2026-08-3",
@@ -43,7 +45,8 @@
       "vatAmount": 66667.0,
       "totalAmount": 900000.0,
       "status": "attached",
-      "drivePath": "Tháng 08-2026/2026-08-15 CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ XĂNG DẦU TÁNH LINH"
+      "drivePath": "Tháng 08-2026/2026-08-15 CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ XĂNG DẦU TÁNH LINH",
+      "description": "Xăng E10 RON 95 (xe công tác HCM - Bảo Lộc)"
     },
     {
       "id": "inv-2026-08-4",
@@ -58,12 +61,13 @@
       "vatAmount": 0.0,
       "totalAmount": 5000000.0,
       "status": "attached",
-      "drivePath": "Tháng 08-2026/2026-08-15 HỘ KINH DOANH DỊCH VỤ CHO THUÊ XE THÀNH NHÂN TRAVEL"
+      "drivePath": "Tháng 08-2026/2026-08-15 HỘ KINH DOANH DỊCH VỤ CHO THUÊ XE THÀNH NHÂN TRAVEL",
+      "description": "Thuê xe du lịch 16 chỗ HCM - Bảo Lộc - HCM"
     },
     {
       "id": "inv-2026-09-1",
       "month": "2026-09",
-      "stt": 1,
+      "stt": 5,
       "date": "11/09/2026",
       "invoiceNo": "00000857",
       "symbol": "1C26TDD",
@@ -73,12 +77,13 @@
       "vatAmount": 211200.0,
       "totalAmount": 2851200.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-11 CÔNG TY CỔ PHẦN THƯƠNG MẠI AHK VIỆT NAM"
+      "drivePath": "Tháng 09-2026/2026-09-11 CÔNG TY CỔ PHẦN THƯƠNG MẠI AHK VIỆT NAM",
+      "description": "Hệ thống âm thanh spa (Loa âm trần OBT-605 & phụ kiện)"
     },
     {
       "id": "inv-2026-09-2",
       "month": "2026-09",
-      "stt": 2,
+      "stt": 6,
       "date": "12/09/2026",
       "invoiceNo": "92",
       "symbol": "1C26TYY",
@@ -88,12 +93,13 @@
       "vatAmount": 528000.0,
       "totalAmount": 7128000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-12 CÔNG TY TNHH PHÁT TRIỂN CÔNG NGHỆ NVC"
+      "drivePath": "Tháng 09-2026/2026-09-12 CÔNG TY TNHH PHÁT TRIỂN CÔNG NGHỆ NVC",
+      "description": "Laptop Lenovo Thinkpad T14s G1"
     },
     {
       "id": "inv-2026-09-3",
       "month": "2026-09",
-      "stt": 3,
+      "stt": 7,
       "date": "14/09/2026",
       "invoiceNo": "89874",
       "symbol": "1C26MYY",
@@ -103,12 +109,13 @@
       "vatAmount": 1199259.0,
       "totalAmount": 16190000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-14 CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM (MÁY GIẶT)"
+      "drivePath": "Tháng 09-2026/2026-09-14 CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM (MÁY GIẶT)",
+      "description": "Máy giặt lồng ngang Toshiba Inverter 10.5 kg TW-T37BZP115MWV"
     },
     {
       "id": "inv-2026-09-4",
       "month": "2026-09",
-      "stt": 4,
+      "stt": 8,
       "date": "14/09/2026",
       "invoiceNo": "00012689",
       "symbol": "1C26MVN",
@@ -118,12 +125,13 @@
       "vatAmount": 58437.0,
       "totalAmount": 788900.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-14 CÔNG TY TNHH CÔNG NGHỆ B1F VIỆT NAM"
+      "drivePath": "Tháng 09-2026/2026-09-14 CÔNG TY TNHH CÔNG NGHỆ B1F VIỆT NAM",
+      "description": "Camera an ninh WIFI IMOU A32PRO 3MP & Thẻ nhớ Dahua 64GB"
     },
     {
       "id": "inv-2026-09-5",
       "month": "2026-09",
-      "stt": 5,
+      "stt": 9,
       "date": "15/09/2026",
       "invoiceNo": "63047",
       "symbol": "1C26TGK",
@@ -133,12 +141,13 @@
       "vatAmount": 1296296.0,
       "totalAmount": 17500000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-15 CÔNG TY TNHH ĐIỆN MÁY GIA KHANG"
+      "drivePath": "Tháng 09-2026/2026-09-15 CÔNG TY TNHH ĐIỆN MÁY GIA KHANG",
+      "description": "Máy rửa bát LG LDT14BGA3"
     },
     {
       "id": "inv-2026-09-6",
       "month": "2026-09",
-      "stt": 6,
+      "stt": 10,
       "date": "17/09/2026",
       "invoiceNo": "00409596",
       "symbol": "1C26TLD",
@@ -148,12 +157,29 @@
       "vatAmount": 198764.0,
       "totalAmount": 2186400.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-17 CÔNG TY TNHH (VNPT INTERNET)"
+      "drivePath": "Tháng 09-2026/2026-09-17 CÔNG TY TNHH (VNPT INTERNET)",
+      "description": "Cước cáp quang Internet & Mesh Wifi trả trước 7 tháng"
+    },
+    {
+      "id": "inv-2026-09-15",
+      "month": "2026-09",
+      "stt": 11,
+      "date": "17/09/2026",
+      "invoiceNo": "33",
+      "symbol": "1C26TPN",
+      "taxCode": "0316540668",
+      "supplier": "CÔNG TY TNHH NỘI THẤT PHƯƠNG NGUYỄN",
+      "preTaxAmount": 20370370.0,
+      "vatAmount": 1629630.0,
+      "totalAmount": 22000000.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/105_HD HANA WELLNESS_17.09.2026.pdf",
+      "description": "Giường spa (5 cái)"
     },
     {
       "id": "inv-2026-09-7",
       "month": "2026-09",
-      "stt": 7,
+      "stt": 12,
       "date": "21/09/2026",
       "invoiceNo": "42",
       "symbol": "C26TTP",
@@ -163,12 +189,13 @@
       "vatAmount": 736000.0,
       "totalAmount": 9936000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-21 CÔNG TY TNHH ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ QUẢNG CÁO TẤN PHÁT"
+      "drivePath": "Tháng 09-2026/2026-09-21 CÔNG TY TNHH ĐẦU TƯ THƯƠNG MẠI DỊCH VỤ QUẢNG CÁO TẤN PHÁT",
+      "description": "Bảng hiệu công ty tấm ốp nhôm alu & chữ nổi"
     },
     {
       "id": "inv-2026-09-8",
       "month": "2026-09",
-      "stt": 8,
+      "stt": 13,
       "date": "22/09/2026",
       "invoiceNo": "103724",
       "symbol": "1C26MYY",
@@ -178,12 +205,13 @@
       "vatAmount": 347407.0,
       "totalAmount": 4690000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-22 CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM"
+      "drivePath": "Tháng 09-2026/2026-09-22 CÔNG TY CỔ PHẦN THƯƠNG MẠI NGUYỄN KIM",
+      "description": "Máy sấy thông hơi Casper 7.2 kg TD-72VWD"
     },
     {
       "id": "inv-2026-09-9",
       "month": "2026-09",
-      "stt": 9,
+      "stt": 14,
       "date": "23/09/2026",
       "invoiceNo": "0912251884",
       "symbol": "1C26TVN",
@@ -193,12 +221,29 @@
       "vatAmount": 1900000.0,
       "totalAmount": 20900000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-23 CÔNG TY CỔ PHẦN TƯ VẤN VÀ HỖ TRỢ NGHỀ VIỆT NAM"
+      "drivePath": "Tháng 09-2026/2026-09-23 CÔNG TY CỔ PHẦN TƯ VẤN VÀ HỖ TRỢ NGHỀ VIỆT NAM",
+      "description": "Máy massage trị liệu dùng điện Fei Lei M10"
+    },
+    {
+      "id": "inv-2026-09-16",
+      "month": "2026-09",
+      "stt": 15,
+      "date": "23/09/2026",
+      "invoiceNo": "02164265",
+      "symbol": "1K26TAN",
+      "taxCode": "0300555450",
+      "supplier": "CÔNG TY TNHH MTV PETROLIMEX SÀI GÒN",
+      "preTaxAmount": 1400043.0,
+      "vatAmount": 0.0,
+      "totalAmount": 1400043.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/143_HDGTGT_K26TAN_2164265.pdf",
+      "description": "Xăng E10 RON 95 Mức 5 (52,182 Lít)"
     },
     {
       "id": "inv-2026-09-10",
       "month": "2026-09",
-      "stt": 10,
+      "stt": 16,
       "date": "24/09/2026",
       "invoiceNo": "62",
       "symbol": "1C26TPC",
@@ -208,12 +253,13 @@
       "vatAmount": 662400.0,
       "totalAmount": 8942400.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-24 CÔNG TY CỔ PHẦN PICO GLOBAL"
+      "drivePath": "Tháng 09-2026/2026-09-24 CÔNG TY CỔ PHẦN PICO GLOBAL",
+      "description": "Thiết bị PCCC (Bình bột 4kg, Đèn Exit, Đèn sự cố, Đầu báo khói)"
     },
     {
       "id": "inv-2026-09-11",
       "month": "2026-09",
-      "stt": 11,
+      "stt": 17,
       "date": "25/09/2026",
       "invoiceNo": "1552249",
       "symbol": "1C26MAA",
@@ -223,12 +269,13 @@
       "vatAmount": 487428.0,
       "totalAmount": 6580282.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-25 CÔNG TY TNHH MM MEGA MARKET"
+      "drivePath": "Tháng 09-2026/2026-09-25 CÔNG TY TNHH MM MEGA MARKET",
+      "description": "Dụng cụ vệ sinh, chất tẩy rửa & nhu yếu phẩm spa"
     },
     {
       "id": "inv-2026-09-12",
       "month": "2026-09",
-      "stt": 12,
+      "stt": 18,
       "date": "25/09/2026",
       "invoiceNo": "435",
       "symbol": "1C26TKP",
@@ -238,12 +285,13 @@
       "vatAmount": 496296.0,
       "totalAmount": 6700000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-25 CÔNG TY TNHH SẢN XUẤT THƯƠNG MẠI DỊCH VỤ SOFA KIM PHÚ"
+      "drivePath": "Tháng 09-2026/2026-09-25 CÔNG TY TNHH SẢN XUẤT THƯƠNG MẠI DỊCH VỤ SOFA KIM PHÚ",
+      "description": "Sofa băng 2m phòng chờ tiếp khách"
     },
     {
       "id": "inv-2026-09-13",
       "month": "2026-09",
-      "stt": 13,
+      "stt": 19,
       "date": "28/09/2026",
       "invoiceNo": "1844",
       "symbol": "1C26TCS",
@@ -253,12 +301,13 @@
       "vatAmount": 720000.0,
       "totalAmount": 7920000.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-28 CÔNG TY TNHH CUỘC SỐNG ẤM ÁP"
+      "drivePath": "Tháng 09-2026/2026-09-28 CÔNG TY TNHH CUỘC SỐNG ẤM ÁP",
+      "description": "Ghế ngồi văn phòng CHR-33302 (6 cái)"
     },
     {
       "id": "inv-2026-09-14",
       "month": "2026-09",
-      "stt": 14,
+      "stt": 20,
       "date": "30/09/2026",
       "invoiceNo": "97",
       "symbol": "1C26TKP",
@@ -268,12 +317,13 @@
       "vatAmount": 2660480.0,
       "totalAmount": 35916480.0,
       "status": "attached",
-      "drivePath": "Tháng 09-2026/2026-09-30 CÔNG TY TNHH THƯƠNG MẠI KOMPA"
+      "drivePath": "Tháng 09-2026/2026-09-30 CÔNG TY TNHH THƯƠNG MẠI KOMPA",
+      "description": "Thi công nội thất quầy lễ tân, tủ locker, tủ giày sảnh, tủ đa năng"
     },
     {
       "id": "inv-2026-10-1",
       "month": "2026-10",
-      "stt": 1,
+      "stt": 21,
       "date": "01/10/2026",
       "invoiceNo": "69",
       "symbol": "1C26TAA",
@@ -283,12 +333,13 @@
       "vatAmount": 288000.0,
       "totalAmount": 3888000.0,
       "status": "attached",
-      "drivePath": "Tháng 10-2026/2026-10-01 CÔNG TY TNHH ICONIC TALENTS"
+      "drivePath": "Tháng 10-2026/2026-10-01 CÔNG TY TNHH ICONIC TALENTS",
+      "description": "Dịch vụ xây dựng nội dung fanpage Marketing"
     },
     {
       "id": "inv-2026-10-2",
       "month": "2026-10",
-      "stt": 2,
+      "stt": 22,
       "date": "02/10/2026",
       "invoiceNo": "00008413",
       "symbol": "1C26MHV",
@@ -298,7 +349,40 @@
       "vatAmount": 190620.0,
       "totalAmount": 2233620.0,
       "status": "attached",
-      "drivePath": "Tháng 10-2026/2026-10-02 DOANH NGHIỆP TƯ NHÂN HOA VIÊN"
+      "drivePath": "Tháng 10-2026/2026-10-02 DOANH NGHIỆP TƯ NHÂN HOA VIÊN",
+      "description": "Tiệc ăn uống tiếp khách / Nhà hàng bia tươi Hoa Viên"
+    },
+    {
+      "id": "inv-2026-10-3",
+      "month": "2026-10",
+      "stt": 23,
+      "date": "03/10/2026",
+      "invoiceNo": "00000117",
+      "symbol": "1C26TTS",
+      "taxCode": "0201715600-001",
+      "supplier": "CÔNG TY TNHH THƯƠNG MẠI JTRUE - CN TP.HCM",
+      "preTaxAmount": 20115740.0,
+      "vatAmount": 1609260.0,
+      "totalAmount": 21725000.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/142_jtrue.pdf",
+      "description": "Bếp từ Panasonic KZ-L32AST, Máy lọc không khí Daikin, Quạt Sharp, Biến áp"
+    },
+    {
+      "id": "inv-2026-10-4",
+      "month": "2026-10",
+      "stt": 24,
+      "date": "04/10/2026",
+      "invoiceNo": "00063495",
+      "symbol": "1C26MTD",
+      "taxCode": "0313596856",
+      "supplier": "CÔNG TY TNHH THƯƠNG MẠI NITORI VIỆT NAM",
+      "preTaxAmount": 699072.0,
+      "vatAmount": 55928.0,
+      "totalAmount": 755000.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/146_nitori.pdf",
+      "description": "Kệ nhựa PP 2 tầng có rổ, 4 hộp nhựa đựng rau ngăn đá"
     }
   ],
   "nonInvoices": [
@@ -371,26 +455,26 @@
       "preTaxAmount": 11939931.0,
       "vatAmount": 555195.0,
       "totalPaymentAmount": 12495126.0,
-      "nonInvoiceCount": 4,
+      "nonInvoiceCount": 5,
       "nonInvoiceAmount": 76000000.0
     },
     {
       "month": "2026-09",
       "monthLabel": "Tháng 09/2026",
-      "invoiceCount": 14,
-      "preTaxAmount": 136934695.0,
-      "vatAmount": 11294967.0,
-      "totalPaymentAmount": 148229662.0,
+      "invoiceCount": 16,
+      "preTaxAmount": 158498108.0,
+      "vatAmount": 13131597.0,
+      "totalPaymentAmount": 171629705.0,
       "nonInvoiceCount": 1,
       "nonInvoiceAmount": 0.0
     },
     {
       "month": "2026-10",
       "monthLabel": "Tháng 10/2026",
-      "invoiceCount": 2,
-      "preTaxAmount": 5643000.0,
-      "vatAmount": 478620.0,
-      "totalPaymentAmount": 6121620.0,
+      "invoiceCount": 4,
+      "preTaxAmount": 26457812.0,
+      "vatAmount": 2143808.0,
+      "totalPaymentAmount": 28601620.0,
       "nonInvoiceCount": 0,
       "nonInvoiceAmount": 0.0
     }
