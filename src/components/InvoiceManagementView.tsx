@@ -32,7 +32,10 @@ export default function InvoiceManagementView() {
   } = useHana();
 
   const [activeTab, setActiveTab] = useState<"invoices" | "non_invoices" | "summary" | "settings">("invoices");
-  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [timePreset, setTimePreset] = useState<string>("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [showCustomDateInputs, setShowCustomDateInputs] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showConfigSavedToast, setShowConfigSavedToast] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
@@ -49,10 +52,61 @@ export default function InvoiceManagementView() {
     return new Intl.NumberFormat("vi-VN").format(num);
   };
 
+  // Helper to parse date "DD/MM/YYYY" to Date object
+  const parseItemDate = (dateStr?: string): Date | null => {
+    if (!dateStr) return null;
+    const parts = dateStr.trim().split("/");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    }
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  // Filter checker for any date given the current timePreset & custom date range
+  const matchesDateFilter = (itemDateStr?: string, itemMonth?: string) => {
+    if (timePreset === "all") return true;
+
+    // By month preset
+    if (timePreset === "2026-10") return itemMonth === "2026-10" || (itemDateStr && itemDateStr.includes("/10/2026"));
+    if (timePreset === "2026-09") return itemMonth === "2026-09" || (itemDateStr && itemDateStr.includes("/09/2026"));
+    if (timePreset === "2026-08") return itemMonth === "2026-08" || (itemDateStr && itemDateStr.includes("/08/2026"));
+    if (timePreset === "q3_2026") {
+      return itemMonth === "2026-07" || itemMonth === "2026-08" || itemMonth === "2026-09" ||
+        (itemDateStr && (itemDateStr.includes("/07/2026") || itemDateStr.includes("/08/2026") || itemDateStr.includes("/09/2026")));
+    }
+    if (timePreset === "year_2026") {
+      return (itemMonth && itemMonth.startsWith("2026")) || (itemDateStr && itemDateStr.includes("2026"));
+    }
+
+    // Custom date range
+    if (timePreset === "custom" || customStartDate || customEndDate) {
+      const itemDate = parseItemDate(itemDateStr);
+      if (!itemDate) return true;
+
+      if (customStartDate) {
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        if (itemDate < start) return false;
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate);
+        end.setHours(23, 59, 59, 999);
+        if (itemDate > end) return false;
+      }
+      return true;
+    }
+
+    return true;
+  };
+
   // Filtered invoices
   const filteredInvoices = useMemo(() => {
     return invoices.filter((item: InvoiceItem) => {
-      const matchMonth = selectedMonth === "all" || item.month === selectedMonth;
+      const matchTime = matchesDateFilter(item.date, item.month);
       const term = searchTerm.toLowerCase();
       const matchSearch = 
         !term ||
@@ -60,23 +114,23 @@ export default function InvoiceManagementView() {
         item.invoiceNo.toLowerCase().includes(term) ||
         item.taxCode.toLowerCase().includes(term) ||
         item.date.includes(term);
-      return matchMonth && matchSearch;
+      return matchTime && matchSearch;
     });
-  }, [invoices, selectedMonth, searchTerm]);
+  }, [invoices, timePreset, customStartDate, customEndDate, searchTerm]);
 
   // Filtered non-invoices
   const filteredNonInvoices = useMemo(() => {
     return nonInvoices.filter((item: NonInvoiceExpenseItem) => {
-      const matchMonth = selectedMonth === "all" || item.month === selectedMonth;
+      const matchTime = matchesDateFilter(item.date, item.month);
       const term = searchTerm.toLowerCase();
       const matchSearch = 
         !term ||
         item.transactionName.toLowerCase().includes(term) ||
         item.attachedDocs.toLowerCase().includes(term) ||
         item.date.includes(term);
-      return matchMonth && matchSearch;
+      return matchTime && matchSearch;
     });
-  }, [nonInvoices, selectedMonth, searchTerm]);
+  }, [nonInvoices, timePreset, customStartDate, customEndDate, searchTerm]);
 
   // Compute metrics
   const totalInvoicedPayment = useMemo(() => {
@@ -94,6 +148,22 @@ export default function InvoiceManagementView() {
   const totalNonInvoiceExpense = useMemo(() => {
     return filteredNonInvoices.reduce((acc, cur) => acc + (cur.recordedAmount || 0), 0);
   }, [filteredNonInvoices]);
+
+  // Get active period label
+  const activePeriodLabel = useMemo(() => {
+    if (timePreset === "all") return "Toàn bộ thời gian";
+    if (timePreset === "2026-10") return "Tháng 10/2026";
+    if (timePreset === "2026-09") return "Tháng 09/2026";
+    if (timePreset === "2026-08") return "Tháng 08/2026";
+    if (timePreset === "q3_2026") return "Quý 3/2026 (T7 - T9)";
+    if (timePreset === "year_2026") return "Cả năm 2026";
+    if (timePreset === "custom") {
+      const startStr = customStartDate ? `Từ ${customStartDate}` : "";
+      const endStr = customEndDate ? `Đến ${customEndDate}` : "";
+      return [startStr, endStr].filter(Boolean).join(" - ") || "Khoảng ngày tuỳ chọn";
+    }
+    return "Toàn bộ";
+  }, [timePreset, customStartDate, customEndDate]);
 
   // Save Settings
   const handleSaveSettings = (e: React.FormEvent) => {
@@ -277,7 +347,7 @@ export default function InvoiceManagementView() {
 
         {/* Filters & Search (Only shown in data tabs) */}
         {activeTab !== "settings" && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1887F]" />
               <input
@@ -285,22 +355,133 @@ export default function InvoiceManagementView() {
                 placeholder="Tìm NCC, số HĐ, MST..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#E7E0D6] rounded-xl outline-none focus:border-[#8D6E63] text-[#4E342E] w-48 sm:w-56"
+                className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#E7E0D6] rounded-xl outline-none focus:border-[#8D6E63] text-[#4E342E] w-44 sm:w-52"
               />
             </div>
 
-            <select
-              value={selectedMonth}
-              onChange={e => setSelectedMonth(e.target.value)}
-              className="text-xs font-bold bg-white border border-[#E7E0D6] rounded-xl px-3 py-1.5 text-[#5D4037] outline-none focus:border-[#8D6E63] cursor-pointer"
+            {/* Quick Time Preset Select */}
+            <div className="flex items-center gap-1.5">
+              <Calendar size={14} className="text-[#8D6E63]" />
+              <select
+                value={timePreset}
+                onChange={e => {
+                  setTimePreset(e.target.value);
+                  if (e.target.value === "custom") {
+                    setShowCustomDateInputs(true);
+                  }
+                }}
+                className="text-xs font-bold bg-white border border-[#E7E0D6] rounded-xl px-3 py-1.5 text-[#5D4037] outline-none focus:border-[#8D6E63] cursor-pointer"
+              >
+                <option value="all">Toàn bộ thời gian (Tất cả)</option>
+                <option value="2026-10">Tháng 10/2026 (Tháng hiện tại)</option>
+                <option value="2026-09">Tháng 09/2026 (14 hóa đơn)</option>
+                <option value="2026-08">Tháng 08/2026 (4 hóa đơn)</option>
+                <option value="q3_2026">Quý 3/2026 (Tháng 7 - 9)</option>
+                <option value="year_2026">Cả năm 2026</option>
+                <option value="custom">📅 Tuỳ chọn khoảng ngày...</option>
+              </select>
+            </div>
+
+            <button
+              onClick={() => setShowCustomDateInputs(!showCustomDateInputs)}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-colors flex items-center gap-1 cursor-pointer ${
+                showCustomDateInputs || timePreset === "custom" || customStartDate || customEndDate
+                  ? "bg-amber-100 text-amber-900 border-amber-300"
+                  : "bg-white text-[#6D4C41] border-[#E7E0D6] hover:bg-[#F5F0E6]"
+              }`}
+              title="Tuỳ chỉnh từ ngày đến ngày"
             >
-              <option value="all">Tất cả các tháng</option>
-              <option value="2026-09">Tháng 09/2026</option>
-              <option value="2026-08">Tháng 08/2026</option>
-            </select>
+              <Calendar size={13} />
+              <span>Khoảng ngày</span>
+            </button>
           </div>
         )}
       </div>
+
+      {/* Expandable Custom Date Range Bar */}
+      {activeTab !== "settings" && showCustomDateInputs && (
+        <div className="bg-[#FAF7F2] border border-[#E7E0D6] rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-black uppercase text-[#5D4037] flex items-center gap-1.5">
+              <Calendar size={15} className="text-[#8D6E63]" />
+              Lọc theo khoảng ngày:
+            </span>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-bold text-[#8D6E63]">Từ ngày:</label>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={e => {
+                  setCustomStartDate(e.target.value);
+                  setTimePreset("custom");
+                }}
+                className="text-xs bg-white border border-[#E7E0D6] rounded-xl px-2.5 py-1 text-[#4E342E] outline-none focus:border-[#8D6E63]"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[11px] font-bold text-[#8D6E63]">Đến ngày:</label>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={e => {
+                  setCustomEndDate(e.target.value);
+                  setTimePreset("custom");
+                }}
+                className="text-xs bg-white border border-[#E7E0D6] rounded-xl px-2.5 py-1 text-[#4E342E] outline-none focus:border-[#8D6E63]"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {(customStartDate || customEndDate || timePreset !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTimePreset("all");
+                  setCustomStartDate("");
+                  setCustomEndDate("");
+                }}
+                className="text-xs font-bold text-[#8D6E63] hover:text-[#4E342E] px-2.5 py-1 rounded-lg hover:bg-white border border-transparent hover:border-[#E7E0D6] transition-colors cursor-pointer"
+              >
+                Xoá bộ lọc ngày
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowCustomDateInputs(false)}
+              className="text-xs font-bold text-[#5D4037] px-3 py-1 bg-white hover:bg-[#EFEBE0] rounded-xl border border-[#E7E0D6] transition-colors cursor-pointer"
+            >
+              Thu gọn
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Filter Period Indicator Banner */}
+      {activeTab !== "settings" && timePreset !== "all" && (
+        <div className="bg-amber-50/70 border border-amber-200 text-[#5D4037] rounded-xl px-4 py-2 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-amber-900">Đang lọc theo thời gian:</span>
+            <span className="font-extrabold bg-white px-2 py-0.5 rounded-md border border-amber-300 text-[#4E342E]">
+              {activePeriodLabel}
+            </span>
+            <span className="text-[#8D6E63]">
+              • Khớp <strong>{filteredInvoices.length}</strong> hóa đơn (Tổng: <strong>{formatVND(totalInvoicedPayment)}</strong>)
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setTimePreset("all");
+              setCustomStartDate("");
+              setCustomEndDate("");
+              setShowCustomDateInputs(false);
+            }}
+            className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+          >
+            Quay lại tất cả
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: INVOICES TABLE */}
       {activeTab === "invoices" && (
@@ -360,10 +541,12 @@ export default function InvoiceManagementView() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#F5F0E6] hover:bg-[#EFEBE0] text-[#6D4C41] hover:text-[#4E342E] font-medium rounded-lg text-[11px] transition-colors"
-                          title={`Thư mục: ${item.folderName}`}
+                          title={`Thư mục: ${item.drivePath || item.folderName}`}
                         >
                           <FolderOpen size={13} className="text-[#8D6E63]" />
-                          <span className="max-w-[120px] truncate">{item.folderName || "Mở Drive"}</span>
+                          <span className="max-w-[130px] truncate">
+                            {(item.drivePath ? item.drivePath.split("/").pop() : item.folderName) || "Mở Drive"}
+                          </span>
                           <ExternalLink size={11} className="opacity-60" />
                         </a>
                       </td>
@@ -439,10 +622,12 @@ export default function InvoiceManagementView() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#F5F0E6] hover:bg-[#EFEBE0] text-[#6D4C41] hover:text-[#4E342E] font-medium rounded-lg text-[11px] transition-colors"
-                          title={`Thư mục: ${item.folderName}`}
+                          title={`Thư mục: ${item.drivePath || item.folderName}`}
                         >
                           <FolderOpen size={13} className="text-[#8D6E63]" />
-                          <span className="max-w-[130px] truncate">{item.folderName}</span>
+                          <span className="max-w-[130px] truncate">
+                            {(item.drivePath ? item.drivePath.split("/").pop() : item.folderName) || "Mở Drive"}
+                          </span>
                           <ExternalLink size={11} className="opacity-60" />
                         </a>
                       </td>
@@ -472,7 +657,7 @@ export default function InvoiceManagementView() {
           <div className="p-4 bg-[#F5F0E6] border-b border-[#E7E0D6] flex items-center justify-between">
             <div className="flex items-center gap-2 font-black text-sm text-[#4E342E] uppercase tracking-wide">
               <Layers size={18} className="text-[#8D6E63]" />
-              <span>Bảng Tổng Hợp Lũy Kế Theo Tháng (Trích Xuất Từ Excel)</span>
+              <span>Bảng Tổng Hợp Lũy Kế Theo Tháng (Khớp 100% Với File Kế Toán)</span>
             </div>
             <div className="text-xs text-[#8D6E63]">
               Sheet "Tổng hợp" của file <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-[#E7E0D6]">{invoiceSettings.reportFileName || "Báo cáo hoá đơn tổng hợp.xlsx"}</code>
@@ -493,21 +678,51 @@ export default function InvoiceManagementView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F0EAE1]">
-                {invoiceSummary.map((sumItem, idx) => (
-                  <tr key={idx} className="hover:bg-[#FAF7F2] transition-colors">
-                    <td className="py-3 px-4 font-bold text-[#4E342E] flex items-center gap-2">
-                      <Calendar size={14} className="text-[#8D6E63]" />
-                      <span>{sumItem.month}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-[#8D6E63]">{sumItem.invoiceCount}</td>
-                    <td className="py-3 px-4 text-right font-medium text-[#5D4037]">{formatNumber(sumItem.preTax)}</td>
-                    <td className="py-3 px-4 text-right font-medium text-blue-900">{formatNumber(sumItem.vat)}</td>
-                    <td className="py-3 px-4 text-right font-black text-emerald-900">{formatNumber(sumItem.total)}</td>
-                    <td className="py-3 px-4 text-center font-bold text-amber-800">{sumItem.nonInvoiceCount}</td>
-                    <td className="py-3 px-4 text-right font-black text-amber-900">{formatNumber(sumItem.nonInvoiceTotal)}</td>
-                  </tr>
-                ))}
+                {invoiceSummary.map((sumItem: any, idx) => {
+                  const preTax = sumItem.preTaxAmount ?? sumItem.preTax ?? 0;
+                  const vat = sumItem.vatAmount ?? sumItem.vat ?? 0;
+                  const total = sumItem.totalPaymentAmount ?? sumItem.total ?? 0;
+                  const nonTotal = sumItem.nonInvoiceAmount ?? sumItem.nonInvoiceTotal ?? 0;
+
+                  return (
+                    <tr key={idx} className="hover:bg-[#FAF7F2] transition-colors">
+                      <td className="py-3 px-4 font-bold text-[#4E342E] flex items-center gap-2">
+                        <Calendar size={14} className="text-[#8D6E63]" />
+                        <span>{sumItem.monthLabel || `Tháng ${sumItem.month}`}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-bold text-[#8D6E63]">{sumItem.invoiceCount}</td>
+                      <td className="py-3 px-4 text-right font-medium text-[#5D4037]">{formatNumber(preTax)}</td>
+                      <td className="py-3 px-4 text-right font-medium text-blue-900">{formatNumber(vat)}</td>
+                      <td className="py-3 px-4 text-right font-black text-emerald-900">{formatNumber(total)}</td>
+                      <td className="py-3 px-4 text-center font-bold text-amber-800">{sumItem.nonInvoiceCount}</td>
+                      <td className="py-3 px-4 text-right font-black text-amber-900">{formatNumber(nonTotal)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
+              <tfoot className="bg-[#F5F0E6] font-bold text-[#4E342E] border-t border-[#E7E0D6]">
+                <tr>
+                  <td className="py-3.5 px-4 uppercase tracking-wider font-black">TỔNG CỘNG LŨY KẾ CẢ NĂM:</td>
+                  <td className="py-3.5 px-4 text-center text-[#8D6E63] font-black">
+                    {invoiceSummary.reduce((acc: number, cur: any) => acc + (cur.invoiceCount || 0), 0)} HĐ
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-bold">
+                    {formatNumber(invoiceSummary.reduce((acc: number, cur: any) => acc + (cur.preTaxAmount ?? cur.preTax ?? 0), 0))}
+                  </td>
+                  <td className="py-3.5 px-4 text-right text-blue-900 font-bold">
+                    {formatNumber(invoiceSummary.reduce((acc: number, cur: any) => acc + (cur.vatAmount ?? cur.vat ?? 0), 0))}
+                  </td>
+                  <td className="py-3.5 px-4 text-right text-emerald-900 font-black text-sm">
+                    {formatNumber(invoiceSummary.reduce((acc: number, cur: any) => acc + (cur.totalPaymentAmount ?? cur.total ?? 0), 0))}
+                  </td>
+                  <td className="py-3.5 px-4 text-center text-amber-800 font-black">
+                    {invoiceSummary.reduce((acc: number, cur: any) => acc + (cur.nonInvoiceCount || 0), 0)} khoản
+                  </td>
+                  <td className="py-3.5 px-4 text-right text-amber-900 font-black text-sm">
+                    {formatNumber(invoiceSummary.reduce((acc: number, cur: any) => acc + (cur.nonInvoiceAmount ?? cur.nonInvoiceTotal ?? 0), 0))}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>

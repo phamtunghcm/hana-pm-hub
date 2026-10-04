@@ -195,17 +195,26 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
             setInvoiceSettings(cloud.invoiceSettings);
             localStorage.setItem("hana_invoice_settings", JSON.stringify(cloud.invoiceSettings));
           }
-          if (cloud.invoices && cloud.invoices.length > 0) {
+          if (cloud.invoices && cloud.invoices.length >= (invoicesSeedData.invoices as InvoiceItem[]).length) {
             setInvoices(cloud.invoices);
             localStorage.setItem("hana_invoices", JSON.stringify(cloud.invoices));
+          } else {
+            setInvoices(invoicesSeedData.invoices as InvoiceItem[]);
+            localStorage.setItem("hana_invoices", JSON.stringify(invoicesSeedData.invoices));
           }
-          if (cloud.nonInvoices && cloud.nonInvoices.length > 0) {
+          if (cloud.nonInvoices && cloud.nonInvoices.length >= (invoicesSeedData.nonInvoices as NonInvoiceExpenseItem[]).length) {
             setNonInvoices(cloud.nonInvoices);
             localStorage.setItem("hana_non_invoices", JSON.stringify(cloud.nonInvoices));
+          } else {
+            setNonInvoices(invoicesSeedData.nonInvoices as NonInvoiceExpenseItem[]);
+            localStorage.setItem("hana_non_invoices", JSON.stringify(invoicesSeedData.nonInvoices));
           }
-          if (cloud.invoiceSummary && cloud.invoiceSummary.length > 0) {
+          if (cloud.invoiceSummary && cloud.invoiceSummary.length >= (invoicesSeedData.summary as InvoiceSummaryMonth[]).length) {
             setInvoiceSummary(cloud.invoiceSummary);
             localStorage.setItem("hana_invoice_summary", JSON.stringify(cloud.invoiceSummary));
+          } else {
+            setInvoiceSummary(invoicesSeedData.summary as InvoiceSummaryMonth[]);
+            localStorage.setItem("hana_invoice_summary", JSON.stringify(invoicesSeedData.summary));
           }
 
           // Force push merged data back to cloud to ensure it matches browser state

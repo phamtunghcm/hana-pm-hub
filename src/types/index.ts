@@ -51,13 +51,16 @@ export interface InvoiceItem {
   stt: number;
   date: string;
   invoiceNo: string;
+  symbol?: string;
   taxCode: string;
   supplier: string;
   preTaxAmount: number;
   vatAmount: number;
   totalAmount: number;
-  folderName: string;
+  folderName?: string;
+  drivePath?: string;
   driveLink?: string;
+  status?: string;
   files?: string[];
 }
 
@@ -69,19 +72,25 @@ export interface NonInvoiceExpenseItem {
   transactionName: string;
   attachedDocs: string;
   recordedAmount: number;
-  folderName: string;
+  folderName?: string;
+  drivePath?: string;
   driveLink?: string;
 }
 
 export interface InvoiceSummaryMonth {
   month: string;
-  monthKey: string;
+  monthKey?: string;
+  monthLabel?: string;
   invoiceCount: number;
-  preTax: number;
-  vat: number;
-  total: number;
+  preTax?: number;
+  preTaxAmount?: number;
+  vat?: number;
+  vatAmount?: number;
+  total?: number;
+  totalPaymentAmount?: number;
   nonInvoiceCount: number;
-  nonInvoiceTotal: number;
+  nonInvoiceTotal?: number;
+  nonInvoiceAmount?: number;
 }
 
 export interface InvoiceSettings {
