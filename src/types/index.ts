@@ -54,6 +54,7 @@ export interface InvoiceItem {
   symbol?: string;
   taxCode: string;
   supplier: string;
+  description?: string;
   preTaxAmount: number;
   vatAmount: number;
   totalAmount: number;

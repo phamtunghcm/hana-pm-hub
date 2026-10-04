@@ -111,6 +111,7 @@ export default function InvoiceManagementView() {
       const matchSearch = 
         !term ||
         item.supplier.toLowerCase().includes(term) ||
+        (item.description && item.description.toLowerCase().includes(term)) ||
         item.invoiceNo.toLowerCase().includes(term) ||
         item.taxCode.toLowerCase().includes(term) ||
         item.date.includes(term);
@@ -504,7 +505,8 @@ export default function InvoiceManagementView() {
                   <th className="py-3 px-4">Ngày HĐ</th>
                   <th className="py-3 px-4">Số Hóa Đơn</th>
                   <th className="py-3 px-4">Mã Số Thuế</th>
-                  <th className="py-3 px-4 min-w-[240px]">Tên Nhà Cung Cấp</th>
+                  <th className="py-3 px-4 min-w-[200px]">Tên Nhà Cung Cấp</th>
+                  <th className="py-3 px-4 min-w-[240px]">Nội Dung Mua Hàng</th>
                   <th className="py-3 px-4 text-right">Trước Thuế (VNĐ)</th>
                   <th className="py-3 px-4 text-right">VAT (VNĐ)</th>
                   <th className="py-3 px-4 text-right font-black">Tổng Tiền (VNĐ)</th>
@@ -514,7 +516,7 @@ export default function InvoiceManagementView() {
               <tbody className="divide-y divide-[#F0EAE1]">
                 {filteredInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-8 text-[#A1887F]">
+                    <td colSpan={10} className="text-center py-8 text-[#A1887F]">
                       Không tìm thấy hóa đơn phù hợp với bộ lọc hiện tại.
                     </td>
                   </tr>
@@ -526,6 +528,11 @@ export default function InvoiceManagementView() {
                       <td className="py-3 px-4 font-mono font-bold text-[#8D6E63]">{item.invoiceNo || "-"}</td>
                       <td className="py-3 px-4 font-mono text-[#5D4037]">{item.taxCode || "-"}</td>
                       <td className="py-3 px-4 font-bold text-[#4E342E]">{item.supplier}</td>
+                      <td className="py-3 px-4 font-medium text-[#4E342E]">
+                        <span className="line-clamp-2" title={item.description || "Theo hóa đơn"}>
+                          {item.description || "Theo hóa đơn đính kèm"}
+                        </span>
+                      </td>
                       <td className="py-3 px-4 text-right font-medium text-[#5D4037]">
                         {formatNumber(item.preTaxAmount)}
                       </td>
@@ -557,7 +564,7 @@ export default function InvoiceManagementView() {
               {filteredInvoices.length > 0 && (
                 <tfoot className="bg-[#F5F0E6] font-bold text-[#4E342E] border-t border-[#E7E0D6]">
                   <tr>
-                    <td colSpan={5} className="py-3 px-4 text-right uppercase tracking-wider">
+                    <td colSpan={6} className="py-3 px-4 text-right uppercase tracking-wider">
                       Tổng Cộng ({filteredInvoices.length} hóa đơn):
                     </td>
                     <td className="py-3 px-4 text-right">{formatNumber(totalPreTax)}</td>
