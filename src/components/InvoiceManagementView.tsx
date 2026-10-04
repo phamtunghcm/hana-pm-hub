@@ -374,9 +374,9 @@ export default function InvoiceManagementView() {
                 className="text-xs font-bold bg-white border border-[#E7E0D6] rounded-xl px-3 py-1.5 text-[#5D4037] outline-none focus:border-[#8D6E63] cursor-pointer"
               >
                 <option value="all">Toàn bộ thời gian (Tất cả)</option>
-                <option value="2026-10">Tháng 10/2026 (Tháng hiện tại)</option>
-                <option value="2026-09">Tháng 09/2026 (14 hóa đơn)</option>
-                <option value="2026-08">Tháng 08/2026 (4 hóa đơn)</option>
+                <option value="2026-10">Tháng 10/2026 ({invoices.filter(i => i.month === '2026-10').length} hóa đơn)</option>
+                <option value="2026-09">Tháng 09/2026 ({invoices.filter(i => i.month === '2026-09').length} hóa đơn)</option>
+                <option value="2026-08">Tháng 08/2026 ({invoices.filter(i => i.month === '2026-08').length} hóa đơn)</option>
                 <option value="q3_2026">Quý 3/2026 (Tháng 7 - 9)</option>
                 <option value="year_2026">Cả năm 2026</option>
                 <option value="custom">📅 Tuỳ chọn khoảng ngày...</option>
