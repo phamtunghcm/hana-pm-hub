@@ -257,9 +257,25 @@
       "description": "Thiết bị PCCC (Bình bột 4kg, Đèn Exit, Đèn sự cố, Đầu báo khói)"
     },
     {
+      "id": "inv-2026-09-dienmayxanh",
+      "month": "2026-09",
+      "date": "24/09/2026",
+      "invoiceNo": "9335891",
+      "symbol": "1K26TAA",
+      "taxCode": "0303217354",
+      "supplier": "CÔNG TY CỔ PHẦN ĐẦU TƯ ĐIỆN MÁY XANH",
+      "preTaxAmount": 19533333.0,
+      "vatAmount": 1562667.0,
+      "totalAmount": 21096000.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/144_DownloadEInvoice.aspx.pdf",
+      "description": "Tủ lạnh Toshiba GR-RF681WI-PGV(D4) 4 cánh",
+      "stt": 17
+    },
+    {
       "id": "inv-2026-09-11",
       "month": "2026-09",
-      "stt": 17,
+      "stt": 18,
       "date": "25/09/2026",
       "invoiceNo": "1552249",
       "symbol": "1C26MAA",
@@ -275,7 +291,7 @@
     {
       "id": "inv-2026-09-12",
       "month": "2026-09",
-      "stt": 18,
+      "stt": 19,
       "date": "25/09/2026",
       "invoiceNo": "435",
       "symbol": "1C26TKP",
@@ -291,7 +307,7 @@
     {
       "id": "inv-2026-09-13",
       "month": "2026-09",
-      "stt": 19,
+      "stt": 20,
       "date": "28/09/2026",
       "invoiceNo": "1844",
       "symbol": "1C26TCS",
@@ -305,9 +321,41 @@
       "description": "Ghế ngồi văn phòng CHR-33302 (6 cái)"
     },
     {
+      "id": "inv-2026-09-thuanthanh",
+      "month": "2026-09",
+      "date": "28/09/2026",
+      "invoiceNo": "968",
+      "symbol": "1C26THC",
+      "taxCode": "0310475772",
+      "supplier": "CÔNG TY TNHH THUẬN THÀNH HOA CƯƠNG",
+      "preTaxAmount": 19577600.0,
+      "vatAmount": 1566208.0,
+      "totalAmount": 21143808.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/119_hoa_cuong.pdf",
+      "description": "Đá Vicostone BQ201 (4.256 m2)",
+      "stt": 21
+    },
+    {
+      "id": "inv-2026-09-huonggiang",
+      "month": "2026-09",
+      "date": "28/09/2026",
+      "invoiceNo": "00006769",
+      "symbol": "1C26MFH",
+      "taxCode": "0316144826",
+      "supplier": "CÔNG TY TNHH SX TM NỘI THẤT HƯƠNG GIANG",
+      "preTaxAmount": 399819.0,
+      "vatAmount": 31986.0,
+      "totalAmount": 431805.0,
+      "status": "attached",
+      "drivePath": "Hóa đơn mới bổ sung/123_huong_giang.pdf",
+      "description": "Bộ ghế văn phòng",
+      "stt": 22
+    },
+    {
       "id": "inv-2026-09-14",
       "month": "2026-09",
-      "stt": 20,
+      "stt": 23,
       "date": "30/09/2026",
       "invoiceNo": "97",
       "symbol": "1C26TKP",
@@ -323,7 +371,7 @@
     {
       "id": "inv-2026-10-1",
       "month": "2026-10",
-      "stt": 21,
+      "stt": 24,
       "date": "01/10/2026",
       "invoiceNo": "69",
       "symbol": "1C26TAA",
@@ -339,7 +387,7 @@
     {
       "id": "inv-2026-10-2",
       "month": "2026-10",
-      "stt": 22,
+      "stt": 25,
       "date": "02/10/2026",
       "invoiceNo": "00008413",
       "symbol": "1C26MHV",
@@ -355,7 +403,7 @@
     {
       "id": "inv-2026-10-3",
       "month": "2026-10",
-      "stt": 23,
+      "stt": 26,
       "date": "03/10/2026",
       "invoiceNo": "00000117",
       "symbol": "1C26TTS",
@@ -371,7 +419,7 @@
     {
       "id": "inv-2026-10-4",
       "month": "2026-10",
-      "stt": 24,
+      "stt": 27,
       "date": "04/10/2026",
       "invoiceNo": "00063495",
       "symbol": "1C26MTD",
@@ -461,10 +509,10 @@
     {
       "month": "2026-09",
       "monthLabel": "Tháng 09/2026",
-      "invoiceCount": 16,
-      "preTaxAmount": 158498108.0,
-      "vatAmount": 13131597.0,
-      "totalPaymentAmount": 171629705.0,
+      "invoiceCount": 19,
+      "preTaxAmount": 198008860.0,
+      "vatAmount": 16292458.0,
+      "totalPaymentAmount": 214301318.0,
       "nonInvoiceCount": 1,
       "nonInvoiceAmount": 0.0
     },
