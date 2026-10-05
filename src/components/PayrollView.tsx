@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   Wallet,
   Users,
@@ -15,7 +15,15 @@ import {
   X,
   FileSpreadsheet,
   Building2,
+  FileDown,
+  Image as ImageIcon,
+  Copy,
+  Sparkles,
+  Gift,
+  HelpCircle,
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import type { EmployeePayroll } from '../types/payroll';
 import {
   INITIAL_PAYROLL_DATA,
@@ -23,12 +31,14 @@ import {
   PAYROLL_MONTHS,
   formatVND,
   numberToVietnameseWords,
+  getEnrichedEmployee,
 } from '../data/payrollData';
 import { useHana } from '../store/HanaContext';
 
 export default function PayrollView() {
   const { currentUser } = useHana();
   const isAdmin = currentUser?.role === 'admin';
+  const payslipRef = useRef<HTMLDivElement>(null);
 
   // State
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-10');
@@ -37,6 +47,7 @@ export default function PayrollView() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeePayroll | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
   const [syncToast, setSyncToast] = useState<{ show: boolean; message: string; success: boolean }>({
     show: false,
     message: '',
@@ -48,7 +59,8 @@ export default function PayrollView() {
   const [periodSummaries, setPeriodSummaries] = useState(INITIAL_PERIOD_SUMMARIES);
 
   const currentMonthEmployees = useMemo(() => {
-    return payrollData[selectedMonth] || [];
+    const raw = payrollData[selectedMonth] || [];
+    return raw.map(getEnrichedEmployee);
   }, [payrollData, selectedMonth]);
 
   const currentSummary = useMemo(() => {
@@ -88,7 +100,6 @@ export default function PayrollView() {
   const handleSyncERP = async () => {
     setIsSyncing(true);
     try {
-      // Giả lập gọi API đồng bộ trực tiếp từ Supabase/ERP
       await new Promise(r => setTimeout(r, 1200));
       setSyncToast({
         show: true,
@@ -129,7 +140,6 @@ export default function PayrollView() {
       },
     }));
 
-    // Cập nhật trạng thái nhân viên
     setPayrollData(prev => ({
       ...prev,
       [selectedMonth]: prev[selectedMonth].map(e => ({
@@ -157,12 +167,11 @@ export default function PayrollView() {
       'Ngân hàng',
       'Công chuẩn',
       'Công thực tế',
-      'Đi muộn (lần)',
+      'Lương cam kết (VNĐ)',
       'Lương đóng BHXH (VNĐ)',
-      'Phụ cấp trách nhiệm (VNĐ)',
-      'Lương thỏa thuận (VNĐ)',
+      'Phụ cấp trách nhiệm / Hiệu suất (VNĐ)',
       'Lương thời gian (VNĐ)',
-      'Phụ cấp ăn trưa/đi lại (VNĐ)',
+      'Phụ cấp cơm & xe (VNĐ)',
       'Hoa hồng Tour KTV (VNĐ)',
       'Hoa hồng Bán lẻ (VNĐ)',
       'Hoa hồng Doanh số (VNĐ)',
@@ -171,7 +180,9 @@ export default function PayrollView() {
       'Phạt đi muộn (VNĐ)',
       'Khấu trừ BHXH 10.5% (VNĐ)',
       'Thuế TNCN (VNĐ)',
-      'THỰC LĨNH (VNĐ)',
+      'THỰC LĨNH CHUYỂN KHOẢN (VNĐ)',
+      'BHXH Cty đóng 21.5% (VNĐ)',
+      'TỔNG ĐÃI NGỘ TOÀN DIỆN (VNĐ)',
       'Trạng thái',
     ];
 
@@ -184,10 +195,9 @@ export default function PayrollView() {
       `"${e.nganHang}"`,
       e.ngayCongChuan,
       e.ngayCongThucTe,
-      e.soLanDiMuon,
+      e.mucLuongCamKet || e.luongThoaThuan,
       e.luongDongBHXH,
       e.phuCapTrachNhiem,
-      e.luongThoaThuan,
       e.luongThoiGian,
       e.phuCapAnTruaXangXe,
       e.hhTourKtv,
@@ -199,6 +209,8 @@ export default function PayrollView() {
       e.bhxhCaNhan,
       e.thueTNCN,
       e.thucLinh,
+      e.tongBhxhDoanhNghiep || 0,
+      e.tongGiaTriDaiNgoToanDien || e.thucLinh,
       e.trangThai === 'DaThanhToan' ? 'Đã thanh toán' : 'Tạm tính',
     ]);
 
@@ -213,9 +225,125 @@ export default function PayrollView() {
     document.body.removeChild(link);
   };
 
-  // Print Payslip or Table
-  const handlePrint = () => {
-    window.print();
+  // Export PDF (Khổ A4)
+  const handleExportPDF = async () => {
+    if (!payslipRef.current || !selectedEmployee) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(payslipRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      if (pdfHeight > 295) {
+        const scaleFactor = 287 / pdfHeight;
+        const finalWidth = pdfWidth * scaleFactor;
+        const xOffset = (pdfWidth - finalWidth) / 2;
+        pdf.addImage(imgData, 'JPEG', xOffset, 5, finalWidth, 287);
+      } else {
+        pdf.addImage(imgData, 'JPEG', 0, 5, pdfWidth, pdfHeight);
+      }
+
+      const safeName = selectedEmployee.hoTen.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
+      pdf.save(`PhieuLuong_${selectedEmployee.maNV}_${safeName}_${selectedMonth}.pdf`);
+      setSyncToast({
+        show: true,
+        message: `Đã xuất file PDF phiếu lương thành công cho ${selectedEmployee.hoTen}!`,
+        success: true,
+      });
+    } catch (err) {
+      console.error('Lỗi xuất PDF:', err);
+      setSyncToast({
+        show: true,
+        message: 'Có lỗi khi xuất file PDF, vui lòng thử lại.',
+        success: false,
+      });
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 3500);
+    }
+  };
+
+  // Export JPEG (Gửi Zalo cho nhân viên)
+  const handleExportJPEG = async () => {
+    if (!payslipRef.current || !selectedEmployee) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(payslipRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const link = document.createElement('a');
+      const safeName = selectedEmployee.hoTen.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
+      link.href = imgData;
+      link.download = `PhieuLuong_${selectedEmployee.maNV}_${safeName}_${selectedMonth}.jpeg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setSyncToast({
+        show: true,
+        message: `Đã tải ảnh JPEG thành công để gửi Zalo cho ${selectedEmployee.hoTen}!`,
+        success: true,
+      });
+    } catch (err) {
+      console.error('Lỗi xuất JPEG:', err);
+      setSyncToast({
+        show: true,
+        message: 'Có lỗi khi xuất ảnh JPEG, vui lòng thử lại.',
+        success: false,
+      });
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 3500);
+    }
+  };
+
+  // Sao chép ảnh vào Clipboard (Ctrl + V vào Zalo ngay lập tức)
+  const handleCopyImage = async () => {
+    if (!payslipRef.current || !selectedEmployee) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(payslipRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+      });
+      canvas.toBlob(async blob => {
+        if (!blob) throw new Error('Không thể tạo blob ảnh');
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob }),
+        ]);
+        setSyncToast({
+          show: true,
+          message: 'Đã sao chép ảnh phiếu lương! Hãy bấm Ctrl+V (hoặc Cmd+V) để dán vào Zalo/Messenger.',
+          success: true,
+        });
+      }, 'image/png');
+    } catch (err) {
+      console.error('Lỗi copy clipboard:', err);
+      setSyncToast({
+        show: true,
+        message: 'Trình duyệt chưa hỗ trợ sao chép trực tiếp, bạn hãy dùng nút "Tải ảnh JPEG".',
+        success: false,
+      });
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 3500);
+    }
   };
 
   // Navigate next/prev employee in payslip modal
@@ -234,6 +362,8 @@ export default function PayrollView() {
       setSelectedEmployee(filteredEmployees[currentIndex + 1]);
     }
   };
+
+  const enrichedSelectedEmp = selectedEmployee ? getEnrichedEmployee(selectedEmployee) : null;
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-12">
@@ -260,10 +390,10 @@ export default function PayrollView() {
             </div>
             <div>
               <h1 className="text-xl lg:text-2xl font-black text-[#4E342E] tracking-tight">
-                BẢNG LƯƠNG NHÂN VIÊN & HOA HỒNG ERP
+                BẢNG LƯƠNG NHÂN VIÊN & CHẾ ĐỘ ĐÃI NGỘ ERP
               </h1>
               <p className="text-xs text-[#8D6E63] font-semibold">
-                Đồng bộ tự động từ ERP Hana Wellness · Lương CB đóng BHXH cố định 5.350.000đ theo QĐ 30/08/2026
+                Chuẩn hóa theo mẫu Bảng tính lương & Phiếu báo đãi ngộ CBNV Hana Wellness · Hỗ trợ xuất file PDF & ảnh JPEG gửi nhân viên
               </p>
             </div>
           </div>
@@ -330,16 +460,6 @@ export default function PayrollView() {
             <FileSpreadsheet size={14} className="text-emerald-700" />
             <span>Xuất Excel</span>
           </button>
-
-          {/* In bảng lương */}
-          <button
-            onClick={handlePrint}
-            className="px-3 py-2 rounded-xl text-xs font-bold bg-white hover:bg-[#FAF7F0] text-[#5D4037] border border-[#D7CCC8] flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-            title="In bảng lương"
-          >
-            <Printer size={14} />
-            <span className="hidden sm:inline">In</span>
-          </button>
         </div>
       </div>
 
@@ -350,7 +470,7 @@ export default function PayrollView() {
           <div>
             <p className="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Tổng Quỹ Lương Thực Lĩnh</p>
             <h3 className="text-2xl font-black text-[#4E342E] mt-1">{formatVND(currentSummary.tongQuyLuong)}</h3>
-            <p className="text-[11px] text-emerald-700 font-semibold mt-1">Đã trừ BHXH & Thuế TNCN</p>
+            <p className="text-[11px] text-emerald-700 font-semibold mt-1">Đã trừ BHXH 10.5% & Thuế TNCN</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-[#F5F0E6] flex items-center justify-center text-[#8D6E63]">
             <Wallet size={24} />
@@ -362,7 +482,9 @@ export default function PayrollView() {
           <div>
             <p className="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Tổng Hoa Hồng (Tour + SP)</p>
             <h3 className="text-2xl font-black text-[#8D6E63] mt-1">{formatVND(currentSummary.tongHoaHong)}</h3>
-            <p className="text-[11px] text-[#A1887F] font-semibold mt-1">Chiếm {(currentSummary.tongHoaHong / (currentSummary.tongQuyLuong || 1) * 100).toFixed(1)}% tổng quỹ</p>
+            <p className="text-[11px] text-[#A1887F] font-semibold mt-1">
+              Chiếm {((currentSummary.tongHoaHong / (currentSummary.tongQuyLuong || 1)) * 100).toFixed(1)}% tổng quỹ
+            </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-[#EFEBE0] flex items-center justify-center text-[#6D4C41]">
             <TrendingUp size={24} />
@@ -372,9 +494,9 @@ export default function PayrollView() {
         {/* Card 3: Tổng Đóng BHXH (10.5%) */}
         <div className="bg-white p-5 rounded-2xl border border-[#E7E0D6] shadow-2xs flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Tổng Trích Nộp BHXH</p>
+            <p className="text-xs font-bold text-[#8D6E63] uppercase tracking-wider">Tổng Trích Nộp BHXH NLĐ</p>
             <h3 className="text-2xl font-black text-[#5D4037] mt-1">{formatVND(currentSummary.tongBHXH)}</h3>
-            <p className="text-[11px] text-[#8D6E63] font-semibold mt-1">561.750đ / người (5.350.000đ × 10.5%)</p>
+            <p className="text-[11px] text-[#8D6E63] font-semibold mt-1">10.5% theo mức lương đóng thực tế</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-[#F5F0E6] flex items-center justify-center text-[#8D6E63]">
             <ShieldCheck size={24} />
@@ -460,7 +582,7 @@ export default function PayrollView() {
             </h2>
           </div>
           <span className="text-xs text-[#8D6E63] italic">
-            Nhấn vào bất kỳ nhân viên nào để xem và in Phiếu lương chi tiết (Payslip)
+            Nhấn vào bất kỳ nhân viên nào để xem và xuất Phiếu lương PDF / JPEG
           </span>
         </div>
 
@@ -471,10 +593,10 @@ export default function PayrollView() {
                 <th className="py-3 px-4">Nhân sự</th>
                 <th className="py-3 px-3">Chi nhánh</th>
                 <th className="py-3 px-3 text-center">Công chuẩn / Làm</th>
+                <th className="py-3 px-3 text-right">Lương cam kết</th>
                 <th className="py-3 px-3 text-right">Lương CB (BHXH)</th>
-                <th className="py-3 px-3 text-right">PC Trách nhiệm</th>
                 <th className="py-3 px-3 text-right">Lương thời gian</th>
-                <th className="py-3 px-3 text-right">PC Phúc lợi</th>
+                <th className="py-3 px-3 text-right">PC Cơm & Xe</th>
                 <th className="py-3 px-3 text-right">Hoa hồng</th>
                 <th className="py-3 px-3 text-right">Thưởng KPI</th>
                 <th className="py-3 px-3 text-right">Trừ BHXH (10.5%)</th>
@@ -534,14 +656,14 @@ export default function PayrollView() {
                       )}
                     </td>
 
-                    {/* Lương CB đóng BHXH (5.350.000đ) */}
+                    {/* Lương cam kết */}
                     <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                      {formatVND(emp.luongDongBHXH)}
+                      {formatVND(emp.mucLuongCamKet || emp.luongThoaThuan)}
                     </td>
 
-                    {/* Phụ cấp trách nhiệm */}
+                    {/* Lương CB đóng BHXH */}
                     <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                      {formatVND(emp.phuCapTrachNhiem)}
+                      {formatVND(emp.luongDongBHXH)}
                     </td>
 
                     {/* Lương thời gian */}
@@ -549,7 +671,7 @@ export default function PayrollView() {
                       {formatVND(emp.luongThoiGian)}
                     </td>
 
-                    {/* Phụ cấp phúc lợi */}
+                    {/* Phụ cấp Cơm & Xe */}
                     <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
                       {formatVND(emp.phuCapAnTruaXangXe)}
                     </td>
@@ -582,7 +704,7 @@ export default function PayrollView() {
                           setSelectedEmployee(emp);
                         }}
                         className="px-2.5 py-1 rounded-lg bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-[11px] font-bold shadow-2xs transition-colors cursor-pointer"
-                        title="Xem Phiếu Lương Chi Tiết"
+                        title="Xem và Xuất Phiếu Lương"
                       >
                         Phiếu lương
                       </button>
@@ -595,14 +717,11 @@ export default function PayrollView() {
             {filteredEmployees.length > 0 && (
               <tfoot>
                 <tr className="bg-[#F5F0E6] text-[#4E342E] font-black border-t-2 border-[#D7CCC8]">
-                  <td className="py-3.5 px-4" colSpan={3}>
+                  <td className="py-3.5 px-4" colSpan={4}>
                     TỔNG CỘNG ({filteredEmployees.length} NHÂN SỰ)
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.luongDongBHXH, 0))}
-                  </td>
-                  <td className="py-3.5 px-3 text-right">
-                    {formatVND(filteredEmployees.reduce((a, b) => a + b.phuCapTrachNhiem, 0))}
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.luongThoiGian, 0))}
@@ -630,12 +749,12 @@ export default function PayrollView() {
         </div>
       </div>
 
-      {/* MODAL / DRAWER: PHIẾU LƯƠNG CÁ NHÂN (PAYSLIP VIEW) */}
-      {selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl border border-[#E7E0D6] shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
-            {/* Modal Header Actions (Không in ra khi print) */}
-            <div className="p-4 bg-[#F5F0E6] border-b border-[#E7E0D6] flex items-center justify-between print:hidden">
+      {/* MODAL: PHIẾU BÁO LƯƠNG & CHẾ ĐỘ ĐÃI NGỘ CBNV (CHUẨN MẪU GOOGLE SHEET) */}
+      {enrichedSelectedEmp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-[#E7E0D6] shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-4 sm:my-8 max-h-[92vh] flex flex-col">
+            {/* Modal Header Actions (Không in ra) */}
+            <div className="p-3 sm:p-4 bg-[#F5F0E6] border-b border-[#E7E0D6] flex flex-wrap items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrevEmployee}
@@ -651,281 +770,385 @@ export default function PayrollView() {
                 >
                   <ChevronRight size={16} />
                 </button>
-                <span className="text-xs font-bold text-[#8D6E63] ml-2">
-                  Phiếu lương: <span className="text-[#4E342E]">{selectedEmployee.hoTen}</span> ({selectedEmployee.maNV})
+                <span className="text-xs font-bold text-[#8D6E63] ml-1">
+                  Phiếu lương: <span className="text-[#4E342E]">{enrichedSelectedEmp.hoTen}</span> ({enrichedSelectedEmp.maNV})
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Nhóm nút xuất file: PDF, JPEG, Copy Clipboard, Print */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                {/* Xuất PDF */}
+                <button
+                  onClick={handleExportPDF}
+                  disabled={isExporting}
+                  className="px-3 py-1.5 rounded-xl bg-red-700 hover:bg-red-800 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  title="Tải phiếu lương định dạng PDF chuẩn in A4"
+                >
+                  <FileDown size={14} />
+                  <span>Xuất PDF</span>
+                </button>
+
+                {/* Xuất JPEG */}
+                <button
+                  onClick={handleExportJPEG}
+                  disabled={isExporting}
+                  className="px-3 py-1.5 rounded-xl bg-[#8D6E63] hover:bg-[#6D4C41] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  title="Tải ảnh JPEG gửi Zalo / Messenger cho nhân viên"
+                >
+                  <ImageIcon size={14} />
+                  <span>Xuất JPEG</span>
+                </button>
+
+                {/* Copy Ảnh vào Clipboard */}
+                <button
+                  onClick={handleCopyImage}
+                  disabled={isExporting}
+                  className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-[#FAF7F0] disabled:opacity-50 text-[#5D4037] border border-[#D7CCC8] text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer hidden sm:flex"
+                  title="Sao chép ảnh phiếu lương vào Clipboard để dán nhanh (Ctrl+V) vào Zalo"
+                >
+                  <Copy size={13} />
+                  <span>Copy ảnh</span>
+                </button>
+
+                {/* In ấn */}
                 <button
                   onClick={() => window.print()}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl bg-white hover:bg-[#FAF7F0] text-[#5D4037] border border-[#D7CCC8] transition-colors cursor-pointer"
+                  title="In trực tiếp"
                 >
-                  <Printer size={14} />
-                  <span>In phiếu lương (A4)</span>
+                  <Printer size={16} />
                 </button>
+
+                {/* Đóng */}
                 <button
                   onClick={() => setSelectedEmployee(null)}
-                  className="p-1.5 rounded-lg bg-white hover:bg-red-50 text-[#8D6E63] hover:text-red-700 border border-[#D7CCC8] transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl bg-white hover:bg-red-50 text-[#8D6E63] hover:text-red-700 border border-[#D7CCC8] transition-colors cursor-pointer ml-1"
+                  title="Đóng modal"
                 >
                   <X size={18} />
                 </button>
               </div>
             </div>
 
-            {/* NỘI DUNG PHIẾU LƯƠNG CHUẨN IN A4 (PAYSLIP DOCUMENT) */}
-            <div className="p-8 sm:p-10 space-y-6 text-[#4E342E]" id="printable-payslip">
-              {/* Header Công Ty */}
-              <div className="border-b-2 border-[#8D6E63] pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-[#8D6E63] rounded-2xl flex items-center justify-center font-black text-white text-2xl shadow-sm">
-                    H
+            {/* VÙNG NỘI DUNG PHIẾU LƯƠNG CHUẨN MẪU GOOGLE SHEET (ĐƯỢC CHỤP ĐỂ XUẤT PDF & JPEG) */}
+            <div className="overflow-y-auto p-4 sm:p-8 bg-[#FDFBF7]">
+              <div
+                ref={payslipRef}
+                id="printable-payslip"
+                className="bg-white p-6 sm:p-9 rounded-2xl border border-[#E7E0D6] shadow-sm space-y-5 text-[#4E342E]"
+              >
+                {/* Header Tiêu Đề */}
+                <div className="border-b-2 border-[#8D6E63] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-[#8D6E63] rounded-2xl flex items-center justify-center font-black text-white text-xl shadow-xs">
+                      H
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-black text-[#4E342E] tracking-tight uppercase">
+                        HANA WELLNESS & TRỊ LIỆU TỰ NHIÊN
+                      </h2>
+                      <p className="text-[11px] text-[#8D6E63] font-bold">Hệ thống Trị liệu Cột sống & Phục hồi Cơ Xương Khớp Chuẩn Y Khoa</p>
+                      <p className="text-[10px] text-[#A1887F]">Chi nhánh: {enrichedSelectedEmp.chiNhanhTen}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right">
+                    <span className="inline-block px-3 py-1 rounded-full text-[11px] font-black bg-[#EFEBE0] text-[#5D4037] border border-[#D7CCC8] uppercase tracking-wider">
+                      PHIẾU BÁO LƯƠNG & ĐÃI NGỘ CBNV
+                    </span>
+                    <p className="text-xs font-black text-[#4E342E] mt-1">{currentSummary.thangDisplay}</p>
+                    <p className="text-[10px] text-[#8D6E63]">Ngày trích xuất: {new Date().toLocaleDateString('vi-VN')}</p>
+                  </div>
+                </div>
+
+                {/* Thông tin cá nhân nhân viên */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#FAF7F0] p-3.5 rounded-xl border border-[#E7E0D6] text-xs">
+                  <div>
+                    <span className="text-[#8D6E63] font-bold text-[11px] block">Họ và tên CBNV:</span>
+                    <span className="font-black text-[#4E342E] text-sm uppercase">{enrichedSelectedEmp.hoTen}</span>
+                    <span className="text-[10px] text-[#8D6E63] block">Mã NV: {enrichedSelectedEmp.maNV}</span>
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-[#4E342E] tracking-tight uppercase">
-                      HANA WELLNESS & TRỊ LIỆU TỰ NHIÊN
-                    </h2>
-                    <p className="text-xs text-[#8D6E63] font-bold">Hệ thống Trị liệu Cột sống & Phục hồi Cơ Xương Khớp Chuẩn Y Khoa</p>
-                    <p className="text-xs text-[#A1887F]">Địa chỉ: {selectedEmployee.chiNhanhTen}</p>
+                    <span className="text-[#8D6E63] font-bold text-[11px] block">Vị trí công việc:</span>
+                    <span className="font-bold text-[#4E342E]">{enrichedSelectedEmp.chucVuLabel}</span>
+                    <span className="text-[10px] text-[#8D6E63] block">{enrichedSelectedEmp.capBacTen || 'Nhân viên chính thức'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8D6E63] font-bold text-[11px] block">Công chuẩn / Tính lương:</span>
+                    <span className="font-black text-[#4E342E]">
+                      {enrichedSelectedEmp.ngayCongThucTe} / {enrichedSelectedEmp.ngayCongChuan} ngày
+                    </span>
+                    <span className="text-[10px] text-[#8D6E63] block">Trạng thái: {enrichedSelectedEmp.trangThaiLamViec}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8D6E63] font-bold text-[11px] block">Chính sách ngày nghỉ:</span>
+                    <span className="font-bold text-[#4E342E] text-[11px]">{enrichedSelectedEmp.cheDoNghi}</span>
                   </div>
                 </div>
 
-                <div className="text-left sm:text-right">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black bg-[#EFEBE0] text-[#5D4037] border border-[#D7CCC8] uppercase">
-                    PHIẾU LƯƠNG & HOA HỒNG
-                  </span>
-                  <p className="text-sm font-black text-[#4E342E] mt-1">{currentSummary.thangDisplay}</p>
-                  <p className="text-[11px] text-[#8D6E63]">Ngày xuất phiếu: {new Date().toLocaleDateString('vi-VN')}</p>
-                </div>
-              </div>
+                {/* 4 Thẻ Tóm Tắt Nhanh (Theo đúng Layout Google Sheet của anh Tùng) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                  <div className="bg-[#FAF7F0] p-2.5 rounded-xl border border-[#E7E0D6]">
+                    <span className="text-[10px] font-bold text-[#8D6E63] uppercase block">Lương Đóng BHXH</span>
+                    <span className="text-sm font-black text-[#4E342E] block mt-0.5">
+                      {formatVND(enrichedSelectedEmp.luongDongBhxhThucTe || enrichedSelectedEmp.luongDongBHXH)}
+                    </span>
+                    <span className="text-[9px] text-[#8D6E63]">Căn cứ tham gia BHXH</span>
+                  </div>
 
-              {/* Thông tin nhân viên */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#FAF7F0] p-4 rounded-2xl border border-[#E7E0D6] text-xs">
-                <div>
-                  <span className="text-[#8D6E63] font-bold block">Mã nhân viên:</span>
-                  <span className="font-black text-[#4E342E] text-sm">{selectedEmployee.maNV}</span>
-                </div>
-                <div>
-                  <span className="text-[#8D6E63] font-bold block">Họ và tên:</span>
-                  <span className="font-black text-[#4E342E] text-sm">{selectedEmployee.hoTen}</span>
-                </div>
-                <div>
-                  <span className="text-[#8D6E63] font-bold block">Chức danh / Cấp bậc:</span>
-                  <span className="font-bold text-[#4E342E]">
-                    {selectedEmployee.capBacTen || selectedEmployee.chucVuLabel}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[#8D6E63] font-bold block">Ngày vào làm:</span>
-                  <span className="font-bold text-[#4E342E]">{selectedEmployee.ngayVaoLam}</span>
+                  <div className="bg-[#FAF7F0] p-2.5 rounded-xl border border-[#E7E0D6]">
+                    <span className="text-[10px] font-bold text-[#8D6E63] uppercase block">Lương Hiệu Suất / Bù Đủ</span>
+                    <span className="text-sm font-black text-[#4E342E] block mt-0.5">
+                      {formatVND(enrichedSelectedEmp.luongThoiGian - (enrichedSelectedEmp.luongDongBhxhThucTe || 0))}
+                    </span>
+                    <span className="text-[9px] text-[#8D6E63]">Tổng cam kết {formatVND(enrichedSelectedEmp.mucLuongCamKet || 10000000)}</span>
+                  </div>
+
+                  <div className="bg-[#FAF7F0] p-2.5 rounded-xl border border-[#E7E0D6]">
+                    <span className="text-[10px] font-bold text-[#8D6E63] uppercase block">Phụ Cấp Cơm & Xe</span>
+                    <span className="text-sm font-black text-[#4E342E] block mt-0.5">
+                      {formatVND(enrichedSelectedEmp.phuCapAnTruaXangXe)}
+                    </span>
+                    <span className="text-[9px] text-[#8D6E63]">Cơm (2 bữa/ngày) + Gửi xe</span>
+                  </div>
+
+                  <div className="bg-[#EFEBE0] p-2.5 rounded-xl border border-[#8D6E63]/30">
+                    <span className="text-[10px] font-black text-[#8D6E63] uppercase block">Lương Thực Lĩnh</span>
+                    <span className="text-base font-black text-[#4E342E] block mt-0.5">
+                      {formatVND(enrichedSelectedEmp.thucLinh)}
+                    </span>
+                    <span className="text-[9px] text-emerald-800 font-bold">Thực nhận chuyển khoản</span>
+                  </div>
                 </div>
 
-                <div>
-                  <span className="text-[#8D6E63] font-bold block">Công chuẩn / Thực tế:</span>
-                  <span className="font-bold text-[#4E342E]">
-                    {selectedEmployee.ngayCongThucTe} / {selectedEmployee.ngayCongChuan} ngày
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[#8D6E63] font-bold block">Người phụ thuộc (TNCN):</span>
-                  <span className="font-bold text-[#4E342E]">{selectedEmployee.soNguoiPhuThuoc} người</span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-[#8D6E63] font-bold block">Tài khoản nhận lương:</span>
-                  <span className="font-bold text-[#4E342E]">
-                    {selectedEmployee.soTaiKhoan} — {selectedEmployee.nganHang}
-                  </span>
-                </div>
-              </div>
-
-              {/* KHỐI 1: BẢNG TỔNG HỢP CÁC KHOẢN THU NHẬP & KHẤU TRỪ */}
-              <div className="border border-[#E7E0D6] rounded-2xl overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-[#F5F0E6] text-[#5D4037] font-bold border-b border-[#E7E0D6] uppercase tracking-wider">
-                      <th className="py-2.5 px-4 text-left">Nội dung chi tiết</th>
-                      <th className="py-2.5 px-3 text-center">Đơn vị / Tỷ lệ</th>
-                      <th className="py-2.5 px-4 text-right">Số tiền (VNĐ)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E7E0D6]">
-                    {/* Mục I: Thu Nhập Cố Định & Thời Gian */}
-                    <tr className="bg-[#FAF7F0] font-bold text-[#4E342E]">
-                      <td colSpan={3} className="py-2 px-4">
-                        I. LƯƠNG & PHỤ CẤP THỜI GIAN
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">1. Lương cơ bản đóng BHXH (QĐ 30/08/2026)</td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">Cố định</td>
-                      <td className="py-2 px-4 text-right font-medium">{formatVND(selectedEmployee.luongDongBHXH)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">2. Phụ cấp trách nhiệm công việc</td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">Thỏa thuận</td>
-                      <td className="py-2 px-4 text-right font-medium">{formatVND(selectedEmployee.phuCapTrachNhiem)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8 font-semibold">
-                        Lương theo ngày công làm việc thực tế ({selectedEmployee.ngayCongThucTe}/{selectedEmployee.ngayCongChuan} ngày)
-                      </td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">{selectedEmployee.ngayCongThucTe} công</td>
-                      <td className="py-2 px-4 text-right font-bold text-[#4E342E]">{formatVND(selectedEmployee.luongThoiGian)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">3. Phụ cấp ăn trưa, xăng xe, điện thoại</td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">Phúc lợi</td>
-                      <td className="py-2 px-4 text-right font-medium">{formatVND(selectedEmployee.phuCapAnTruaXangXe)}</td>
-                    </tr>
-
-                    {/* Mục II: Hoa Hồng & Thưởng */}
-                    <tr className="bg-[#FAF7F0] font-bold text-[#4E342E]">
-                      <td colSpan={3} className="py-2 px-4">
-                        II. HOA HỒNG DỊCH VỤ / SẢN PHẨM & THƯỞNG KPI
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">1. Hoa hồng đi Tour KTV (Chính / Phụ)</td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">Theo ca</td>
-                      <td className="py-2 px-4 text-right font-bold text-[#8D6E63]">{formatVND(selectedEmployee.hhTourKtv)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">2. Hoa hồng Bán lẻ mỹ phẩm / thảo dược</td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">3% - 5%</td>
-                      <td className="py-2 px-4 text-right font-bold text-[#8D6E63]">{formatVND(selectedEmployee.hhBanLe)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">3. Hoa hồng Doanh số / Bán thẻ liệu trình</td>
-                      <td className="py-2 px-3 text-center text-[#8D6E63]">8%</td>
-                      <td className="py-2 px-4 text-right font-bold text-[#8D6E63]">{formatVND(selectedEmployee.hhDoanhSo)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8">4. Thưởng hiệu suất công việc (KPI)</td>
-                      <td className="py-2 px-3 text-center text-emerald-800">Đạt KPI</td>
-                      <td className="py-2 px-4 text-right font-bold text-emerald-800">{formatVND(selectedEmployee.thuongKPI)}</td>
-                    </tr>
-                    <tr className="bg-[#FAF7F0]/60 font-bold">
-                      <td className="py-2 px-4">TỔNG THU NHẬP TRƯỚC GIẢM TRỪ</td>
-                      <td></td>
-                      <td className="py-2 px-4 text-right text-sm text-[#4E342E]">{formatVND(selectedEmployee.tongThuNhap)}</td>
-                    </tr>
-
-                    {/* Mục III: Các Khoản Khấu Trừ */}
-                    <tr className="bg-[#FAF7F0] font-bold text-red-900">
-                      <td colSpan={3} className="py-2 px-4">
-                        III. CÁC KHOẢN KHẤU TRỪ THEO QUY ĐỊNH
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8 text-red-800">1. Trích nộp BHXH, BHYT, BHTN người lao động</td>
-                      <td className="py-2 px-3 text-center text-red-800">10.5% × 5.350.000đ</td>
-                      <td className="py-2 px-4 text-right font-bold text-red-800">-{formatVND(selectedEmployee.bhxhCaNhan)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-4 pl-8 text-red-800">2. Thuế thu nhập cá nhân (TNCN) tạm khấu trừ</td>
-                      <td className="py-2 px-3 text-center text-red-800">Biểu lũy tiến</td>
-                      <td className="py-2 px-4 text-right font-medium text-red-800">
-                        {selectedEmployee.thueTNCN > 0 ? `-${formatVND(selectedEmployee.thueTNCN)}` : '0 đ'}
-                      </td>
-                    </tr>
-                    {selectedEmployee.phatDiMuon > 0 && (
-                      <tr>
-                        <td className="py-2 px-4 pl-8 text-red-800">
-                          3. Phạt đi muộn ({selectedEmployee.soLanDiMuon} lần × 50.000đ)
-                        </td>
-                        <td className="py-2 px-3 text-center text-red-800">Nội quy</td>
-                        <td className="py-2 px-4 text-right font-bold text-red-800">-{formatVND(selectedEmployee.phatDiMuon)}</td>
+                {/* BẢNG CHI TIẾT CÁC KHOẢN MỤC THU NHẬP & TRÍCH TRỪ (KHỚP 100% CẤU TRÚC SHEET) */}
+                <div className="border border-[#E7E0D6] rounded-xl overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-[#F5F0E6] text-[#5D4037] font-bold border-b border-[#E7E0D6] uppercase tracking-wider text-[11px]">
+                        <th className="py-2 px-3 text-left">Khoản mục thu nhập & khấu trừ</th>
+                        <th className="py-2 px-3 text-center">Đơn giá / Căn cứ</th>
+                        <th className="py-2 px-3 text-center">Số lượng / Tỷ lệ</th>
+                        <th className="py-2 px-3 text-right">Thành tiền (VNĐ)</th>
                       </tr>
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-[#EFEBE0] text-[#4E342E] font-black text-sm border-t-2 border-[#8D6E63]">
-                      <td className="py-3.5 px-4 uppercase tracking-wider" colSpan={2}>
-                        THỰC LĨNH NHÂN VIÊN NHẬN ĐƯỢC
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-base text-[#4E342E]">
-                        {formatVND(selectedEmployee.thucLinh)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {/* Số tiền bằng chữ */}
-              <div className="bg-[#FAF7F0] p-4 rounded-xl border border-[#E7E0D6] text-xs">
-                <span className="font-bold text-[#8D6E63]">Số tiền bằng chữ: </span>
-                <span className="font-bold text-[#4E342E] italic">
-                  {numberToVietnameseWords(selectedEmployee.thucLinh)}
-                </span>
-              </div>
-
-              {/* KHỐI 2: CHI TIẾT HOA HỒNG TỪNG TOUR/CA KHÁCH (NẾU CÓ) */}
-              {selectedEmployee.chiTietHoaHong && selectedEmployee.chiTietHoaHong.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black text-[#5D4037] uppercase tracking-wider">
-                    Bảng Kê Chi Tiết Ca Trị Liệu & Doanh Số Trong Kỳ ({selectedEmployee.chiTietHoaHong.length} mục)
-                  </h4>
-                  <div className="border border-[#E7E0D6] rounded-xl overflow-hidden">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="bg-[#F5F0E6] text-[#5D4037] font-bold border-b border-[#E7E0D6]">
-                          <th className="py-2 px-3 text-left">Ngày</th>
-                          <th className="py-2 px-3 text-left">Khách hàng</th>
-                          <th className="py-2 px-3 text-left">Dịch vụ / Sản phẩm</th>
-                          <th className="py-2 px-3 text-left">Vai trò</th>
-                          <th className="py-2 px-3 text-right">Doanh số</th>
-                          <th className="py-2 px-3 text-right">Hoa hồng</th>
+                    </thead>
+                    <tbody className="divide-y divide-[#E7E0D6]">
+                      {/* I. THU NHẬP & PHỤ CẤP */}
+                      <tr className="bg-[#FAF7F0] font-bold text-[#4E342E]">
+                        <td colSpan={3} className="py-2 px-3">
+                          I. CÁC KHOẢN THU NHẬP & PHỤ CẤP (LƯƠNG CAM KẾT + ĐÃI NGỘ CƠM, XE)
+                        </td>
+                        <td className="py-2 px-3 text-right font-black">
+                          {formatVND(enrichedSelectedEmp.tongThuNhap)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 font-medium">1. Lương cơ bản đóng BHXH</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">{formatVND(enrichedSelectedEmp.luongDongBHXH)}</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">
+                          {enrichedSelectedEmp.ngayCongThucTe} / {enrichedSelectedEmp.ngayCongChuan} công
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-medium">
+                          {formatVND(enrichedSelectedEmp.luongDongBhxhThucTe || enrichedSelectedEmp.luongDongBHXH)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 font-medium">2. Lương hiệu suất & trách nhiệm (bù đủ cam kết)</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">{formatVND(enrichedSelectedEmp.phuCapTrachNhiem)}</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">
+                          {enrichedSelectedEmp.ngayCongThucTe} / {enrichedSelectedEmp.ngayCongChuan} công
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-medium">
+                          {formatVND(enrichedSelectedEmp.luongThoiGian - (enrichedSelectedEmp.luongDongBhxhThucTe || 0))}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 font-medium">3. Phụ cấp đãi ngộ: Tiền cơm (40.000 đ/bữa x 2 bữa/ngày)</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">40,000 đ</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">
+                          {enrichedSelectedEmp.ngayCongThucTe * 2} bữa ({enrichedSelectedEmp.ngayCongThucTe} ngày)
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-medium">
+                          {formatVND(enrichedSelectedEmp.phuCapCom || enrichedSelectedEmp.phuCapAnTruaXangXe)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 font-medium">4. Phụ cấp đãi ngộ: Tiền gửi xe cố định hàng tháng</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">200,000 đ</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">1 tháng</td>
+                        <td className="py-1.5 px-3 text-right font-medium">
+                          {formatVND(enrichedSelectedEmp.phuCapGuiXe || 200000)}
+                        </td>
+                      </tr>
+                      {enrichedSelectedEmp.tongHoaHong > 0 && (
+                        <tr>
+                          <td className="py-1.5 px-3 pl-6 font-bold text-[#8D6E63]">
+                            5. Hoa hồng dịch vụ trị liệu / bán lẻ mỹ phẩm (ERP)
+                          </td>
+                          <td className="py-1.5 px-3 text-center text-[#8D6E63]">Theo ca</td>
+                          <td className="py-1.5 px-3 text-center text-[#8D6E63]">{enrichedSelectedEmp.chiTietHoaHong?.length || 0} ca</td>
+                          <td className="py-1.5 px-3 text-right font-bold text-[#8D6E63]">
+                            {formatVND(enrichedSelectedEmp.tongHoaHong)}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E7E0D6]">
-                        {selectedEmployee.chiTietHoaHong.map(item => (
-                          <tr key={item.id} className="hover:bg-[#FAF7F0]">
-                            <td className="py-2 px-3 text-[#6D4C41]">{item.ngay}</td>
-                            <td className="py-2 px-3 font-semibold text-[#4E342E]">{item.tenKhachHang}</td>
-                            <td className="py-2 px-3 text-[#5D4037]">{item.tenDichVu_SanPham}</td>
-                            <td className="py-2 px-3">
-                              <span className="px-2 py-0.5 rounded bg-[#EFEBE0] text-[#5D4037] text-[10px] font-bold">
-                                {item.vaiTroLabel}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 text-right font-medium text-[#6D4C41]">
-                              {formatVND(item.doanhSo)}
-                            </td>
-                            <td className="py-2 px-3 text-right font-bold text-[#8D6E63]">
-                              {formatVND(item.soTienHoaHong)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                      )}
+                      {enrichedSelectedEmp.thuongKPI > 0 && (
+                        <tr>
+                          <td className="py-1.5 px-3 pl-6 font-bold text-emerald-800">
+                            6. Thưởng hiệu suất hoàn thành chỉ tiêu KPI
+                          </td>
+                          <td className="py-1.5 px-3 text-center text-emerald-800">Đạt chỉ tiêu</td>
+                          <td className="py-1.5 px-3 text-center text-emerald-800">100%</td>
+                          <td className="py-1.5 px-3 text-right font-bold text-emerald-800">
+                            {formatVND(enrichedSelectedEmp.thuongKPI)}
+                          </td>
+                        </tr>
+                      )}
 
-              {/* Chữ ký xác nhận */}
-              <div className="pt-8 grid grid-cols-3 text-center text-xs gap-4">
-                <div>
-                  <p className="font-bold text-[#4E342E] uppercase">Người Lập Phiếu</p>
-                  <p className="text-[11px] text-[#8D6E63] italic mt-0.5">(Ký và ghi rõ họ tên)</p>
-                  <div className="h-16"></div>
-                  <p className="font-semibold text-[#4E342E]">Kế toán Tiền lương</p>
+                      {/* II. CÁC KHOẢN TRÍCH TRỪ BẢO HIỂM */}
+                      <tr className="bg-[#FAF7F0] font-bold text-red-900">
+                        <td colSpan={3} className="py-2 px-3">
+                          II. CÁC KHOẢN TRÍCH TRỪ BẢO HIỂM (NLĐ ĐÓNG 10.5%)
+                        </td>
+                        <td className="py-2 px-3 text-right font-black text-red-800">
+                          -{formatVND(enrichedSelectedEmp.bhxhCaNhan)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 text-red-800">1. Bảo hiểm xã hội (BHXH - Hưu trí, thai sản, ốm đau)</td>
+                        <td className="py-1.5 px-3 text-center text-red-800">{formatVND(enrichedSelectedEmp.luongDongBhxhThucTe || 0)}</td>
+                        <td className="py-1.5 px-3 text-center text-red-800">8.0%</td>
+                        <td className="py-1.5 px-3 text-right font-medium text-red-800">
+                          -{formatVND(enrichedSelectedEmp.bhxhNld8 || Math.round(enrichedSelectedEmp.bhxhCaNhan * 8 / 10.5))}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 text-red-800">2. Bảo hiểm y tế (BHYT - Khám chữa bệnh)</td>
+                        <td className="py-1.5 px-3 text-center text-red-800">{formatVND(enrichedSelectedEmp.luongDongBhxhThucTe || 0)}</td>
+                        <td className="py-1.5 px-3 text-center text-red-800">1.5%</td>
+                        <td className="py-1.5 px-3 text-right font-medium text-red-800">
+                          -{formatVND(enrichedSelectedEmp.bhytNld1_5 || Math.round(enrichedSelectedEmp.bhxhCaNhan * 1.5 / 10.5))}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 text-red-800">3. Bảo hiểm thất nghiệp (BHTN)</td>
+                        <td className="py-1.5 px-3 text-center text-red-800">{formatVND(enrichedSelectedEmp.luongDongBhxhThucTe || 0)}</td>
+                        <td className="py-1.5 px-3 text-center text-red-800">1.0%</td>
+                        <td className="py-1.5 px-3 text-right font-medium text-red-800">
+                          -{formatVND(enrichedSelectedEmp.bhtnNld1 || Math.round(enrichedSelectedEmp.bhxhCaNhan * 1.0 / 10.5))}
+                        </td>
+                      </tr>
+
+                      {/* III. THỰC LĨNH CHUYỂN KHOẢN */}
+                      <tr className="bg-[#EFEBE0] font-black text-sm border-t-2 border-[#8D6E63] text-[#4E342E]">
+                        <td colSpan={3} className="py-3 px-3 uppercase tracking-wider">
+                          THỰC LĨNH CHUYỂN KHOẢN (I - II)
+                        </td>
+                        <td className="py-3 px-3 text-right text-base text-[#4E342E]">
+                          {formatVND(enrichedSelectedEmp.thucLinh)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
-                <div>
-                  <p className="font-bold text-[#4E342E] uppercase">Kế Toán Trưởng / Giám Đốc</p>
-                  <p className="text-[11px] text-[#8D6E63] italic mt-0.5">(Ký và duyệt chi)</p>
-                  <div className="h-16 flex items-center justify-center">
-                    <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-1 rounded-md rotate-[-5deg]">
-                      HANA ERP CERTIFIED
+
+                {/* Số tiền bằng chữ & Tài khoản ngân hàng */}
+                <div className="bg-[#FAF7F0] p-3 rounded-xl border border-[#E7E0D6] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div>
+                    <span className="font-bold text-[#8D6E63]">Số tiền thực lĩnh: </span>
+                    <span className="font-bold text-[#4E342E] italic">
+                      {numberToVietnameseWords(enrichedSelectedEmp.thucLinh)}
                     </span>
                   </div>
-                  <p className="font-semibold text-[#4E342E]">Phạm Văn Tùng</p>
+                  <div className="text-[11px] text-[#5D4037] font-semibold">
+                    STK: <span className="font-bold">{enrichedSelectedEmp.soTaiKhoan}</span> ({enrichedSelectedEmp.nganHang})
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-[#4E342E] uppercase">Người Nhận Lương</p>
-                  <p className="text-[11px] text-[#8D6E63] italic mt-0.5">(Ký xác nhận đã nhận đủ)</p>
-                  <div className="h-16"></div>
-                  <p className="font-bold text-[#4E342E]">{selectedEmployee.hoTen}</p>
+
+                {/* KHỐI IV: CHI PHÍ BẢO HIỂM DOANH NGHIỆP ĐÓNG CHO CBNV (21.5%) - ĐẶC THÙ CỦA HANA */}
+                <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Gift size={16} className="text-emerald-700" />
+                      <h4 className="font-bold text-xs text-emerald-900 uppercase tracking-wide">
+                        IV. QUYỀN LỢI BHXH CÔNG TY ĐÓNG THÊM CHO CBNV (21.5%)
+                      </h4>
+                    </div>
+                    <span className="text-xs font-black text-emerald-900">
+                      +{formatVND(enrichedSelectedEmp.tongBhxhDoanhNghiep || 0)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-emerald-800">
+                    <div className="bg-white/80 p-2 rounded-lg border border-emerald-100">
+                      <span>• Quỹ hưu trí, thai sản, ốm đau (17.0%): </span>
+                      <span className="font-bold">{formatVND(enrichedSelectedEmp.bhxhDoanhNghiep17 || 0)}</span>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-lg border border-emerald-100">
+                      <span>• Quỹ bảo hiểm y tế (3.0%): </span>
+                      <span className="font-bold">{formatVND(enrichedSelectedEmp.bhytDoanhNghiep3 || 0)}</span>
+                    </div>
+                    <div className="bg-white/80 p-2 rounded-lg border border-emerald-100">
+                      <span>• Quỹ BHTN & TNLĐ-BNN (1.5%): </span>
+                      <span className="font-bold">{formatVND(enrichedSelectedEmp.bhtnDoanhNghiep1_5 || 0)}</span>
+                    </div>
+                  </div>
+
+                  {/* 🌟 TỔNG GIÁ TRỊ ĐÃI NGỘ TOÀN DIỆN CÔNG TY CHI TRẢ */}
+                  <div className="bg-[#8D6E63] text-white p-3 rounded-xl flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={18} className="text-amber-200" />
+                      <div>
+                        <span className="text-xs font-black uppercase tracking-wider block">
+                          TỔNG GIÁ TRỊ ĐÃI NGỘ TOÀN DIỆN CÔNG TY CHI TRẢ (I + IV)
+                        </span>
+                        <span className="text-[10px] text-[#EFEBE0]">
+                          Bao gồm Tổng thu nhập trong kỳ + Toàn bộ 21.5% bảo hiểm do Hana chi trả
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-lg font-black text-amber-200">
+                      {formatVND(enrichedSelectedEmp.tongGiaTriDaiNgoToanDien || enrichedSelectedEmp.thucLinh)}
+                    </span>
+                  </div>
                 </div>
+
+                {/* KHỐI V: TÓM TẮT QUY CHẾ LÀM VIỆC & NGHỈ PHÉP LUÂN PHIÊN (THEO MẪU GOOGLE SHEET) */}
+                <div className="bg-[#FAF7F0] p-3 rounded-xl border border-[#E7E0D6] text-[11px] space-y-1 text-[#5D4037]">
+                  <div className="flex items-center gap-1 font-bold text-xs text-[#4E342E]">
+                    <HelpCircle size={14} className="text-[#8D6E63]" />
+                    <span>V. TÓM TẮT QUY CHẾ LÀM VIỆC & NGHỈ PHÉP LUÂN PHIÊN</span>
+                  </div>
+                  <p>• <strong>Tiêu chuẩn nghỉ:</strong> 3 - 4 ngày/tháng hưởng nguyên lương (tháng làm việc 26 công chuẩn).</p>
+                  <p>• <strong>Phân bổ luân phiên:</strong> 01 ngày nghỉ cuối tuần (T7/CN) + 2 - 3 ngày nghỉ trong tuần (T2 - T6).</p>
+                  <p>• <strong>Hoạt động thiện nguyện:</strong> Sử dụng 01 ngày nghỉ có lương của CBNV khi Công ty tổ chức.</p>
+                  <p>• <strong>Đăng ký lịch trực:</strong> CBNV chủ động đăng ký lịch trực & ngày nghỉ với Quản lý trước 01 tuần.</p>
+                </div>
+
+                {/* Khu vực chữ ký xác nhận */}
+                <div className="pt-4 grid grid-cols-2 text-center text-xs gap-4 border-t border-[#E7E0D6]">
+                  <div>
+                    <p className="font-bold text-[#4E342E] uppercase">XÁC NHẬN CỦA CBNV</p>
+                    <p className="text-[10px] text-[#8D6E63] italic mt-0.5">(Ký và ghi rõ họ tên)</p>
+                    <div className="h-14"></div>
+                    <p className="font-bold text-[#4E342E]">{enrichedSelectedEmp.hoTen}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#4E342E] uppercase">ĐẠI DIỆN QUẢN LÝ / DUYỆT LƯƠNG</p>
+                    <p className="text-[10px] text-[#8D6E63] italic mt-0.5">(Ký, ghi rõ họ tên & đóng dấu)</p>
+                    <div className="h-14 flex items-center justify-center">
+                      <span className="text-[9px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded rotate-[-4deg]">
+                        HANA ERP CERTIFIED
+                      </span>
+                    </div>
+                    <p className="font-semibold text-[#4E342E]">Phạm Văn Tùng</p>
+                  </div>
+                </div>
+
+                {/* Ghi chú chân trang */}
+                <p className="text-[10px] text-[#A1887F] italic text-center pt-2">
+                  (*) Phiếu thông báo trích xuất tự động từ Bảng tính lương & Chế độ đãi ngộ Hana Wellness. Mọi thắc mắc vui lòng liên hệ Ban Quản lý.
+                </p>
               </div>
             </div>
           </div>

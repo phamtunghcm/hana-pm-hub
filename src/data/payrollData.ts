@@ -9,6 +9,61 @@ export const PAYROLL_MONTHS: { id: string; label: string; daysInMonth: number; w
 export const INITIAL_PAYROLL_DATA: Record<string, EmployeePayroll[]> = {
   '2026-10': [
     {
+      maNV: 'NV_DEMO',
+      hoTen: 'HOÀNG THỊ BUÔN MÊ',
+      chucVu: 'KTV',
+      chucVuLabel: 'Kỹ thuật viên Spa',
+      capBac: 'CB02',
+      capBacTen: 'Kỹ thuật viên Spa (Chính thức)',
+      chiNhanh: 'CN1',
+      chiNhanhTen: 'Chi nhánh 1 — Quận 1',
+      soDienThoai: '0908123456',
+      soTaiKhoan: '190366882299',
+      nganHang: 'Techcombank - CN Sài Gòn',
+      ngayVaoLam: '01/09/2026',
+      soNguoiPhuThuoc: 0,
+      hinhThucLuong: 'LCBHoaHong',
+      mucLuongCamKet: 10000000,
+      trangThaiLamViec: 'Chính thức',
+      cheDoNghi: '3 - 4 ngày/tháng (Hưởng nguyên lương)',
+      ngayCongChuan: 26,
+      ngayCongThucTe: 10,
+      soLanDiMuon: 0,
+      ngayNghiPhep: 0,
+      ngayNghiKhongLuong: 0,
+      luongDongBHXH: 5500000,
+      phuCapTrachNhiem: 4500000,
+      luongThoaThuan: 10000000,
+      luongThoiGian: 3846154,
+      phuCapCom: 800000,
+      phuCapGuiXe: 200000,
+      phuCapAnTruaXangXe: 800000,
+      hhTourKtv: 0,
+      hhBanLe: 0,
+      hhDoanhSo: 0,
+      tongHoaHong: 0,
+      thuongKPI: 0,
+      phatDiMuon: 0,
+      tongThuNhap: 4646154,
+      luongDongBhxhThucTe: 2115385,
+      bhxhNld8: 169231,
+      bhytNld1_5: 31731,
+      bhtnNld1: 21154,
+      bhxhCaNhan: 222115,
+      thueTNCN: 0,
+      tamUng: 0,
+      tongKhauTru: 222115,
+      thucLinh: 4424038,
+      bhxhDoanhNghiep17: 359615,
+      bhytDoanhNghiep3: 63462,
+      bhtnDoanhNghiep1_5: 31731,
+      tongBhxhDoanhNghiep: 454808,
+      tongGiaTriDaiNgoToanDien: 5100962,
+      trangThai: 'TamTinh',
+      chiTietHoaHong: [],
+      chiTietChamCong: [],
+    },
+    {
       maNV: 'NV002',
       hoTen: 'Lê Văn Tuấn',
       chucVu: 'KTV',
@@ -764,6 +819,61 @@ export const INITIAL_PAYROLL_DATA: Record<string, EmployeePayroll[]> = {
   ],
   '2026-09': [
     {
+      maNV: 'NV_DEMO',
+      hoTen: 'HOÀNG THỊ BUÔN MÊ',
+      chucVu: 'KTV',
+      chucVuLabel: 'Kỹ thuật viên Spa',
+      capBac: 'CB02',
+      capBacTen: 'Kỹ thuật viên Spa (Chính thức)',
+      chiNhanh: 'CN1',
+      chiNhanhTen: 'Chi nhánh 1 — Quận 1',
+      soDienThoai: '0908123456',
+      soTaiKhoan: '190366882299',
+      nganHang: 'Techcombank - CN Sài Gòn',
+      ngayVaoLam: '01/09/2026',
+      soNguoiPhuThuoc: 0,
+      hinhThucLuong: 'LCBHoaHong',
+      mucLuongCamKet: 10000000,
+      trangThaiLamViec: 'Chính thức',
+      cheDoNghi: '3 - 4 ngày/tháng (Hưởng nguyên lương)',
+      ngayCongChuan: 26,
+      ngayCongThucTe: 10,
+      soLanDiMuon: 0,
+      ngayNghiPhep: 0,
+      ngayNghiKhongLuong: 0,
+      luongDongBHXH: 5500000,
+      phuCapTrachNhiem: 4500000,
+      luongThoaThuan: 10000000,
+      luongThoiGian: 3846154,
+      phuCapCom: 800000,
+      phuCapGuiXe: 200000,
+      phuCapAnTruaXangXe: 800000,
+      hhTourKtv: 0,
+      hhBanLe: 0,
+      hhDoanhSo: 0,
+      tongHoaHong: 0,
+      thuongKPI: 0,
+      phatDiMuon: 0,
+      tongThuNhap: 4646154,
+      luongDongBhxhThucTe: 2115385,
+      bhxhNld8: 169231,
+      bhytNld1_5: 31731,
+      bhtnNld1: 21154,
+      bhxhCaNhan: 222115,
+      thueTNCN: 0,
+      tamUng: 0,
+      tongKhauTru: 222115,
+      thucLinh: 4424038,
+      bhxhDoanhNghiep17: 359615,
+      bhytDoanhNghiep3: 63462,
+      bhtnDoanhNghiep1_5: 31731,
+      tongBhxhDoanhNghiep: 454808,
+      tongGiaTriDaiNgoToanDien: 5100962,
+      trangThai: 'DaThanhToan',
+      chiTietHoaHong: [],
+      chiTietChamCong: [],
+    },
+    {
       maNV: 'NV002',
       hoTen: 'Lê Văn Tuấn',
       chucVu: 'KTV',
@@ -969,4 +1079,56 @@ export const numberToVietnameseWords = (amount: number): string => {
 
   words = words.trim() + ' đồng chẵn.';
   return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+export const getEnrichedEmployee = (emp: EmployeePayroll): EmployeePayroll => {
+  const ngayCongChuan = emp.ngayCongChuan || 26;
+  const ngayCongThucTe = emp.ngayCongThucTe || 26;
+  const luongDongBHXH = emp.luongDongBHXH || 5350000;
+  const phuCapTrachNhiem = emp.phuCapTrachNhiem || 0;
+  const luongThoaThuan = emp.luongThoaThuan || (luongDongBHXH + phuCapTrachNhiem);
+  const luongThoiGian = emp.luongThoiGian || Math.round((luongThoaThuan / ngayCongChuan) * ngayCongThucTe);
+
+  const luongDongBhxhThucTe = emp.luongDongBhxhThucTe ?? (
+    emp.ngayCongThucTe < emp.ngayCongChuan 
+      ? Math.round((luongDongBHXH / ngayCongChuan) * ngayCongThucTe)
+      : luongDongBHXH
+  );
+
+  const bhxhNld8 = emp.bhxhNld8 ?? Math.round(luongDongBhxhThucTe * 0.08);
+  const bhytNld1_5 = emp.bhytNld1_5 ?? Math.round(luongDongBhxhThucTe * 0.015);
+  const bhtnNld1 = emp.bhtnNld1 ?? Math.round(luongDongBhxhThucTe * 0.01);
+  const bhxhCaNhan = emp.bhxhCaNhan ?? (bhxhNld8 + bhytNld1_5 + bhtnNld1);
+
+  const bhxhDoanhNghiep17 = emp.bhxhDoanhNghiep17 ?? Math.round(luongDongBhxhThucTe * 0.17);
+  const bhytDoanhNghiep3 = emp.bhytDoanhNghiep3 ?? Math.round(luongDongBhxhThucTe * 0.03);
+  const bhtnDoanhNghiep1_5 = emp.bhtnDoanhNghiep1_5 ?? Math.round(luongDongBhxhThucTe * 0.015);
+  const tongBhxhDoanhNghiep = emp.tongBhxhDoanhNghiep ?? (bhxhDoanhNghiep17 + bhytDoanhNghiep3 + bhtnDoanhNghiep1_5);
+
+  const phuCapAnTruaXangXe = emp.phuCapAnTruaXangXe || 730000;
+  const phuCapCom = emp.phuCapCom ?? Math.min(phuCapAnTruaXangXe, Math.round(ngayCongThucTe * 2 * 40000));
+  const phuCapGuiXe = emp.phuCapGuiXe ?? 200000;
+
+  const tongThuNhap = emp.tongThuNhap;
+  const tongGiaTriDaiNgoToanDien = emp.tongGiaTriDaiNgoToanDien ?? (tongThuNhap + tongBhxhDoanhNghiep);
+
+  return {
+    ...emp,
+    mucLuongCamKet: emp.mucLuongCamKet ?? (emp.luongThoaThuan || 10000000),
+    trangThaiLamViec: emp.trangThaiLamViec ?? 'Chính thức',
+    cheDoNghi: emp.cheDoNghi ?? '3 - 4 ngày/tháng (Hưởng nguyên lương)',
+    luongDongBhxhThucTe,
+    bhxhNld8,
+    bhytNld1_5,
+    bhtnNld1,
+    bhxhCaNhan,
+    bhxhDoanhNghiep17,
+    bhytDoanhNghiep3,
+    bhtnDoanhNghiep1_5,
+    tongBhxhDoanhNghiep,
+    phuCapCom,
+    phuCapGuiXe,
+    luongThoiGian: emp.luongThoiGian ?? luongThoiGian,
+    tongGiaTriDaiNgoToanDien,
+  };
 };
