@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useHana, DRIVE_LINKS } from "../store/HanaContext";
-import { Calendar, AlertTriangle, ArrowRight, CheckCircle2, Clock, PieChart, BarChart3, Wallet, FileText, Scale, Receipt } from "lucide-react";
+import { 
+  Calendar, AlertTriangle, ArrowRight, CheckCircle2, Clock, PieChart, BarChart3, 
+  Wallet, FileText, Scale, BellRing, Zap, ShieldCheck, Flame, Users, Trash2, 
+  ExternalLink, Check, ChevronRight, Receipt 
+} from "lucide-react";
 import EditModal from "./EditModal";
 
 interface DashboardViewProps {
@@ -8,9 +12,9 @@ interface DashboardViewProps {
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const { tasks, legal, docs, capex, settings, invoices, invoiceSettings } = useHana();
+  const { tasks, legal, docs, capex, settings, updateItemStatus, invoices, invoiceSettings } = useHana();
 
-  // Merge docs into tasks for global stats as requested: "VĂN BẢN NỘI BỘ CŨNG LÀ TASK"
+  // Merge docs & legal into tasks for global stats as requested: "VĂN BẢN NỘI BỘ & PHÁP LÝ ĐỀU LÀ TASK"
   const combinedTasks = useMemo(() => {
     const parseDeadline = (deadline: string) => {
       if (!deadline || deadline === "Đã hoàn thành") return 0;
@@ -37,9 +41,186 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       note: d.content
     } as any));
 
+    const legalTasks = legal.map(l => {
+      const parts = l.timeEstimate ? l.timeEstimate.split("->") : [];
+      const endStr = parts.length > 1 ? parts[1].trim() : (parts[0] || "").trim();
+      return {
+        id: `legal_${l.id}`,
+        type: "legal",
+        workstream: `Pháp lý: ${(l as any).group || 'Thủ tục pháp lý'}`,
+        title: l.title,
+        pic: l.agency || "Pháp lý",
+        dueDate: endStr,
+        priority: "Bắt buộc",
+        status: l.status,
+        daysLeft: parseDeadline(endStr),
+        percent: l.status === "Hoàn thành" ? "100%" : (l.status === "Đang thực hiện" ? "50%" : "0%"),
+        note: l.note
+      } as any;
+    });
+
     const standardTasks = tasks.map(t => ({ ...t, type: "task" }));
-    return [...standardTasks, ...docTasks];
-  }, [tasks, docs]);
+    return [...standardTasks, ...docTasks, ...legalTasks];
+  }, [tasks, docs, legal]);
+
+  // 5 việc trọng điểm bắt buộc hoàn thành tuần sau (14/09 - 20/09/2026)
+  const weeklyReminders = useMemo(() => {
+    // 1. Hồ sơ CBNV
+    const cbnvTask = tasks.find(t => t.id === 4) || {
+      id: 4, type: "task", title: "Hồ sơ CBNV & Chứng chỉ KTV", status: "Đang thực hiện", pic: "HR / Phạm Vũ Tùng", dueDate: "18-Sep-2026"
+    };
+    // 2. Hồ sơ ANTT
+    const anttTask = tasks.find(t => t.id === 6) || {
+      id: 6, type: "task", title: "Hồ sơ ANTT (Lý lịch tư pháp & Chuẩn bị cơ sở)", status: "Đang thực hiện", pic: "Phạm Vũ Tùng / Vận hành", dueDate: "18-Sep-2026"
+    };
+    // 3. Liên hệ Công an khu vực PCCC
+    const pcccTask = tasks.find(t => t.id === 40) || legal.find(l => l.id === 17) || {
+      id: 40, type: "task", title: "Liên hệ Công an khu vực / CS PCCC hỏi vụ kiểm tra (PC10)", status: "Đang thực hiện", pic: "Phạm Vũ Tùng", dueDate: "16-Sep-2026"
+    };
+    // 4. Đồng hồ điện
+    const electricTask = tasks.find(t => t.id === 38) || {
+      id: 38, type: "task", title: "Thủ tục sang tên & tách đồng hồ điện kinh doanh EVN", status: "Đang thực hiện", pic: "Vận hành / Tùng", dueDate: "17-Sep-2026"
+    };
+    // 5. Hợp đồng thu gom rác thải
+    const wasteTask = legal.find(l => l.id === 31) || tasks.find(t => t.id === 39) || {
+      id: 31, type: "legal", title: "Hợp đồng thu gom rác thải sinh hoạt", status: "Đang thực hiện", pic: "Vận hành cơ sở", dueDate: "19-Sep-2026"
+    };
+
+    return [
+      {
+        stt: 1,
+        key: "cbnv",
+        title: "1. Hồ sơ CBNV & Chứng chỉ nghề KTV",
+        targetItem: cbnvTask,
+        itemType: (cbnvTask as any).type || "task",
+        dueDate: "18/09/2026",
+        daysLeftBadge: "Hạn: 18/09 (Còn 5 ngày)",
+        priority: "BẮT BUỘC",
+        priorityClass: "bg-red-50 text-red-700 border-red-200",
+        pic: "HR / Phạm Vũ Tùng",
+        agency: "Trường nghề / Sở Y tế",
+        icon: Users,
+        iconColor: "text-purple-600 bg-purple-50",
+        status: cbnvTask.status || "Đang thực hiện",
+        checklist: [
+          "Khám sức khỏe theo TT 32/2023/TT-BYT (dán ảnh giáp lai, hạn 15/09)",
+          "Thu thập 100% Chứng chỉ nghề Xoa bóp bấm huyệt KTV trị liệu (hạn 18/09)",
+          "Ký kết Hợp đồng lao động chính thức mang tên NĐDPL Phạm Vũ Tùng",
+          "Lập Sổ quản lý lao động & Bảng tính lương/KPI hệ thống"
+        ],
+        driveLink: DRIVE_LINKS.legalSheet,
+        group: "5. Nhân sự & Chứng chỉ KTV"
+      },
+      {
+        stt: 2,
+        key: "antt",
+        title: "2. Hồ sơ An ninh trật tự (ANTT cơ sở xoa bóp)",
+        targetItem: anttTask,
+        itemType: (anttTask as any).type || "task",
+        dueDate: "18/09/2026",
+        daysLeftBadge: "Hạn: 18/09 (Còn 5 ngày)",
+        priority: "BẮT BUỘC",
+        priorityClass: "bg-red-50 text-red-700 border-red-200",
+        pic: "Phạm Vũ Tùng / Vận hành",
+        agency: "Đội CSQLHC về TTXH - Công an Q.3",
+        icon: ShieldCheck,
+        iconColor: "text-emerald-600 bg-emerald-50",
+        status: anttTask.status || "Đang thực hiện",
+        checklist: [
+          "Theo dõi nhận Phiếu Lý lịch tư pháp của ông Tùng (VNeID/Sở Tư pháp)",
+          "Chuẩn hóa mặt bằng massage: Tháo bỏ chốt khóa trong, lắp chuông cấp cứu",
+          "Hoàn thiện Đơn đề nghị Mẫu 03 & Bản khai lý lịch người đứng đầu Mẫu 02",
+          "Chuẩn bị bộ hồ sơ nộp Công an Quận 3 theo Nghị định 96/2016/NĐ-CP"
+        ],
+        driveLink: DRIVE_LINKS.legalAnttFolder,
+        group: "4. An ninh trật tự (ANTT)"
+      },
+      {
+        stt: 3,
+        key: "pccc",
+        title: "3. Liên hệ Công an khu vực để hỏi vụ PCCC (PC10)",
+        targetItem: pcccTask,
+        itemType: (pcccTask as any).type || "task",
+        dueDate: "16/09/2026",
+        daysLeftBadge: "Hạn: 16/09 (Còn 3 ngày)",
+        priority: "KHẨN CẤP",
+        priorityClass: "bg-amber-50 text-amber-800 border-amber-300",
+        pic: "Phạm Vũ Tùng",
+        agency: "Công an Phường & CS PCCC Quận 3",
+        icon: Flame,
+        iconColor: "text-red-600 bg-red-50",
+        status: pcccTask.status || "Đang thực hiện",
+        checklist: [
+          "Chủ động liên hệ Công an Phường & CS PCCC Quận 3 nắm lịch kiểm tra cơ sở",
+          "Hoàn tất lắp đặt thiết bị PCCC thực tế (Bình bột ABC, CO2 có tem, đèn Exit)",
+          "Phối hợp kiểm tra hiện trường 107/18 Trương Định & lấy Biên bản PC10",
+          "Lưu Biên bản PC10 làm thành phần bắt buộc để nộp hồ sơ ANTT"
+        ],
+        driveLink: DRIVE_LINKS.legalPcccFolder,
+        group: "3. Phòng cháy chữa cháy (PCCC)"
+      },
+      {
+        stt: 4,
+        key: "electric",
+        title: "4. Đồng hồ điện (Sang tên & Tách công tơ EVN)",
+        targetItem: electricTask,
+        itemType: (electricTask as any).type || "task",
+        dueDate: "17/09/2026",
+        daysLeftBadge: "Hạn: 17/09 (Còn 4 ngày)",
+        priority: "CẦN THIẾT",
+        priorityClass: "bg-blue-50 text-blue-700 border-blue-200",
+        pic: "Vận hành cơ sở / Phạm Vũ Tùng",
+        agency: "Công ty Điện lực Sài Gòn (EVN Q.3)",
+        icon: Zap,
+        iconColor: "text-amber-600 bg-amber-50",
+        status: electricTask.status || "Đang thực hiện",
+        checklist: [
+          "Lấy hợp đồng mua bán điện cũ & hồ sơ nhà 107/18 Trương Định từ chủ nhà",
+          "Nộp hồ sơ sang tên hợp đồng điện sang Công ty TNHH Hana Wellness",
+          "Đăng ký tách công tơ điện kinh doanh / 3 pha đảm bảo phụ tải máy trị liệu & lạnh"
+        ],
+        driveLink: DRIVE_LINKS.tasks,
+        group: "Cơ sở vật chất & Hạ tầng điện"
+      },
+      {
+        stt: 5,
+        key: "waste",
+        title: "5. Hợp đồng thu gom rác thải sinh hoạt",
+        targetItem: wasteTask,
+        itemType: (wasteTask as any).type || "legal",
+        dueDate: "19/09/2026",
+        daysLeftBadge: "Hạn: 19/09 (Còn 6 ngày)",
+        priority: "BẮT BUỘC",
+        priorityClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        pic: "Vận hành cơ sở",
+        agency: "Cty TNHH MTV DV Công ích đô thị Q.3",
+        icon: Trash2,
+        iconColor: "text-teal-600 bg-teal-50",
+        status: wasteTask.status || "Đang thực hiện",
+        checklist: [
+          "Liên hệ Công ty DV Công ích đô thị Quận 3 / Đội thu gom rác dân lập",
+          "Ký kết hợp đồng dịch vụ thu gom & vận chuyển rác sinh hoạt định kỳ",
+          "Bố trí thùng rác có nắp đậy phân loại rác thải tại các tầng theo Luật BV Môi trường"
+        ],
+        driveLink: DRIVE_LINKS.legalSheet,
+        group: "8. Môi trường & Rác thải"
+      }
+    ];
+  }, [tasks, legal]);
+
+  const handleToggleReminderStatus = (reminder: any) => {
+    const current = reminder.status;
+    let nextStatus = "Đang thực hiện";
+    if (current === "Chưa bắt đầu") nextStatus = "Đang thực hiện";
+    else if (current === "Đang thực hiện") nextStatus = "Hoàn thành";
+    else nextStatus = "Chưa bắt đầu";
+
+    updateItemStatus(reminder.itemType, reminder.targetItem.id, nextStatus);
+  };
+
+  const completedRemindersCount = useMemo(() => {
+    return weeklyReminders.filter(r => r.status === "Hoàn thành").length;
+  }, [weeklyReminders]);
 
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [selectedItemForEdit, setSelectedItemForEdit] = useState<any | null>(null);
@@ -169,6 +350,155 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               <span className="text-xs text-[#8D6E63] font-medium">({settings.targetDate})</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* LỊCH NHẮC NHỞ TUẦN SAU (14/09 – 20/09/2026) — 5 HẠNG MỤC TRỌNG ĐIỂM */}
+      {/* ========================================================================= */}
+      <div className="bg-gradient-to-br from-[#FFFBF2] via-[#FFF8EB] to-[#FFF3DC] rounded-2xl border-2 border-amber-300 shadow-sm p-6 relative overflow-hidden">
+        {/* Ambient Glow */}
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-red-400/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 pb-4 border-b border-amber-200/80">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-red-600 text-white shadow-xs">
+                <BellRing size={13} className="animate-bounce" />
+                Lịch nhắc nhở tuần sau
+              </span>
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                <Calendar size={13} />
+                14/09 – 20/09/2026
+              </span>
+              <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                Tiến độ: {completedRemindersCount}/5 hoàn tất
+              </span>
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-[#3D2B1A] mt-2 tracking-tight flex items-center gap-2">
+              5 Nhiệm Vụ Bắt Buộc Hoàn Thành Đúng Hạn
+            </h2>
+            <p className="text-xs md:text-sm text-[#795548] mt-0.5 font-medium">
+              Ưu tiên hoàn thiện hồ sơ nhân sự CBNV, PCCC PC10, thẩm định ANTT, đồng hồ điện và rác thải cơ sở 107/18 Trương Định
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-stretch sm:self-auto">
+            <button
+              onClick={() => onNavigate("legal")}
+              className="text-xs font-bold text-amber-900 bg-white/90 hover:bg-white border border-amber-300 px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              <Scale size={14} /> Xem Bảng Pháp lý
+            </button>
+            <button
+              onClick={() => onNavigate("tasks")}
+              className="text-xs font-bold text-white bg-[#5D4037] hover:bg-[#3E2723] px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              <FileText size={14} /> Xem Bảng Task
+            </button>
+          </div>
+        </div>
+
+        {/* 5 Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {weeklyReminders.map((rem) => {
+            const isDone = rem.status === "Hoàn thành";
+            const isDoing = rem.status === "Đang thực hiện";
+
+            return (
+              <div 
+                key={rem.key}
+                className={`rounded-xl border transition-all duration-200 p-4 flex flex-col justify-between bg-white relative group ${
+                  isDone 
+                    ? "border-emerald-300 bg-emerald-50/30 shadow-xs" 
+                    : isDoing 
+                    ? "border-amber-300 hover:border-amber-400 shadow-sm hover:shadow-md" 
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div>
+                  {/* Card Header: Stt + Priority + Days Left */}
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-6 h-6 rounded-lg bg-[#3D2B1A] text-amber-300 text-xs font-black flex items-center justify-center shrink-0 shadow-xs">
+                        0{rem.stt}
+                      </span>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${rem.priorityClass}`}>
+                        {rem.priority}
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
+                      <Clock size={11} /> {rem.daysLeftBadge}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-black text-sm text-[#3D2B1A] leading-snug mb-1 group-hover:text-amber-900 transition-colors">
+                    {rem.title}
+                  </h3>
+
+                  <div className="flex items-center gap-2 text-[11px] text-[#8D6E63] mb-3">
+                    <span>Phụ trách: <strong className="text-[#5D4037]">{rem.pic}</strong></span>
+                    <span>•</span>
+                    <span className="truncate">{rem.agency}</span>
+                  </div>
+
+                  {/* Checklist items */}
+                  <div className="bg-[#FAF7F2] rounded-lg p-2.5 border border-[#EFEBE4] mb-3 space-y-1.5">
+                    {rem.checklist.map((c: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-1.5 text-xs text-[#5D4037] leading-relaxed">
+                        <CheckCircle2 size={13} className={`shrink-0 mt-0.5 ${isDone ? "text-emerald-600" : "text-amber-600"}`} />
+                        <span>{c}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bottom Bar: Quick status toggle & Actions */}
+                <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => handleToggleReminderStatus(rem)}
+                    className={`text-xs font-black px-2.5 py-1.5 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isDone 
+                        ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+                        : isDoing 
+                        ? "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
+                        : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                    }`}
+                    title="Click để đổi trạng thái"
+                  >
+                    {isDone ? <Check size={13} className="stroke-[3]" /> : <Clock size={13} />}
+                    <span>{rem.status}</span>
+                    <span className="text-[10px] opacity-70 font-normal">(đổi)</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {rem.driveLink && (
+                      <a
+                        href={rem.driveLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 text-[#8D6E63] hover:text-[#3D2B1A] hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Mở Google Drive / Sheets gốc"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+                    )}
+                    <button
+                      onClick={() => setSelectedItemForEdit(rem.targetItem)}
+                      className="text-xs font-bold text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Sửa</span>
+                      <ChevronRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

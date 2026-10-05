@@ -6,10 +6,11 @@
     "pic": "CEO",
     "dueDate": "31-Jul-2026",
     "priority": "Cao",
-    "status": "Đang thực hiện",
+    "status": "Hoàn thành",
     "daysLeft": -20,
     "percent": "60%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 2,
@@ -18,10 +19,11 @@
     "pic": "IT / Ops",
     "dueDate": "01-Jul-2026",
     "priority": "Cao",
-    "status": "Đang thực hiện",
+    "status": "Hoàn thành",
     "daysLeft": -50,
     "percent": "99%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 3,
@@ -33,19 +35,21 @@
     "status": "Hoàn thành",
     "daysLeft": -50,
     "percent": "100%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 4,
     "workstream": "Trước khai trương: Nhân sự & Đào tạo",
-    "title": "Học và thi chứng chỉ",
-    "pic": "Training Lead",
-    "dueDate": "01-Sep-2026",
-    "priority": "Cao",
+    "title": "Hồ sơ CBNV & Chứng chỉ nghề KTV (Khám sức khỏe, bằng KTV, HĐLĐ)",
+    "pic": "HR / Phạm Vũ Tùng",
+    "dueDate": "18-Sep-2026",
+    "priority": "Bắt buộc",
     "status": "Đang thực hiện",
-    "daysLeft": 12,
+    "daysLeft": 5,
     "percent": "40%",
-    "note": ""
+    "note": "Hoàn tất khám sức khỏe TT 32/2023, thu thập chứng chỉ xoa bóp KTV và ký hợp đồng lao động chuẩn NĐDPL.",
+    "type": "task"
   },
   {
     "id": 5,
@@ -54,34 +58,24 @@
     "pic": "IT / Ops",
     "dueDate": "20-Jul-2026",
     "priority": "Trung bình",
-    "status": "Đang thực hiện",
+    "status": "Hoàn thành",
     "daysLeft": -31,
     "percent": "70%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 6,
     "workstream": "Trước khai trương: Pháp lý & Thiết lập",
-    "title": "Đăng ký Giấy phép Spa thư giãn",
-    "pic": "CEO / Legal",
-    "dueDate": "02-Sep-2026",
-    "priority": "Cao",
-    "status": "Chưa bắt đầu",
-    "daysLeft": 13,
+    "title": "Hồ sơ ANTT (Lý lịch tư pháp, chuẩn bị mặt bằng massage, hoàn thiện Mẫu 02/03)",
+    "pic": "Phạm Vũ Tùng / Vận hành",
+    "dueDate": "18-Sep-2026",
+    "priority": "Bắt buộc",
+    "status": "Đang thực hiện",
+    "daysLeft": 5,
     "percent": "0%",
-    "note": "Hạn chót 02/09/2026: Đăng ký Giấy phép Spa thư giãn phục vụ khai trương."
-  },
-  {
-    "id": 37,
-    "workstream": "Tháng thứ 6: Đánh giá Lợi nhuận & Mở rộng",
-    "title": "Đăng ký Giấy phép Phòng khám Vật lý trị liệu (VLTL)",
-    "pic": "CEO / Legal",
-    "dueDate": "Q2/2027",
-    "priority": "Trung bình",
-    "status": "Chưa bắt đầu",
-    "daysLeft": 250,
-    "percent": 0,
-    "note": "Lộ trình dời sang Quý 2/2027 (Sau khi spa đi vào vận hành ổn định)."
+    "note": "Theo dõi lấy Phiếu LLTP, kiểm tra chuông cấp cứu, tháo khóa phòng massage, hoàn thiện Mẫu 02 và 03 chuẩn bị nộp Công an Quận.",
+    "type": "task"
   },
   {
     "id": 7,
@@ -93,7 +87,8 @@
     "status": "Hoàn thành",
     "daysLeft": -3,
     "percent": "100%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 8,
@@ -105,7 +100,8 @@
     "status": "Đang thực hiện",
     "daysLeft": 11,
     "percent": "50%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 9,
@@ -114,10 +110,11 @@
     "pic": "CEO / Finance",
     "dueDate": "24-Aug-2026",
     "priority": "Cao",
-    "status": "Đang thực hiện",
+    "status": "Hoàn thành",
     "daysLeft": 4,
     "percent": "70%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 10,
@@ -129,7 +126,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 13,
     "percent": "0%",
-    "note": "Tạm dời theo tiến độ Giấy phép Phòng khám VLTL sang Q2/2027."
+    "note": "Tạm dời theo tiến độ Giấy phép Phòng khám VLTL sang Q2/2027.",
+    "type": "task"
   },
   {
     "id": 11,
@@ -138,10 +136,11 @@
     "pic": "Ops Manager",
     "dueDate": "21-Sep-2026",
     "priority": "Cao",
-    "status": "Chưa bắt đầu",
+    "status": "Đang thực hiện",
     "daysLeft": 32,
     "percent": "20%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 12,
@@ -153,7 +152,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 18,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 13,
@@ -165,7 +165,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 39,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 14,
@@ -177,7 +178,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 18,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 15,
@@ -186,10 +188,11 @@
     "pic": "CEO",
     "dueDate": "26-Sep-2026",
     "priority": "Trung bình",
-    "status": "Chưa bắt đầu",
+    "status": "Đang thực hiện",
     "daysLeft": 37,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 16,
@@ -198,10 +201,11 @@
     "pic": "CEO",
     "dueDate": "25-Sep-2026",
     "priority": "Trung bình",
-    "status": "Chưa bắt đầu",
+    "status": "Đang thực hiện",
     "daysLeft": 36,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 17,
@@ -213,7 +217,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 36,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 18,
@@ -222,10 +227,11 @@
     "pic": "CEO",
     "dueDate": "30-Sep-2026",
     "priority": "Cao",
-    "status": "Chưa bắt đầu",
+    "status": "Đang thực hiện",
     "daysLeft": 41,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 19,
@@ -237,7 +243,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 39,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 20,
@@ -249,7 +256,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 21,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 21,
@@ -261,7 +269,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 39,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 22,
@@ -273,7 +282,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 48,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 23,
@@ -285,7 +295,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 70,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 24,
@@ -297,7 +308,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 74,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 25,
@@ -309,7 +321,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 133,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 26,
@@ -321,7 +334,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 117,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 27,
@@ -333,7 +347,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 124,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 28,
@@ -345,7 +360,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 162,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 29,
@@ -357,7 +373,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 155,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 30,
@@ -369,7 +386,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 170,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 31,
@@ -381,7 +399,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 170,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 32,
@@ -393,7 +412,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 238,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 33,
@@ -405,7 +425,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 238,
     "percent": "0%",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 34,
@@ -417,7 +438,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 261,
     "percent": "0",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 35,
@@ -429,7 +451,8 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 261,
     "percent": "0",
-    "note": ""
+    "note": "",
+    "type": "task"
   },
   {
     "id": 36,
@@ -441,6 +464,56 @@
     "status": "Chưa bắt đầu",
     "daysLeft": 259,
     "percent": "0",
-    "note": ""
+    "note": "",
+    "type": "task"
+  },
+  {
+    "id": 37,
+    "workstream": "Tháng thứ 6: Đánh giá Lợi nhuận & Mở rộng",
+    "title": "Đăng ký Giấy phép Phòng khám Vật lý trị liệu (VLTL)",
+    "pic": "CEO / Legal",
+    "dueDate": "Q2/2027",
+    "priority": "Trung bình",
+    "status": "Chưa bắt đầu",
+    "daysLeft": 250,
+    "percent": 0,
+    "note": "Lộ trình dời sang Quý 2/2027 (Sau khi spa đi vào vận hành ổn định).",
+    "type": "task"
+  },
+  {
+    "id": 38,
+    "workstream": "Trước khai trương: Cơ sở vật chất",
+    "title": "Thủ tục sang tên & tách đồng hồ điện kinh doanh EVN (107/18 Trương Định)",
+    "pic": "Vận hành / Tùng",
+    "dueDate": "17-Sep-2026",
+    "priority": "Bắt buộc",
+    "status": "Đang thực hiện",
+    "daysLeft": 4,
+    "percent": "50%",
+    "note": "Làm việc với chủ nhà lấy hợp đồng điện cũ & CCCD; nộp hồ sơ tại Công ty Điện lực Sài Gòn (EVN Quận 3) để sang tên hợp đồng mua bán điện và tách công tơ điện phục vụ vận hành spa."
+  },
+  {
+    "id": 39,
+    "workstream": "Trước khai trương: Cơ sở vật chất",
+    "title": "Ký hợp đồng thu gom rác thải sinh hoạt (Công ty DV Công ích Q3)",
+    "pic": "Vận hành",
+    "dueDate": "19-Sep-2026",
+    "priority": "Bắt buộc",
+    "status": "Đang thực hiện",
+    "daysLeft": 6,
+    "percent": "30%",
+    "note": "Ký hợp đồng dịch vụ thu gom rác với Công ty Dịch vụ Công ích đô thị Quận 3, bố trí thùng rác có nắp đậy phân loại rác thải tại các tầng cơ sở 107/18 Trương Định."
+  },
+  {
+    "id": 40,
+    "workstream": "Trước khai trương: Pháp lý & Thiết lập",
+    "title": "Liên hệ Công an khu vực / CS PCCC hỏi vụ kiểm tra an toàn PCCC (PC10)",
+    "pic": "Phạm Vũ Tùng",
+    "dueDate": "16-Sep-2026",
+    "priority": "Bắt buộc",
+    "status": "Đang thực hiện",
+    "daysLeft": 3,
+    "percent": "40%",
+    "note": "Liên hệ Công an Phường & CS PCCC Quận 3 để chốt lịch kiểm tra an toàn PCCC thực tế cơ sở 107/18 Trương Định, hoàn tất lắp đặt thiết bị PCCC có tem kiểm định."
   }
 ]

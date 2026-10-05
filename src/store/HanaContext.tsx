@@ -77,6 +77,8 @@ interface HanaContextType {
   addUserPermission: (email: string, role: "admin" | "user", name?: string) => void;
   removeUserPermission: (email: string) => void;
   updateUserRole: (email: string, role: "admin" | "user") => void;
+  syncGoogleSheets: () => Promise<{ success: boolean; message: string }>;
+  refreshData: () => Promise<void>;
 }
 
 const HanaContext = createContext<HanaContextType | undefined>(undefined);
@@ -403,6 +405,37 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
     });
   };
 
+  const refreshData = async () => {
+    try {
+      const res = await fetch('/api/data');
+      const resData = await res.json();
+      if (resData.success && resData.data) {
+        const cloud = resData.data;
+        if (cloud.tasks) setTasks(cloud.tasks);
+        if (cloud.legal) setLegal(cloud.legal);
+        if (cloud.docs) setDocs(cloud.docs);
+        if (cloud.capex) setCapex(cloud.capex);
+        if (cloud.settings) setSettings(cloud.settings);
+      }
+    } catch (e) {
+      console.error("Error refreshing data:", e);
+    }
+  };
+
+  const syncGoogleSheets = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const res = await fetch('/api/sync', { method: 'POST' });
+      const resData = await res.json();
+      await refreshData();
+      return {
+        success: resData.success,
+        message: resData.message || (resData.success ? 'Đồng bộ thành công!' : 'Lỗi đồng bộ.')
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi kết nối máy chủ' };
+    }
+  };
+
   return (
     <HanaContext.Provider value={{ 
       tasks, 
@@ -425,7 +458,9 @@ export const HanaProvider: React.FC<{children: React.ReactNode}> = ({ children }
       logout,
       addUserPermission,
       removeUserPermission,
-      updateUserRole
+      updateUserRole,
+      syncGoogleSheets,
+      refreshData
     }}>
       {children}
     </HanaContext.Provider>
