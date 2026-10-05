@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, ListTodo, Scale, FileText, ShoppingCart, UserCircle, Settings, LogOut, Receipt } from "lucide-react";
+import { LayoutDashboard, ListTodo, Scale, FileText, ShoppingCart, UserCircle, Settings, LogOut, RefreshCw, CheckCircle2, ExternalLink, Wallet, Receipt } from "lucide-react";
 import DashboardView from "./components/DashboardView";
 import TaskListView from "./components/TaskListView";
 import LegalView from "./components/LegalView";
@@ -7,15 +7,31 @@ import DocsView from "./components/DocsView";
 import CapexView from "./components/CapexView";
 import InvoiceManagementView from "./components/InvoiceManagementView";
 import AdminView from "./components/AdminView";
+import PayrollView from "./components/PayrollView";
 import SettingsModal from "./components/SettingsModal";
 import LoginView from "./components/LoginView";
 import AICopilotDrawer from "./components/AICopilotDrawer";
-import { useHana } from "./store/HanaContext";
+import { useHana, DRIVE_LINKS } from "./store/HanaContext";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showSettings, setShowSettings] = useState(false);
-  const { settings, currentUser, logout } = useHana();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncToast, setSyncToast] = useState<{ show: boolean; message: string; success: boolean }>({ show: false, message: "", success: true });
+  const { settings, currentUser, logout, syncGoogleSheets } = useHana();
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await syncGoogleSheets();
+      setSyncToast({ show: true, message: res.message, success: res.success });
+    } catch (e: any) {
+      setSyncToast({ show: true, message: e.message || "Lỗi đồng bộ", success: false });
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 4000);
+    }
+  };
 
   if (!currentUser) {
     return <LoginView />;
@@ -30,6 +46,7 @@ export default function App() {
       case "legal": return <LegalView />;
       case "docs": return <DocsView />;
       case "capex": return <CapexView />;
+      case "payroll": return <PayrollView />;
       case "invoices": return <InvoiceManagementView />;
       case "admin": return isAdmin ? <AdminView /> : <DashboardView onNavigate={setActiveTab} />;
       default: return <DashboardView onNavigate={setActiveTab} />;
@@ -38,6 +55,7 @@ export default function App() {
 
   const navItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
+    { id: "payroll", label: "Bảng Lương ERP", icon: Wallet },
     { id: "tasks", label: "Bảng Công việc", icon: ListTodo },
     { id: "legal", label: "Hồ sơ Pháp lý", icon: Scale },
     { id: "docs", label: "Văn bản Nội bộ", icon: FileText },
@@ -126,6 +144,72 @@ export default function App() {
             <span>Đăng xuất</span>
           </button>
         </header>
+
+        {/* Top Sync & Status Bar */}
+        <div className="bg-[#FAF7F0] border-b border-[#E7E0D6] px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Đồng bộ 2 chiều Google Sheets & Drive: Đang bật
+            </span>
+            <span className="text-[#8D6E63] hidden xl:inline">
+              (Cập nhật trên Site hoặc Google Sheets đều đồng bộ tự động cả 2 chiều)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <a 
+              href={DRIVE_LINKS.tasks} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-[#6D4C41] hover:text-[#3E2723] hover:underline flex items-center gap-1 font-medium px-2 py-1 rounded hover:bg-[#EFEBE0]"
+              title="Mở Google Sheet Tasks"
+            >
+              <span>Sheet Tasks</span>
+              <ExternalLink size={12} />
+            </a>
+            <a 
+              href={DRIVE_LINKS.legalSheet} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-[#6D4C41] hover:text-[#3E2723] hover:underline flex items-center gap-1 font-medium px-2 py-1 rounded hover:bg-[#EFEBE0]"
+              title="Mở Google Sheet / File Pháp lý"
+            >
+              <span>File Pháp lý</span>
+              <ExternalLink size={12} />
+            </a>
+            <a 
+              href={DRIVE_LINKS.capex} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-[#6D4C41] hover:text-[#3E2723] hover:underline flex items-center gap-1 font-medium px-2 py-1 rounded hover:bg-[#EFEBE0]"
+              title="Mở Google Sheet Mua sắm"
+            >
+              <span>Sheet Mua sắm</span>
+              <ExternalLink size={12} />
+            </a>
+
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="ml-1 bg-[#8D6E63] hover:bg-[#6D4C41] disabled:opacity-50 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              title="Nhấn để kiểm tra và đồng bộ ngay với Google Sheets"
+            >
+              <RefreshCw size={13} className={isSyncing ? "animate-spin" : ""} />
+              <span>{isSyncing ? "Đang đồng bộ..." : "Đồng bộ ngay"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Sync Toast Notification */}
+        {syncToast.show && (
+          <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border text-sm font-bold animate-in fade-in slide-in-from-top-2 ${
+            syncToast.success ? "bg-emerald-50 border-emerald-300 text-emerald-900" : "bg-red-50 border-red-300 text-red-900"
+          }`}>
+            <CheckCircle2 size={18} className={syncToast.success ? "text-emerald-600" : "text-red-600"} />
+            <span>{syncToast.message}</span>
+          </div>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#FDFBF7] p-6">
