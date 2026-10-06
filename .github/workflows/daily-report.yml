@@ -1,9 +1,8 @@
 name: Send Daily Report at 8 AM
 
 on:
-  schedule:
-    # 7:30 AM GMT+7 is 00:30 UTC (Giảm tải hàng đợi của GitHub để mail đến kịp 8h)
-    - cron: '30 0 * * *'
+  # schedule:
+  #   - cron: '30 0 * * *'
   workflow_dispatch:
 
 jobs:

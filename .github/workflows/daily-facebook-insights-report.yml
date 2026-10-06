@@ -1,9 +1,8 @@
 name: Send Daily Facebook Video Insights Report at 8 AM
 
 on:
-  schedule:
-    # 8:00 AM GMT+7 is 01:00 AM UTC everyday
-    - cron: '0 1 * * *'
+  # schedule:
+  #   - cron: '0 1 * * *'
   workflow_dispatch:
 
 jobs:
