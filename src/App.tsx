@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, ListTodo, Scale, FileText, ShoppingCart, UserCircle, Settings, LogOut, RefreshCw, CheckCircle2, ExternalLink, Wallet, Receipt } from "lucide-react";
+import { LayoutDashboard, ListTodo, Scale, FileText, ShoppingCart, UserCircle, Settings, LogOut, RefreshCw, CheckCircle2, ExternalLink, Receipt, Users } from "lucide-react";
 import DashboardView from "./components/DashboardView";
 import TaskListView from "./components/TaskListView";
 import LegalView from "./components/LegalView";
@@ -7,7 +7,7 @@ import DocsView from "./components/DocsView";
 import CapexView from "./components/CapexView";
 import InvoiceManagementView from "./components/InvoiceManagementView";
 import AdminView from "./components/AdminView";
-import PayrollView from "./components/PayrollView";
+import HRManagementView from "./components/HRManagementView";
 import SettingsModal from "./components/SettingsModal";
 import LoginView from "./components/LoginView";
 import AICopilotDrawer from "./components/AICopilotDrawer";
@@ -42,11 +42,12 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard": return <DashboardView onNavigate={setActiveTab} />;
+      case "hr":
+      case "payroll": return <HRManagementView />;
       case "tasks": return <TaskListView />;
       case "legal": return <LegalView />;
       case "docs": return <DocsView />;
       case "capex": return <CapexView />;
-      case "payroll": return <PayrollView />;
       case "invoices": return <InvoiceManagementView />;
       case "admin": return isAdmin ? <AdminView /> : <DashboardView onNavigate={setActiveTab} />;
       default: return <DashboardView onNavigate={setActiveTab} />;
@@ -55,7 +56,7 @@ export default function App() {
 
   const navItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
-    { id: "payroll", label: "Bảng Lương ERP", icon: Wallet },
+    { id: "hr", label: "Quản trị Nhân sự", icon: Users },
     { id: "tasks", label: "Bảng Công việc", icon: ListTodo },
     { id: "legal", label: "Hồ sơ Pháp lý", icon: Scale },
     { id: "docs", label: "Văn bản Nội bộ", icon: FileText },
