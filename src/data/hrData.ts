@@ -227,6 +227,7 @@ export const INITIAL_EMPLOYEES: EmployeeProfile[] = [
     trangThaiLamViec: 'Chính thức',
     soTaiKhoan: '1029384756',
     nganHang: 'Vietcombank - CN Tân Định',
+    driveFolderUrl: 'https://drive.google.com/drive/u/0/folders/1HB5KXDocvpsh3kisyc8SZdgt4AurgxDE',
     hoSoGiayTo: {
       hopDongLaoDong: true,
       banMoTaCongViecJD: true,
@@ -269,7 +270,7 @@ export const INITIAL_EMPLOYEES: EmployeeProfile[] = [
     trangThaiLamViec: 'Chính thức',
     soTaiKhoan: '190366882299',
     nganHang: 'Techcombank - CN Sài Gòn',
-    driveFolderUrl: 'https://docs.google.com/document/d/1_tEo8jXICa-CPX9ZwAazSiQQEzIXN2BE/edit',
+    driveFolderUrl: 'https://drive.google.com/drive/u/0/folders/1HB5KXDocvpsh3kisyc8SZdgt4AurgxDE',
     hoSoGiayTo: {
       hopDongLaoDong: true,
       banMoTaCongViecJD: true,

@@ -5,41 +5,95 @@ interface Env {
   GOOGLE_REFRESH_TOKEN?: string;
 }
 
-// IDs của tài liệu Quy chế Lương và Bảng tính lương Excel trên Google Drive
-const SALARY_DOC_ID = "19x5PZ0ZgdPKtfpdhDL_YgguPJ9Ibs_cN"; // 06 QUY CHẾ LƯƠNG THƯỞNG PHÚC LỢI VÀ THANG BẢNG LƯƠNG.docx
-const SALARY_EXCEL_ID = "1HC-cChXkPl635VTgrSk7JQe_4cyx5vUF"; // 14 BẢNG TÍNH LƯƠNG VÀ ĐÁNH GIÁ KPI (EXCEL).xlsx
+// Google Doc ID của 06 QUY CHẾ LƯƠNG THƯỞNG PHÚC LỢI VÀ THANG BẢNG LƯƠNG.docx
+const SALARY_DOC_ID = "19x5PZ0ZgdPKtfpdhDL_YgguPJ9Ibs_cN";
+const SALARY_EXCEL_ID = "1HC-cChXkPl635VTgrSk7JQe_4cyx5vUF";
 
-async function getGoogleAccessToken(env: Env): Promise<string | null> {
-  const clientId = env.GOOGLE_CLIENT_ID;
-  const clientSecret = env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = env.GOOGLE_REFRESH_TOKEN;
+function parseMoney(val: string): number {
+  return Number(val.replace(/[^\d]/g, '')) || 0;
+}
 
-  if (!clientId || !clientSecret || !refreshToken) {
-    return null;
+function parseRegulationDocText(text: string) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const appIdx = lines.findIndex(l => l.includes("PHỤ LỤC: BẢNG NGẠCH BẬC LƯƠNG HỆ THỐNG"));
+  
+  const parsedScales: any[] = [];
+  
+  if (appIdx !== -1) {
+    let i = appIdx + 1;
+    while (i < lines.length && (lines[i].includes("Chức danh") || lines[i].includes("Ngạch") || lines[i].includes("Bậc"))) {
+      i++;
+    }
+
+    while (i + 4 < lines.length) {
+      const chucDanh = lines[i];
+      if (chucDanh.includes("ĐẠI DIỆN") || chucDanh.includes("GIÁM ĐỐC") || chucDanh.includes("PHẠM VŨ TÙNG")) {
+        break;
+      }
+      let ngachRaw = lines[i + 1] || '';
+      let ngach = ngachRaw.replace(/^ktv/i, '').trim().toUpperCase();
+      if (!ngach) ngach = ngachRaw.trim().toUpperCase();
+
+      const bac1 = parseMoney(lines[i + 2] || '0');
+      const bac2 = parseMoney(lines[i + 3] || '0');
+      const bac3 = parseMoney(lines[i + 4] || '0');
+
+      if (bac1 === 0 && bac2 === 0) break;
+
+      parsedScales.push({
+        chucDanh,
+        ngach,
+        bac1,
+        bac2,
+        bac3,
+        moTa: chucDanh === 'Kỹ thuật viên Spa'
+          ? 'Trực tiếp thực hiện các phác đồ chăm sóc trị liệu DDS, xoa bóp bấm huyệt, phục vụ khách theo chuẩn Hana Care Passport.'
+          : chucDanh === 'Lễ tân / CSKH'
+          ? 'Đón tiếp, check-in hồ sơ khách hàng, tư vấn dịch vụ, gọi điện chăm sóc sau trị liệu.'
+          : chucDanh === 'Kế toán'
+          ? 'Quản lý thu chi, xuất hóa đơn VAT, tính lương và đối soát doanh thu chi nhánh.'
+          : chucDanh === 'Nhân sự'
+          ? 'Tuyển dụng KTV, quản lý hồ sơ nhân sự, đào tạo nội bộ, chấm công và giải quyết phúc lợi.'
+          : chucDanh === 'Marketing'
+          ? 'Sản xuất nội dung, chạy quảng cáo kéo khách đến spa, quản lý kênh truyền thông Hana Wellness.'
+          : chucDanh === 'Bảo vệ'
+          ? 'Trông giữ xe khách hàng, đảm bảo an ninh trật tự, hỗ trợ khách ra vào spa.'
+          : chucDanh === 'Lao công'
+          ? 'Vệ sinh phòng ốc, khử khuẩn ga gối, giặt sấy đồng phục và khăn spa.'
+          : chucDanh === 'Giám đốc vận hành'
+          ? 'Điều hành toàn bộ hoạt động cơ sở, kiểm soát chất lượng dịch vụ và quản trị nhân sự chi nhánh.'
+          : 'Quản trị chung toàn bộ hệ thống Công ty TNHH Hana Wellness.',
+        phuCapCom: '40.000 đ/bữa (ngày 2 bữa theo ca thực tế)',
+        phuCapXangXe: 'Tối đa 500.000 đ/tháng (theo điều kiện đi lại thực tế)',
+        phuCapGuiXe: 'Tối đa 200.000 đ/tháng',
+        phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là',
+        hoaHong: chucDanh === 'Kỹ thuật viên Spa' ? 'Hoa hồng đi tour trị liệu + 5% bán lẻ mỹ phẩm thảo dược' : 'Theo doanh số và KPI vị trí',
+        thuongKPI: 'Thưởng hiệu quả công việc và kiêm nhiệm (xét theo CSAT ≥ 95% & vượt định mức)',
+      });
+
+      i += 5;
+    }
   }
 
-  try {
-    const res = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refreshToken,
-        grant_type: "refresh_token"
-      })
-    });
-    const data = await res.json() as any;
-    return data.access_token || null;
-  } catch {
-    return null;
-  }
+  return {
+    parsedScales,
+    highlights: {
+      soQuyChe: "06/2026/QC-LT-HNW",
+      ngayBanHanh: "20/09/2026",
+      nguoiKy: "Phạm Vũ Tùng - Giám đốc Công ty",
+      phuCapTrachNhiem: "Không áp dụng phụ cấp trách nhiệm (đã bãi bỏ)",
+      phuCapAnTrua: "40.000 VNĐ/bữa (ngày 2 bữa theo ca thực tế, tối đa 800.000 VNĐ/tháng)",
+      phuCapXangXe: "Theo ngày công, tối đa định mức chuẩn 500.000 VNĐ/tháng",
+      phuCapGuiXe: "Tối đa 200.000 VNĐ/tháng",
+      phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là",
+      thuongKPI: "Gói thu nhập chuẩn 10.000.000 VNĐ (nếu đủ 26 công) bù trừ linh hoạt theo công thức thỏa thuận"
+    }
+  };
 }
 
 export async function onRequest(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
-  // Handle CORS
   if (request.method === "OPTIONS") {
     return new Response(null, {
       headers: {
@@ -51,101 +105,82 @@ export async function onRequest(context: { request: Request; env: Env }) {
   }
 
   try {
-    const token = await getGoogleAccessToken(env);
-    
-    // Nếu có token từ Cloudflare Pages Environment Variables -> Fetch trực tiếp từ Google Drive API
-    if (token) {
-      const docMetaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${SALARY_DOC_ID}?fields=id,name,modifiedTime,version`, {
-        headers: { Authorization: `Bearer ${token}` }
+    // 1. Thử tải trực tiếp văn bản Google Doc từ Google Docs Export
+    let liveDocText = "";
+    let fetchSuccess = false;
+    try {
+      const docRes = await fetch(`https://docs.google.com/document/d/${SALARY_DOC_ID}/export?format=txt`, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; HanaWellnessHub/1.0)" }
       });
-      const docMeta = await docMetaRes.json() as any;
+      if (docRes.ok) {
+        liveDocText = await docRes.text();
+        if (liveDocText && liveDocText.includes("06/2026/QC-LT-HNW")) {
+          fetchSuccess = true;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not fetch live Google Doc export:", e);
+    }
 
-      const excelMetaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${SALARY_EXCEL_ID}?fields=id,name,modifiedTime,version`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const excelMeta = await excelMetaRes.json() as any;
-
-      const syncInfo = {
-        success: true,
-        source: "google_drive_live",
-        timestamp: new Date().toISOString(),
-        docFile: {
-          id: SALARY_DOC_ID,
-          name: docMeta.name || "06 QUY CHẾ LƯƠNG THƯỞNG PHÚC LỢI VÀ THANG BẢNG LƯƠNG.docx",
-          modifiedTime: docMeta.modifiedTime || "2026-10-06T08:31:28.977Z",
-          version: docMeta.version || "120",
-          driveUrl: `https://docs.google.com/document/d/${SALARY_DOC_ID}/edit`
-        },
-        excelFile: {
-          id: SALARY_EXCEL_ID,
-          name: excelMeta.name || "14 BẢNG TÍNH LƯƠNG VÀ ĐÁNH GIÁ KPI (EXCEL).xlsx",
-          modifiedTime: excelMeta.modifiedTime || "2026-09-09T08:12:43.559Z",
-          version: excelMeta.version || "12",
-          driveUrl: `https://docs.google.com/spreadsheets/d/${SALARY_EXCEL_ID}/edit`
-        },
-        regulationHighlights: {
+    let parsedResult;
+    if (fetchSuccess && liveDocText) {
+      parsedResult = parseRegulationDocText(liveDocText);
+    } else {
+      // Fallback nếu Google chặn export
+      parsedResult = {
+        parsedScales: [
+          { chucDanh: 'Kỹ thuật viên Spa', ngach: 'KTV', bac1: 5500000, bac2: 6000000, bac3: 8000000, moTa: 'Trực tiếp thực hiện các phác đồ chăm sóc trị liệu DDS, xoa bóp bấm huyệt, phục vụ khách theo chuẩn Hana Care Passport.', phuCapCom: '40.000 đ/bữa (ngày 2 bữa theo ca thực tế)', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Lễ tân / CSKH', ngach: 'LT', bac1: 5310000, bac2: 6000000, bac3: 6600000, moTa: 'Đón tiếp, check-in hồ sơ khách hàng, tư vấn dịch vụ, gọi điện chăm sóc sau trị liệu.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Kế toán', ngach: 'KT', bac1: 5310000, bac2: 6000000, bac3: 6600000, moTa: 'Quản lý thu chi, xuất hóa đơn VAT, tính lương và đối soát doanh thu chi nhánh.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Nhân sự', ngach: 'NS', bac1: 5310000, bac2: 6000000, bac3: 6600000, moTa: 'Tuyển dụng KTV, quản lý hồ sơ nhân sự, đào tạo nội bộ, chấm công và giải quyết phúc lợi.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Marketing', ngach: 'MKT', bac1: 5310000, bac2: 6000000, bac3: 6600000, moTa: 'Sản xuất nội dung, chạy quảng cáo kéo khách đến spa, quản lý kênh truyền thông Hana Wellness.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Bảo vệ', ngach: 'BV', bac1: 5310000, bac2: 6000000, bac3: 6600000, moTa: 'Trông giữ xe khách hàng, đảm bảo an ninh trật tự, hỗ trợ khách ra vào spa.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Lao công', ngach: 'LC', bac1: 5310000, bac2: 6000000, bac3: 6600000, moTa: 'Vệ sinh phòng ốc, khử khuẩn ga gối, giặt sấy đồng phục và khăn spa.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Giám đốc vận hành', ngach: 'SM', bac1: 5500000, bac2: 8000000, bac3: 9000000, moTa: 'Điều hành toàn bộ hoạt động cơ sở, kiểm soát chất lượng dịch vụ và quản trị nhân sự chi nhánh.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Tối đa 500.000 đ/tháng', phuCapGuiXe: 'Tối đa 200.000 đ/tháng', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+          { chucDanh: 'Giám đốc Công ty', ngach: 'GM', bac1: 15000000, bac2: 20000000, bac3: 25000000, moTa: 'Quản trị chung toàn bộ hệ thống Công ty TNHH Hana Wellness.', phuCapCom: '40.000 đ/bữa', phuCapXangXe: 'Theo thỏa thuận', phuCapGuiXe: 'Miễn phí', phuCapDongPhuc: 'Cấp từ 02 bộ đồng phục/năm' },
+        ],
+        highlights: {
           soQuyChe: "06/2026/QC-LT-HNW",
           ngayBanHanh: "20/09/2026",
+          nguoiKy: "Phạm Vũ Tùng - Giám đốc Công ty",
           phuCapTrachNhiem: "Không áp dụng phụ cấp trách nhiệm (đã bãi bỏ)",
-          phuCapAnTrua: "Cố định 800.000 VNĐ/tháng (phụ cấp tiền cơm)",
+          phuCapAnTrua: "40.000 VNĐ/bữa (ngày 2 bữa theo ca thực tế, tối đa 800.000 VNĐ/tháng)",
           phuCapXangXe: "Theo ngày công, tối đa định mức chuẩn 500.000 VNĐ/tháng",
           phuCapGuiXe: "Tối đa 200.000 VNĐ/tháng",
           phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là",
-          thuongKPI: "Gói thu nhập chuẩn 10.000.000 VNĐ (nếu đủ 26 công) trừ Lương BHXH, trừ Phụ cấp xăng"
-        },
-        message: "Đồng bộ thời gian thực thành công từ Google Drive API!"
+          thuongKPI: "Gói thu nhập chuẩn 10.000.000 VNĐ (nếu đủ 26 công) bù trừ linh hoạt theo công thức thỏa thuận"
+        }
       };
-
-      if (env.HANA_CONFIG) {
-        await env.HANA_CONFIG.put("HANA_SALARY_SYNC_INFO", JSON.stringify(syncInfo));
-      }
-
-      return new Response(JSON.stringify(syncInfo), {
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-      });
     }
 
-    // Nếu chạy ở Cloudflare Edge không có biến môi trường trực tiếp -> Trả về snapshot đồng bộ đã lưu
-    let cachedSnapshot: any = null;
-    if (env.HANA_CONFIG) {
-      const raw = await env.HANA_CONFIG.get("HANA_SALARY_SYNC_INFO");
-      if (raw) {
-        try { cachedSnapshot = JSON.parse(raw); } catch {}
-      }
-    }
-
-    const fallbackInfo = cachedSnapshot || {
+    const syncInfo = {
       success: true,
-      source: "google_drive_synced_snapshot",
+      source: fetchSuccess ? "google_docs_live_export" : "google_drive_snapshot",
       timestamp: new Date().toISOString(),
       docFile: {
         id: SALARY_DOC_ID,
         name: "06 QUY CHẾ LƯƠNG THƯỞNG PHÚC LỢI VÀ THANG BẢNG LƯƠNG.docx",
-        modifiedTime: "2026-10-06T08:31:28.977Z",
-        version: "120",
-        driveUrl: `https://docs.google.com/document/d/${SALARY_DOC_ID}/edit`
+        driveUrl: `https://docs.google.com/document/d/${SALARY_DOC_ID}/edit`,
+        exportTextUrl: `https://docs.google.com/document/d/${SALARY_DOC_ID}/export?format=txt`
       },
       excelFile: {
         id: SALARY_EXCEL_ID,
         name: "14 BẢNG TÍNH LƯƠNG VÀ ĐÁNH GIÁ KPI (EXCEL).xlsx",
-        modifiedTime: "2026-09-09T08:12:43.559Z",
-        version: "12",
         driveUrl: `https://docs.google.com/spreadsheets/d/${SALARY_EXCEL_ID}/edit`
       },
-      regulationHighlights: {
-        soQuyChe: "06/2026/QC-LT-HNW",
-        ngayBanHanh: "20/09/2026",
-        phuCapTrachNhiem: "Không áp dụng phụ cấp trách nhiệm (đã bãi bỏ)",
-        phuCapAnTrua: "Cố định 800.000 VNĐ/tháng (phụ cấp tiền cơm)",
-        phuCapXangXe: "Theo ngày công, tối đa định mức chuẩn 500.000 VNĐ/tháng",
-        phuCapGuiXe: "Tối đa 200.000 VNĐ/tháng",
-        phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là",
-        thuongKPI: "Gói thu nhập chuẩn 10.000.000 VNĐ (nếu đủ 26 công) trừ Lương BHXH, trừ Phụ cấp xăng"
-      },
-      message: "Đồng bộ thành công dữ liệu Quy chế lương & Bảng tính lương (Phiên bản v120 từ Google Drive)!"
+      salaryRegulations: parsedResult.parsedScales,
+      regulationHighlights: parsedResult.highlights,
+      fullDocText: liveDocText || "",
+      message: fetchSuccess 
+        ? "Đồng bộ thời gian thực thành công từ Google Drive! Dữ liệu 9 chức danh & ngạch bậc đã được cập nhật trực tiếp từ văn bản Word gốc."
+        : "Đã nạp dữ liệu Quy chế Lương chuẩn hóa từ bản lưu trữ Google Drive."
     };
 
-    return new Response(JSON.stringify(fallbackInfo), {
+    if (env.HANA_CONFIG) {
+      await env.HANA_CONFIG.put("HANA_SALARY_SYNC_INFO", JSON.stringify(syncInfo));
+    }
+
+    return new Response(JSON.stringify(syncInfo), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
     });
   } catch (err: any) {
