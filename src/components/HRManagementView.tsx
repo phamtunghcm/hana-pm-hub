@@ -23,7 +23,8 @@ import { Sparkles,
   X,
 } from 'lucide-react';
 import PayrollView from './PayrollView';
-import { HANA_DATA_VERSION, INITIAL_PAYROLL_DATA } from '../data/payrollData';
+import { HANA_DATA_VERSION, INITIAL_PAYROLL_DATA, calculateHanaPayrollRecord, PAYROLL_MONTHS } from '../data/payrollData';
+import type { EmployeePayroll } from '../types/payroll';
 import {
   INITIAL_EMPLOYEES,
   SALARY_REGULATIONS,
@@ -66,6 +67,122 @@ export default function HRManagementView() {
   const [filterBranch, setFilterBranch] = useState('ALL');
   const [filterRole, setFilterRole] = useState('ALL');
   const [selectedEmpDetail, setSelectedEmpDetail] = useState<EmployeeProfile | null>(null);
+
+  // Payroll Integration State trong HRManagementView
+  const [selectedPayrollMonth, setSelectedPayrollMonth] = useState<string>('2026-10');
+  const [targetSelectedMaNV, setTargetSelectedMaNV] = useState<string | null>(null);
+  const [payrollData, setPayrollData] = useState<Record<string, EmployeePayroll[]>>(() => {
+    const saved = localStorage.getItem('HANA_PAYROLL_DATA');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return INITIAL_PAYROLL_DATA;
+  });
+
+  const updatePayrollData = (newData: Record<string, EmployeePayroll[]>) => {
+    setPayrollData(newData);
+    localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(newData));
+    window.dispatchEvent(new Event('HANA_PAYROLL_UPDATED'));
+  };
+
+  // Hàm tạo record bảng lương từ hồ sơ nhân sự
+  const createPayrollRecordFromEmp = (emp: EmployeeProfile): EmployeePayroll => {
+    const baseSalary = Number(emp.luongDongBHXH || emp.luongThoaThuan) || 5500000;
+    const commitment = Number(emp.mucLuongCamKet) || 10000000;
+    return calculateHanaPayrollRecord({
+      maNV: emp.maNV,
+      hoTen: emp.hoTen,
+      chucVu: emp.chucVu,
+      chucVuLabel: emp.chucVuLabel,
+      capBac: emp.capBacTen || 'Bậc 1',
+      capBacTen: emp.capBacTen || 'Bậc 1',
+      chiNhanh: emp.chiNhanh,
+      chiNhanhTen: emp.chiNhanhTen,
+      soDienThoai: emp.soDienThoai,
+      soTaiKhoan: emp.soTaiKhoan || '',
+      nganHang: emp.nganHang || '',
+      ngayVaoLam: emp.ngayVaoLam || '01/10/2026',
+      soNguoiPhuThuoc: 0,
+      hinhThucLuong: emp.hinhThucLuong || 'LCBHoaHong',
+      mucLuongCamKet: commitment,
+      trangThaiLamViec: emp.trangThaiLamViec || 'Chính thức',
+      cheDoNghi: '3 - 4 ngày/tháng (Hưởng nguyên lương)',
+      ngayCongChuan: 26,
+      ngayCongThucTe: 26,
+      soLanDiMuon: 0,
+      ngayNghiPhep: 0,
+      ngayNghiKhongLuong: 0,
+      luongDongBHXH: baseSalary,
+      coDongBHXH: true,
+      phuCapTrachNhiem: 0,
+      luongThoaThuan: baseSalary,
+      phuCapCom: 800000,
+      phuCapGuiXe: 200000,
+      phuCapXang: 500000,
+      hhTourKtv: 0,
+      hhBanLe: 0,
+      hhDoanhSo: 0,
+      tongHoaHong: 0,
+      thuongKPI: commitment - baseSalary - 500000,
+      phatDiMuon: 0,
+      tamUng: 0,
+      thueTNCN: 0,
+      trangThai: 'TamTinh' as const,
+      chiTietHoaHong: [],
+      chiTietChamCong: [],
+    });
+  };
+
+  // Xử lý đưa 1 nhân sự lên Bảng Lương
+  const handleAddToPayroll = (emp: EmployeeProfile, month: string = selectedPayrollMonth) => {
+    const currentList = payrollData[month] || [];
+    if (currentList.some(p => p.maNV === emp.maNV)) {
+      showToast(`Nhân sự ${emp.hoTen} đã có trên Bảng Lương kỳ ${month}!`, false);
+      return;
+    }
+
+    const newRecord = createPayrollRecordFromEmp(emp);
+    const updatedPayroll = {
+      ...payrollData,
+      [month]: [...currentList, newRecord],
+    };
+    updatePayrollData(updatedPayroll);
+    showToast(`✓ Đã đưa nhân sự ${emp.hoTen} lên Bảng Lương kỳ ${month} thành công!`, true);
+  };
+
+  // Xử lý gỡ nhân sự khỏi Bảng Lương
+  const handleRemoveFromPayroll = (emp: EmployeeProfile, month: string = selectedPayrollMonth) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn gỡ nhân sự ${emp.hoTen} khỏi Bảng Lương kỳ ${month}?`)) return;
+    const currentList = payrollData[month] || [];
+    const updatedPayroll = {
+      ...payrollData,
+      [month]: currentList.filter(p => p.maNV !== emp.maNV),
+    };
+    updatePayrollData(updatedPayroll);
+    showToast(`Đã gỡ nhân sự ${emp.hoTen} khỏi Bảng Lương kỳ ${month}!`, true);
+  };
+
+  // Đưa tất cả nhân sự lên Bảng Lương
+  const handleAddAllToPayroll = (month: string = selectedPayrollMonth) => {
+    const currentList = payrollData[month] || [];
+    const existingIds = new Set(currentList.map(p => p.maNV));
+    const toAdd = employees.filter(e => !existingIds.has(e.maNV));
+
+    if (toAdd.length === 0) {
+      showToast(`Tất cả nhân sự đã có trên Bảng Lương kỳ ${month}!`, true);
+      return;
+    }
+
+    const newRecords = toAdd.map(createPayrollRecordFromEmp);
+    const updatedPayroll = {
+      ...payrollData,
+      [month]: [...currentList, ...newRecords],
+    };
+    updatePayrollData(updatedPayroll);
+    showToast(`✓ Đã đưa ${toAdd.length} nhân sự lên Bảng Lương kỳ ${month} thành công!`, true);
+  };
 
   // CRUD Employee States
   const [showAddEmpModal, setShowAddEmpModal] = useState(false);
@@ -542,7 +659,11 @@ export default function HRManagementView() {
       {/* ========================================================= */}
       {activeSubTab === 'payroll' && (
         <div className="space-y-4">
-          <PayrollView />
+          <PayrollView
+            payrollData={payrollData}
+            onUpdatePayrollData={updatePayrollData}
+            targetSelectedMaNV={targetSelectedMaNV}
+          />
         </div>
       )}
 
@@ -764,6 +885,31 @@ export default function HRManagementView() {
               <span>Chuẩn Hóa ERP (4 KTV)</span>
             </button>
 
+            
+            {/* Bộ chọn kỳ áp dụng lương */}
+            <div className="flex items-center gap-1.5 bg-[#FAF7F0] px-3 py-1.5 rounded-xl border border-[#E7E0D6] text-xs">
+              <span className="font-bold text-[#8D6E63]">Kỳ áp dụng:</span>
+              <select
+                value={selectedPayrollMonth}
+                onChange={e => setSelectedPayrollMonth(e.target.value)}
+                className="font-bold text-[#4E342E] bg-transparent outline-none cursor-pointer"
+              >
+                {PAYROLL_MONTHS.map(m => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nút Đưa Tất Cả Lên Bảng Lương */}
+            <button
+              onClick={() => handleAddAllToPayroll(selectedPayrollMonth)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white text-xs font-black rounded-xl transition-all shadow-xs cursor-pointer"
+              title="Đưa toàn bộ nhân sự chưa có lên Bảng Lương kỳ hiện tại"
+            >
+              <Wallet size={15} />
+              <span>Đưa Tất Cả Lên Bảng Lương</span>
+            </button>
+
             <button
               onClick={() => setShowAddEmpModal(true)}
               className="flex items-center gap-1.5 px-4 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
@@ -851,6 +997,55 @@ export default function HRManagementView() {
                     </div>
                   </div>
                 </div>
+
+                {/* DẢI HÀNH ĐỘNG: ĐƯA LÊN BẢNG LƯƠNG */}
+                {(() => {
+                  const currentMonthList = payrollData[selectedPayrollMonth] || [];
+                  const isEnrolled = currentMonthList.some(p => p.maNV === emp.maNV);
+                  return (
+                    <div className="mt-3 pt-3 border-t border-[#F0EAE1]">
+                      {isEnrolled ? (
+                        <div className="flex items-center justify-between gap-2 bg-emerald-50/80 border border-emerald-200 p-2 rounded-xl text-xs">
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-900">
+                            <CheckCircle2 size={15} className="text-emerald-700 shrink-0" />
+                            <span>Đã có trên Bảng Lương ({selectedPayrollMonth})</span>
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTargetSelectedMaNV(emp.maNV);
+                                setActiveSubTab('payroll');
+                              }}
+                              className="px-2 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-[10px] font-black cursor-pointer shadow-2xs"
+                              title="Chuyển sang Bảng Lương xem chi tiết"
+                            >
+                              Xem Lương →
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFromPayroll(emp, selectedPayrollMonth)}
+                              className="p-1 hover:bg-rose-100 text-rose-600 rounded-lg text-[10px] cursor-pointer"
+                              title="Gỡ khỏi kỳ lương này"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAddToPayroll(emp, selectedPayrollMonth)}
+                          className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white rounded-xl text-xs font-black shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer group-hover:shadow-md"
+                          title="Bấm để đưa nhân sự này lên Bảng Lương kỳ hiện tại"
+                        >
+                          <Wallet size={15} />
+                          <span>➕ Đưa Lên Bảng Lương ({selectedPayrollMonth})</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ACTION BAR: XEM CHI TIẾT + SỬA + XÓA */}
                 <div className="mt-5 pt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">

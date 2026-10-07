@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Wallet,
   Users,
@@ -42,7 +42,17 @@ import {
 } from '../data/payrollData';
 import { useHana } from '../store/HanaContext';
 
-export default function PayrollView() {
+export interface PayrollViewProps {
+  payrollData?: Record<string, EmployeePayroll[]>;
+  onUpdatePayrollData?: (newData: Record<string, EmployeePayroll[]>) => void;
+  targetSelectedMaNV?: string | null;
+}
+
+export default function PayrollView({
+  payrollData: propPayrollData,
+  onUpdatePayrollData: propOnUpdatePayrollData,
+  targetSelectedMaNV,
+}: PayrollViewProps = {}) {
   const { currentUser } = useHana();
   const isAdmin = currentUser?.role === 'admin';
   const payslipRef = useRef<HTMLDivElement>(null);
@@ -110,9 +120,46 @@ export default function PayrollView() {
   const [showDeletePayrollModal, setShowDeletePayrollModal] = useState(false);
   const [deletingPayrollEmp, setDeletingPayrollEmp] = useState<EmployeePayroll | null>(null);
 
+  // Đồng bộ props & sự kiện LANA_PAYROLL_UPDATED
+  useEffect(() => {
+    if (propPayrollData) {
+      setPayrollData(propPayrollData);
+    }
+  }, [propPayrollData]);
+
+  useEffect(() => {
+    if (targetSelectedMaNV) {
+      const match = (payrollData[selectedMonth] || []).find(e => e.maNV === targetSelectedMaNV);
+      if (match) {
+        setSelectedEmployee(match);
+      }
+    }
+  }, [targetSelectedMaNV, payrollData, selectedMonth]);
+
+  useEffect(() => {
+    const handleSyncEvent = () => {
+      const saved = localStorage.getItem('HANA_PAYROLL_DATA');
+      if (saved) {
+        try {
+          setPayrollData(JSON.parse(saved));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleSyncEvent);
+    window.addEventListener('HANA_PAYROLL_UPDATED', handleSyncEvent);
+    return () => {
+      window.removeEventListener('storage', handleSyncEvent);
+      window.removeEventListener('HANA_PAYROLL_UPDATED', handleSyncEvent);
+    };
+  }, []);
+
+
   const updatePayrollData = (newData: Record<string, EmployeePayroll[]>) => {
     setPayrollData(newData);
     localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(newData));
+    if (propOnUpdatePayrollData) {
+      propOnUpdatePayrollData(newData);
+    }
   };
   const [periodSummaries, setPeriodSummaries] = useState(INITIAL_PERIOD_SUMMARIES);
 
@@ -554,6 +601,24 @@ export default function PayrollView() {
           <span>{syncToast.message}</span>
         </div>
       )}
+
+      {/* Banner thông báo quy trình: Nhân sự đưa lên từ tab Hồ sơ */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50/60 border border-amber-200/80 rounded-2xl p-4 flex items-center justify-between gap-4 text-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shrink-0">
+            💡
+          </div>
+          <div className="text-[#5D4037]">
+            <span className="font-extrabold text-[#4E342E]">Quy tắc đưa nhân sự vào Bảng Lương: </span>
+            Nhân sự mới được tạo từ <strong>Hồ sơ nhân sự</strong> chỉ xuất hiện trên Bảng Lương khi người quản lý bấm nút <strong className="text-emerald-800">"➕ Đưa Lên Bảng Lương"</strong> trên thẻ nhân viên đó.
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] font-bold text-amber-900 bg-white px-2.5 py-1 rounded-lg border border-amber-200">
+            Kỳ {selectedMonth}: {currentMonthEmployees.length} nhân sự
+          </span>
+        </div>
+      </div>
 
       {/* Header Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#F5F0E6] p-6 rounded-2xl border border-[#E7E0D6] shadow-sm">
