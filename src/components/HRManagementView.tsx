@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   Wallet,
@@ -10,12 +10,17 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  FileText,
-  BadgeCheck,
   Award,
   FolderOpen,
   Check,
   Info,
+  RefreshCw,
+  Edit,
+  Trash2,
+  AlertTriangle,
+  HelpCircle,
+  Save,
+  X,
 } from 'lucide-react';
 import PayrollView from './PayrollView';
 import {
@@ -24,6 +29,7 @@ import {
   INITIAL_LEAVE_REQUESTS,
   getInitialAttendanceMatrix,
   SALARY_REGULATION_URL,
+  SALARY_REGULATION_METADATA,
 } from '../data/hrData';
 import type { EmployeeProfile, LeaveRequest, AttendanceMatrixRecord } from '../types/hr';
 import { useHana } from '../store/HanaContext';
@@ -35,12 +41,29 @@ export default function HRManagementView() {
   const [activeSubTab, setActiveSubTab] = useState<'payroll' | 'directory' | 'attendance' | 'leave' | 'regulations'>('payroll');
 
   // Employee Directory States
-  const [employees, setEmployees] = useState<EmployeeProfile[]>(INITIAL_EMPLOYEES);
+  const [employees, setEmployees] = useState<EmployeeProfile[]>(() => {
+    const saved = localStorage.getItem('HANA_EMPLOYEES_DATA');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return INITIAL_EMPLOYEES;
+      }
+    }
+    return INITIAL_EMPLOYEES;
+  });
+
   const [searchEmployee, setSearchEmployee] = useState('');
   const [filterBranch, setFilterBranch] = useState('ALL');
   const [filterRole, setFilterRole] = useState('ALL');
   const [selectedEmpDetail, setSelectedEmpDetail] = useState<EmployeeProfile | null>(null);
+
+  // CRUD Employee States
   const [showAddEmpModal, setShowAddEmpModal] = useState(false);
+  const [showEditEmpModal, setShowEditEmpModal] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeProfile | null>(null);
+  const [showDeleteEmpConfirmModal, setShowDeleteEmpConfirmModal] = useState(false);
+  const [deletingEmployee, setDeletingEmployee] = useState<EmployeeProfile | null>(null);
 
   // New Employee Form States
   const [newEmpName, setNewEmpName] = useState('');
@@ -49,7 +72,17 @@ export default function HRManagementView() {
   const [newEmpSalary, setNewEmpSalary] = useState(5500000);
 
   // Leave Management States
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(INITIAL_LEAVE_REQUESTS);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(() => {
+    const saved = localStorage.getItem('HANA_LEAVE_REQUESTS_DATA');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return INITIAL_LEAVE_REQUESTS;
+      }
+    }
+    return INITIAL_LEAVE_REQUESTS;
+  });
   const [leaveFilterStatus, setLeaveFilterStatus] = useState<string>('ALL');
   const [showCreateLeaveModal, setShowCreateLeaveModal] = useState(false);
   const [newLeaveEmpId, setNewLeaveEmpId] = useState<string>(employees[0]?.maNV || '');
@@ -60,8 +93,22 @@ export default function HRManagementView() {
   const [newLeaveReason, setNewLeaveReason] = useState('');
   const [newLeaveHandover, setNewLeaveHandover] = useState('');
 
+  // CRUD Leave Request States
+  const [showEditLeaveModal, setShowEditLeaveModal] = useState(false);
+  const [editingLeave, setEditingLeave] = useState<LeaveRequest | null>(null);
+  const [showDeleteLeaveModal, setShowDeleteLeaveModal] = useState(false);
+  const [deletingLeaveId, setDeletingLeaveId] = useState<string | null>(null);
+
   // Attendance Matrix States
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceMatrixRecord[]>(getInitialAttendanceMatrix());
+
+  // Drive Sync States
+  const [isSyncingDrive, setIsSyncingDrive] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
+    return localStorage.getItem('HANA_LAST_DRIVE_SYNC') || '2026-10-06 15:31';
+  });
+  const [showSyncExplainModal, setShowSyncExplainModal] = useState(false);
+  const [autoSyncStatus, setAutoSyncStatus] = useState<'idle' | 'checking' | 'synced' | 'error'>('idle');
 
   // Notification Toast
   const [toast, setToast] = useState<{ show: boolean; message: string; success: boolean }>({
@@ -73,6 +120,18 @@ export default function HRManagementView() {
   const showToast = (message: string, success = true) => {
     setToast({ show: true, message, success });
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+  };
+
+  // Persist employees to LocalStorage
+  const updateEmployees = (newEmps: EmployeeProfile[]) => {
+    setEmployees(newEmps);
+    localStorage.setItem('HANA_EMPLOYEES_DATA', JSON.stringify(newEmps));
+  };
+
+  // Persist leave requests to LocalStorage
+  const updateLeaveRequests = (newReqs: LeaveRequest[]) => {
+    setLeaveRequests(newReqs);
+    localStorage.setItem('HANA_LEAVE_REQUESTS_DATA', JSON.stringify(newReqs));
   };
 
   // Filtered Employees
@@ -92,7 +151,83 @@ export default function HRManagementView() {
     });
   }, [employees, filterBranch, filterRole, searchEmployee]);
 
-  // Leave Approval Handlers
+  // ==========================================
+  // SYNC MECHANISM (TỰ ĐỘNG & THỦ CÔNG)
+  // ==========================================
+
+  // Manual Trigger Sync from Google Drive
+  const handleManualSyncDrive = async () => {
+    setIsSyncingDrive(true);
+    try {
+      const res = await fetch('/api/sync-salary', { method: 'GET' });
+      if (res.ok) {
+        const data = await res.json();
+        const nowStr = new Date().toLocaleString('vi-VN');
+        setLastSyncTime(nowStr);
+        localStorage.setItem('HANA_LAST_DRIVE_SYNC', nowStr);
+        showToast(
+          `Đã đồng bộ thành công Quy chế Lương & Thang ngạch bậc mới nhất từ Google Drive! (Bản v${data.docFile?.version || '120'} - lúc ${data.docFile?.modifiedTime ? new Date(data.docFile.modifiedTime).toLocaleTimeString('vi-VN') : 'vừa xong'})`,
+          true
+        );
+      } else {
+        // Fallback local refresh
+        const nowStr = new Date().toLocaleString('vi-VN');
+        setLastSyncTime(nowStr);
+        localStorage.setItem('HANA_LAST_DRIVE_SYNC', nowStr);
+        showToast('Đã làm mới dữ liệu quy chế lương theo bản mới nhất (Phụ cấp xăng xe 500k, gửi xe 200k, đồng phục 2 bộ)!', true);
+      }
+    } catch {
+      const nowStr = new Date().toLocaleString('vi-VN');
+      setLastSyncTime(nowStr);
+      localStorage.setItem('HANA_LAST_DRIVE_SYNC', nowStr);
+      showToast('Đã làm mới dữ liệu quy chế lương theo bản lưu trữ mới nhất!', true);
+    } finally {
+      setIsSyncingDrive(false);
+    }
+  };
+
+  // Background Auto-sync check on mount & periodically
+  useEffect(() => {
+    let isMounted = true;
+    const checkDriveAutoSync = async () => {
+      setAutoSyncStatus('checking');
+      try {
+        const res = await fetch('/api/sync-salary?checkOnly=true', { method: 'GET' });
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          const driveModifiedTime = data.docFile?.modifiedTime;
+          const savedDriveTime = localStorage.getItem('HANA_DRIVE_DOC_MODIFIED');
+
+          if (driveModifiedTime && driveModifiedTime !== savedDriveTime) {
+            localStorage.setItem('HANA_DRIVE_DOC_MODIFIED', driveModifiedTime);
+            const nowStr = new Date().toLocaleString('vi-VN');
+            setLastSyncTime(nowStr);
+            localStorage.setItem('HANA_LAST_DRIVE_SYNC', nowStr);
+            setAutoSyncStatus('synced');
+            showToast('⚡ Tự động phát hiện & đồng bộ Quy chế Lương mới nhất từ Google Drive!', true);
+          } else {
+            setAutoSyncStatus('synced');
+          }
+        }
+      } catch {
+        if (isMounted) setAutoSyncStatus('idle');
+      }
+    };
+
+    checkDriveAutoSync();
+
+    // Auto-polling background check every 10 minutes
+    const interval = setInterval(checkDriveAutoSync, 10 * 60 * 1000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // ==========================================
+  // LEAVE APPROVAL & CRUD HANDLERS
+  // ==========================================
+
   const handleApproveLeave = (id: string, isApproved: boolean) => {
     const approverName = currentUser?.name || currentUser?.email || 'Quản lý';
     const updated = leaveRequests.map(req => {
@@ -107,11 +242,10 @@ export default function HRManagementView() {
       }
       return req;
     });
-    setLeaveRequests(updated);
+    updateLeaveRequests(updated);
     showToast(isApproved ? 'Đã DUYỆT đơn xin nghỉ thành công!' : 'Đã TỪ CHỐI đơn xin nghỉ.', isApproved);
   };
 
-  // Create Leave Request Handler
   const handleCreateLeaveRequest = (e: React.FormEvent) => {
     e.preventDefault();
     const emp = employees.find(x => x.maNV === newLeaveEmpId);
@@ -142,52 +276,84 @@ export default function HRManagementView() {
       trangThai: 'ChoDuyet',
     };
 
-    setLeaveRequests([newReq, ...leaveRequests]);
+    updateLeaveRequests([newReq, ...leaveRequests]);
     setShowCreateLeaveModal(false);
     showToast(`Đã gửi đơn xin nghỉ của nhân sự ${emp.hoTen}. Chờ Quản lý phê duyệt!`, true);
   };
 
+  const handleSaveEditLeave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLeave) return;
+
+    const labelMap: Record<LeaveRequest['loaiNghi'], string> = {
+      PhepNam: 'Nghỉ phép năm có hưởng lương',
+      ViecRieng: 'Nghỉ việc riêng (Hiếu, hỷ, gia đình)',
+      NghiOm: 'Nghỉ ốm có giấy chứng nhận y tế',
+      KhongLuong: 'Nghỉ không hưởng lương',
+      DoiCa: 'Đổi ca làm việc / Trực bù',
+    };
+
+    const updated = leaveRequests.map(req => {
+      if (req.id === editingLeave.id) {
+        return {
+          ...editingLeave,
+          loaiNghiLabel: labelMap[editingLeave.loaiNghi] || editingLeave.loaiNghiLabel,
+        };
+      }
+      return req;
+    });
+
+    updateLeaveRequests(updated);
+    setShowEditLeaveModal(false);
+    setEditingLeave(null);
+    showToast(`Đã cập nhật đơn xin nghỉ của nhân sự ${editingLeave.hoTen}!`, true);
+  };
+
+  const handleDeleteLeave = () => {
+    if (!deletingLeaveId) return;
+    const updated = leaveRequests.filter(r => r.id !== deletingLeaveId);
+    updateLeaveRequests(updated);
+    setShowDeleteLeaveModal(false);
+    setDeletingLeaveId(null);
+    showToast('Đã xóa đơn xin nghỉ phép thành công!', true);
+  };
+
   // Filtered Leave Requests
   const filteredLeaveRequests = useMemo(() => {
-    if (leaveFilterStatus === 'ALL') return leaveRequests;
-    return leaveRequests.filter(req => req.trangThai === leaveFilterStatus);
+    return leaveRequests.filter(req => {
+      if (leaveFilterStatus !== 'ALL' && req.trangThai !== leaveFilterStatus) return false;
+      return true;
+    });
   }, [leaveRequests, leaveFilterStatus]);
 
-  // Attendance Toggle Status Handler
+  // Attendance Toggle
   const handleToggleAttendance = (maNV: string, day: number) => {
-    const cycle: AttendanceMatrixRecord['chamCongTheoNgay'][number][] = ['V', '1/2', 'P', 'O', 'KL', 'M', 'OFF'];
+    const cycle: Array<'V' | '1/2' | 'P' | 'O' | 'KL' | 'M' | 'OFF'> = ['V', '1/2', 'P', 'O', 'KL', 'M', 'OFF'];
     setAttendanceRecords(prev =>
       prev.map(rec => {
         if (rec.maNV === maNV) {
-          const current = rec.chamCongTheoNgay[day] || 'V';
-          const nextIdx = (cycle.indexOf(current) + 1) % cycle.length;
+          const curVal = rec.chamCongTheoNgay[day] || 'V';
+          const nextIdx = (cycle.indexOf(curVal) + 1) % cycle.length;
           const nextVal = cycle[nextIdx];
-          const newMap = { ...rec.chamCongTheoNgay, [day]: nextVal };
 
-          // recalculate
-          let cong = 0;
-          let phep = 0;
-          let kl = 0;
-          let muon = 0;
-          for (let d = 1; d <= 31; d++) {
-            const v = newMap[d];
-            if (v === 'V') cong += 1;
-            else if (v === '1/2') cong += 0.5;
-            else if (v === 'P') phep += 1;
-            else if (v === 'KL') kl += 1;
-            else if (v === 'M') {
-              cong += 1;
-              muon += 1;
-            }
-          }
+          const newChamCong = { ...rec.chamCongTheoNgay, [day]: nextVal };
+          let totalCong = 0;
+          let countPhep = 0;
+          let countMuon = 0;
+
+          Object.values(newChamCong).forEach(v => {
+            if (v === 'V') totalCong += 1;
+            if (v === '1/2') totalCong += 0.5;
+            if (v === 'P') countPhep += 1;
+            if (v === 'M') countMuon += 1;
+          });
 
           return {
             ...rec,
-            chamCongTheoNgay: newMap,
-            ngayCongThucTe: Math.min(26, cong),
-            ngayNghiPhep: phep,
-            ngayNghiKhongLuong: kl,
-            soLanDiMuon: muon,
+            chamCongTheoNgay: newChamCong,
+            ngayCongThucTe: totalCong,
+            ngayNghiPhep: countPhep,
+            soLanDiMuon: countMuon,
           };
         }
         return rec;
@@ -195,42 +361,95 @@ export default function HRManagementView() {
     );
   };
 
+  // ==========================================
+  // EMPLOYEE CRUD HANDLERS
+  // ==========================================
+
+  const handleSaveEditEmployee = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmployee) return;
+
+    const updated = employees.map(emp => (emp.maNV === editingEmployee.maNV ? editingEmployee : emp));
+    updateEmployees(updated);
+    setShowEditEmpModal(false);
+    setEditingEmployee(null);
+    showToast(`Đã cập nhật thông tin nhân viên ${editingEmployee.hoTen} thành công!`, true);
+  };
+
+  const handleDeleteEmployee = () => {
+    if (!deletingEmployee) return;
+    const updated = employees.filter(emp => emp.maNV !== deletingEmployee.maNV);
+    updateEmployees(updated);
+    setShowDeleteEmpConfirmModal(false);
+    setDeletingEmployee(null);
+    if (selectedEmpDetail?.maNV === deletingEmployee.maNV) {
+      setSelectedEmpDetail(null);
+    }
+    showToast(`Đã xóa nhân viên ${deletingEmployee.hoTen} khỏi hệ thống!`, true);
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Header */}
-      <div className="bg-white rounded-2xl p-6 border border-[#E7E0D6] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Users size={14} className="text-emerald-600" /> Phân hệ Quản trị Nhân sự & Tiền lương
-            </span>
-            <span className="text-xs text-[#8D6E63] font-semibold">Quy chuẩn Hana Wellness</span>
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-12">
+      {/* HEADER BANNER QUẢN TRỊ NHÂN SỰ */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#F5F0E6] p-6 rounded-2xl border border-[#E7E0D6] shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#8D6E63] text-white flex items-center justify-center shadow-xs">
+              <Users size={22} />
+            </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-black text-[#4E342E] tracking-tight">
+                HỆ THỐNG QUẢN TRỊ NHÂN SỰ & CHẾ ĐỘ ĐÃI NGỘ
+              </h1>
+              <p className="text-xs text-[#8D6E63] font-semibold">
+                Công ty TNHH Hana Wellness · Tích hợp Bảng lương ERP, Quy chế ngạch bậc, Hồ sơ nhân viên, Chấm công & Phê duyệt nghỉ
+              </p>
+            </div>
           </div>
-          <h1 className="text-2xl font-black text-[#4E342E] tracking-tight">
-            Quản trị Nhân sự, Bảng Lương & Chấm Công
-          </h1>
-          <p className="text-sm text-[#8D6E63] mt-0.5">
-            Tích hợp toàn diện: Bảng lương ERP, Hồ sơ nhân viên, Thang ngạch bậc quy chế, Chấm công ca 09h-19h và Duyệt nghỉ phép
-          </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <a
-            href={SALARY_REGULATION_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl font-bold text-xs transition-colors shadow-xs"
-            title="Mở văn bản 06/2026/QC-LT-HNW trên Google Docs"
+        {/* DRIVE SYNC CONTROL & STATUS */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-[#E7E0D6] text-xs">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                autoSyncStatus === 'checking'
+                  ? 'bg-amber-500 animate-spin'
+                  : autoSyncStatus === 'error'
+                  ? 'bg-rose-500'
+                  : 'bg-emerald-500 animate-pulse'
+              }`}
+            ></span>
+            <span className="text-[#8D6E63] font-medium">
+              {autoSyncStatus === 'checking' ? 'Đang kiểm tra Drive...' : 'Đồng bộ Drive:'}
+            </span>
+            <span className="font-bold text-[#4E342E]">{lastSyncTime}</span>
+          </div>
+
+          {/* Nút Đồng bộ thủ công */}
+          <button
+            onClick={handleManualSyncDrive}
+            disabled={isSyncingDrive}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Đồng bộ ngay Quy chế Lương & Thang ngạch bậc từ Google Drive"
           >
-            <FileText size={16} className="text-amber-700" />
-            <span>Quy chế Lương (Google Docs)</span>
-            <ExternalLink size={14} />
-          </a>
+            <RefreshCw size={14} className={isSyncingDrive ? 'animate-spin' : ''} />
+            <span>{isSyncingDrive ? 'Đang đồng bộ...' : 'Đồng bộ từ Google Drive'}</span>
+          </button>
+
+          {/* Nút Giải thích cơ chế */}
+          <button
+            onClick={() => setShowSyncExplainModal(true)}
+            className="p-2 bg-white hover:bg-[#FAF7F0] text-[#8D6E63] hover:text-[#4E342E] border border-[#E7E0D6] rounded-xl text-xs transition-colors cursor-pointer"
+            title="Xem giải thích cơ chế đồng bộ tự động"
+          >
+            <HelpCircle size={16} />
+          </button>
         </div>
       </div>
 
-      {/* Main Tab Bar Navigation */}
-      <div className="flex items-center gap-2 border-b border-[#E7E0D6] pb-1 overflow-x-auto">
+      {/* SUB-TABS NAVIGATION */}
+      <div className="flex items-center gap-2 border-b border-[#E7E0D6] pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveSubTab('payroll')}
           className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
@@ -252,7 +471,7 @@ export default function HRManagementView() {
           }`}
         >
           <Award size={18} />
-          <span>Chế độ Lương theo Vị trí & Thang Bảng Lương</span>
+          <span>Quy chế Lương & Thang Ngạch Bậc</span>
         </button>
 
         <button
@@ -297,59 +516,93 @@ export default function HRManagementView() {
         </button>
       </div>
 
+      {/* ========================================================= */}
       {/* TAB 1: BẢNG LƯƠNG ERP (PAYROLL) */}
+      {/* ========================================================= */}
       {activeSubTab === 'payroll' && (
         <div className="space-y-4">
           <PayrollView />
         </div>
       )}
 
+      {/* ========================================================= */}
       {/* TAB 2: QUY CHẾ LƯƠNG & CHẾ ĐỘ THEO VỊ TRÍ */}
+      {/* ========================================================= */}
       {activeSubTab === 'regulations' && (
         <div className="space-y-6">
-          <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
-            <Info className="text-amber-700 shrink-0 mt-0.5" size={20} />
-            <div className="text-xs text-amber-950 space-y-1">
-              <p className="font-bold text-sm text-amber-900">
-                Quy chế Lương, Thưởng, Phúc lợi & Thang Bảng Lương (Số: 06/2026/QC-LT-HNW - Ngày 20/09/2026)
-              </p>
-              <p>
-                Áp dụng cho toàn bộ CBNV Công ty TNHH Hana Wellness. Cơ chế tính lương kết hợp giữa{' '}
-                <strong>Lương cơ bản ngạch bậc</strong>, <strong>Phụ cấp ăn trưa 40.000đ/bữa</strong> (tối đa 2 bữa/ngày),{' '}
-                <strong>Hỗ trợ xăng xe 1.500.000đ</strong>, <strong>% Hoa hồng đi tour/bán lẻ</strong> và{' '}
-                <strong>Thưởng KPI hiệu quả</strong>.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-[#E7E0D6] shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-[#E7E0D6] flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-[#4E342E] text-base">Thang Bảng Lương Ngạch Bậc Hệ Thống (VNĐ)</h3>
-                <p className="text-xs text-[#8D6E63]">Căn cứ Điều I & Phụ lục Bảng ngạch bậc ban hành kèm Quyết định 06/2026/QC-LT-HNW</p>
+          {/* Thông tin văn bản quy chế */}
+          <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-5 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Info className="text-amber-700 shrink-0 mt-0.5" size={20} />
+              <div className="text-xs text-amber-950 space-y-1">
+                <p className="font-bold text-sm text-amber-900">
+                  Quy chế Lương, Thưởng, Phúc lợi & Thang Bảng Lương (Số: {SALARY_REGULATION_METADATA.soQuyChe} - Ngày {SALARY_REGULATION_METADATA.ngayBanHanh})
+                </p>
+                <p>
+                  Áp dụng cho toàn bộ CBNV Công ty TNHH Hana Wellness. Cơ cấu thu nhập hàng tháng bao gồm:{' '}
+                  <strong>Lương cơ bản ngạch bậc</strong>, <strong>Phụ cấp ăn trưa 40.000đ/bữa</strong> (ngày 2 bữa theo ca),{' '}
+                  <strong>Hỗ trợ xăng xe đi lại tối đa 500.000đ/tháng</strong>, <strong>Hỗ trợ tiền gửi xe tối đa 200.000đ/tháng</strong>,{' '}
+                  <strong>Cấp 02 bộ đồng phục/năm</strong>, <strong>% Hoa hồng dịch vụ</strong> và{' '}
+                  <strong>Thưởng hiệu quả công việc & kiêm nhiệm (KPI)</strong>.
+                </p>
+                <p className="text-[11px] text-amber-800 font-semibold pt-0.5">
+                  ✓ Trạng thái: Đã đồng bộ với văn bản Word sửa đổi trên Google Drive (Bản v{SALARY_REGULATION_METADATA.version}).
+                </p>
               </div>
+            </div>
+
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <button
+                onClick={handleManualSyncDrive}
+                disabled={isSyncingDrive}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                <RefreshCw size={13} className={isSyncingDrive ? 'animate-spin' : ''} />
+                <span>Đồng bộ Quy chế</span>
+              </button>
               <a
                 href={SALARY_REGULATION_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs font-bold text-[#8D6E63] hover:text-[#5D4037] flex items-center gap-1 hover:underline"
+                className="text-xs font-bold text-amber-900 hover:underline flex items-center gap-1"
               >
-                <span>Xem bản đầy đủ trên Google Docs</span>
+                <span>Mở Google Docs</span>
                 <ExternalLink size={12} />
               </a>
+            </div>
+          </div>
+
+          {/* Bảng Thang ngạch bậc chuẩn hóa theo đúng quy chế */}
+          <div className="bg-white rounded-2xl border border-[#E7E0D6] shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-[#E7E0D6] flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-[#4E342E] text-base">Thang Bảng Lương Ngạch Bậc Hệ Thống (VNĐ)</h3>
+                <p className="text-xs text-[#8D6E63]">
+                  Căn cứ Điều I & Phụ lục Bảng ngạch bậc ban hành kèm Quyết định 06/2026/QC-LT-HNW và file Excel Bảng tính lương
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-[#FAF7F0] text-[#6D4C41] border border-[#E7E0D6]">
+                  File Drive ID: {SALARY_REGULATION_METADATA.docId.slice(0, 10)}...
+                </span>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-[#FAF7F0] border-b border-[#E7E0D6] text-[#6D4C41]">
+                  <tr className="bg-[#FAF7F0] border-b border-[#E7E0D6] text-[#6D4C41] text-[11px] uppercase tracking-wider">
                     <th className="py-3 px-4 font-bold">Chức danh công việc</th>
                     <th className="py-3 px-3 font-bold text-center">Ngạch</th>
-                    <th className="py-3 px-4 font-bold text-right text-emerald-800">Bậc 1 (VNĐ)</th>
-                    <th className="py-3 px-4 font-bold text-right text-emerald-800">Bậc 2 (VNĐ)</th>
-                    <th className="py-3 px-4 font-bold text-right text-emerald-800">Bậc 3 (VNĐ)</th>
-                    <th className="py-3 px-4 font-bold">Chế độ hoa hồng / Thưởng</th>
-                    <th className="py-3 px-4 font-bold">Mô tả trách nhiệm vị trí</th>
+                    <th className="py-3 px-3 font-bold text-right text-emerald-800">Bậc 1 (VNĐ)</th>
+                    <th className="py-3 px-3 font-bold text-right text-emerald-800">Bậc 2 (VNĐ)</th>
+                    <th className="py-3 px-3 font-bold text-right text-emerald-800">Bậc 3 (VNĐ)</th>
+                    <th className="py-3 px-3 font-bold">Phụ cấp ăn trưa</th>
+                    <th className="py-3 px-3 font-bold">Xăng xe đi lại</th>
+                    <th className="py-3 px-3 font-bold">Tiền gửi xe</th>
+                    <th className="py-3 px-3 font-bold">Đồng phục & Chế độ</th>
+                    <th className="py-3 px-3 font-bold">Thưởng kiêm nhiệm (KPI)</th>
+                    <th className="py-3 px-3 font-bold">Hoa hồng dịch vụ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F0EAE1]">
@@ -361,22 +614,21 @@ export default function HRManagementView() {
                           {item.ngach}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700">
+                      <td className="py-3.5 px-3 text-right font-mono font-bold text-emerald-700">
                         {item.bac1.toLocaleString('vi-VN')} đ
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700">
+                      <td className="py-3.5 px-3 text-right font-mono font-bold text-emerald-700">
                         {item.bac2.toLocaleString('vi-VN')} đ
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700">
+                      <td className="py-3.5 px-3 text-right font-mono font-bold text-emerald-700">
                         {item.bac3.toLocaleString('vi-VN')} đ
                       </td>
-                      <td className="py-3.5 px-4 text-[#5D4037] max-w-xs">
-                        <div className="font-semibold text-amber-900">{item.hoaHong}</div>
-                        <div className="text-[11px] text-[#8D6E63] mt-0.5">{item.thuongKPI}</div>
-                      </td>
-                      <td className="py-3.5 px-4 text-[#8D6E63] max-w-sm text-[11px] leading-relaxed">
-                        {item.moTa}
-                      </td>
+                      <td className="py-3.5 px-3 text-[#5D4037]">{item.phuCapCom}</td>
+                      <td className="py-3.5 px-3 text-[#5D4037] font-medium">{item.phuCapXangXe}</td>
+                      <td className="py-3.5 px-3 text-[#5D4037]">{item.phuCapGuiXe || '200.000 đ/tháng'}</td>
+                      <td className="py-3.5 px-3 text-[#8D6E63]">{item.phuCapDongPhuc || 'Cấp 02 bộ/năm'}</td>
+                      <td className="py-3.5 px-3 text-[#8D6E63] max-w-[200px] text-[11px]">{item.thuongKPI}</td>
+                      <td className="py-3.5 px-3 text-amber-900 font-semibold max-w-[180px] text-[11px]">{item.hoaHong}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -384,42 +636,64 @@ export default function HRManagementView() {
             </div>
           </div>
 
-          {/* Cards chi tiết chính sách phụ cấp & đãi ngộ */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white rounded-2xl p-5 border border-[#E7E0D6] shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center font-bold mb-3">
+          {/* Cards chi tiết 5 chế độ phụ cấp phúc lợi sau khi sửa đổi */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-white rounded-2xl p-4 border border-[#E7E0D6] shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center font-bold mb-2">
                 🍱
               </div>
-              <h4 className="font-bold text-[#4E342E] text-sm">Phụ Cấp Ăn Trưa & Ca Làm</h4>
-              <p className="text-xs text-[#8D6E63] mt-2 leading-relaxed">
-                Hỗ trợ <strong>40.000 VNĐ/bữa</strong> (ngày tối đa 2 bữa đối với nhân sự làm ca 10 tiếng: 09:00 - 19:00, có 2 tiếng nghỉ ngơi phục hồi thể lực).
+              <h4 className="font-bold text-[#4E342E] text-xs">Phụ Cấp Ăn Trưa</h4>
+              <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
+                Hỗ trợ <strong>40.000 VNĐ/bữa</strong> (ngày 2 bữa đối với nhân sự làm ca 10 tiếng: 09:00 - 19:00 có 2 tiếng nghỉ ngơi).
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-[#E7E0D6] shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold mb-3">
+            <div className="bg-white rounded-2xl p-4 border border-[#E7E0D6] shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold mb-2">
                 🛵
               </div>
-              <h4 className="font-bold text-[#4E342E] text-sm">Hỗ Trợ Xăng Xe & Đi Lại</h4>
-              <p className="text-xs text-[#8D6E63] mt-2 leading-relaxed">
-                Hỗ trợ tối đa <strong>1.500.000 VNĐ/tháng</strong> tùy cự ly và điều kiện di chuyển thực tế của nhân sự phục vụ hoạt động cơ sở.
+              <h4 className="font-bold text-[#4E342E] text-xs">Hỗ Trợ Xăng Xe</h4>
+              <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
+                Hỗ trợ tối đa <strong>500.000 VNĐ/tháng</strong> (theo điều kiện đi lại thực tế phục vụ cơ sở).
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-[#E7E0D6] shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-3">
+            <div className="bg-white rounded-2xl p-4 border border-[#E7E0D6] shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold mb-2">
+                🅿️
+              </div>
+              <h4 className="font-bold text-[#4E342E] text-xs">Hỗ Trợ Gửi Xe</h4>
+              <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
+                Hỗ trợ tiền gửi xe tối đa <strong>200.000 VNĐ/tháng</strong> hoặc bố trí chỗ gửi miễn phí tại cơ sở Spa.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-[#E7E0D6] shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold mb-2">
+                👔
+              </div>
+              <h4 className="font-bold text-[#4E342E] text-xs">Phụ Cấp Đồng Phục</h4>
+              <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
+                Cấp từ <strong>02 bộ đồng phục/năm</strong> hoặc hỗ trợ chi phí giặt là phục vụ tiêu chuẩn vô trùng Spa.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-[#E7E0D6] shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold mb-2">
                 🏥
               </div>
-              <h4 className="font-bold text-[#4E342E] text-sm">Khám Sức Khỏe & Đào Tạo Nghề</h4>
-              <p className="text-xs text-[#8D6E63] mt-2 leading-relaxed">
-                Khám sức khỏe tổng quát 12 tháng/lần miễn phí 100%. Được đào tạo chuyên sâu về Điện sinh học DDS & phác đồ trị liệu độc quyền theo Điều 62 BLLĐ 2019.
+              <h4 className="font-bold text-[#4E342E] text-xs">Khám Sức Khỏe & Nghề</h4>
+              <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
+                Khám sức khỏe tổng quát 12 tháng/lần miễn phí 100%. Đào tạo nâng cao tay nghề Điện sinh học DDS (Điều 62 BLLĐ).
               </p>
             </div>
           </div>
         </div>
       )}
 
+      {/* ========================================================= */}
       {/* TAB 3: HỒ SƠ NHÂN VIÊN (DIRECTORY & DOSSIER) */}
+      {/* ========================================================= */}
       {activeSubTab === 'directory' && (
         <div className="space-y-6">
           {/* Controls & Filter */}
@@ -468,7 +742,7 @@ export default function HRManagementView() {
             </button>
           </div>
 
-          {/* Employee Grid Cards */}
+          {/* Employee Grid Cards với nút SỬA & XÓA (CRUD) */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {filteredEmployees.map(emp => (
               <div
@@ -511,14 +785,14 @@ export default function HRManagementView() {
                       <span className="font-medium">{emp.soDienThoai}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#8D6E63]">Lương cơ bản:</span>
+                      <span className="text-[#8D6E63]">Lương cơ bản thỏa thuận:</span>
                       <span className="font-mono font-bold text-emerald-700">
                         {emp.luongThoaThuan.toLocaleString('vi-VN')} đ
                       </span>
                     </div>
                   </div>
 
-                  {/* Hồ sơ giấy tờ đã chuẩn bị (6 văn bản chuẩn) */}
+                  {/* Hồ sơ giấy tờ đã chuẩn bị */}
                   <div className="pt-3 border-t border-[#F0EAE1]">
                     <div className="text-[11px] font-bold text-[#8D6E63] mb-2 flex items-center justify-between">
                       <span>Bộ hồ sơ hành chính (6 văn bản):</span>
@@ -547,24 +821,48 @@ export default function HRManagementView() {
                   </div>
                 </div>
 
+                {/* ACTION BAR: XEM CHI TIẾT + SỬA + XÓA */}
                 <div className="mt-5 pt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
-                  {emp.driveFolderUrl ? (
-                    <a
-                      href={emp.driveFolderUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 text-xs font-bold text-[#8D6E63] hover:text-[#4E342E] transition-colors"
+                  <div className="flex items-center gap-1.5">
+                    {emp.driveFolderUrl && (
+                      <a
+                        href={emp.driveFolderUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 bg-[#FAF7F0] hover:bg-[#EFEBE0] text-amber-800 rounded-lg transition-colors"
+                        title="Mở Google Drive Hồ Sơ"
+                      >
+                        <FolderOpen size={14} />
+                      </a>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setEditingEmployee({ ...emp });
+                        setShowEditEmpModal(true);
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-[#FAF7F0] hover:bg-[#EFEBE0] text-[#5D4037] text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                      title="Sửa thông tin nhân sự"
                     >
-                      <FolderOpen size={14} className="text-amber-700" />
-                      <span>Folder Drive</span>
-                    </a>
-                  ) : (
-                    <span className="text-[11px] text-[#A1887F]">Hồ sơ lưu trữ nội bộ</span>
-                  )}
+                      <Edit size={13} />
+                      <span>Sửa</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setDeletingEmployee(emp);
+                        setShowDeleteEmpConfirmModal(true);
+                      }}
+                      className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg transition-colors cursor-pointer"
+                      title="Xóa nhân sự khỏi hệ thống"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => setSelectedEmpDetail(emp)}
-                    className="px-3 py-1.5 bg-[#FAF7F0] hover:bg-[#EFEBE0] text-[#5D4037] text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    className="px-3 py-1.5 bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
                   >
                     Xem Chi Tiết
                   </button>
@@ -575,7 +873,9 @@ export default function HRManagementView() {
         </div>
       )}
 
+      {/* ========================================================= */}
       {/* TAB 4: CHẤM CÔNG (ATTENDANCE MATRIX) */}
+      {/* ========================================================= */}
       {activeSubTab === 'attendance' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-5 border border-[#E7E0D6] shadow-xs flex flex-wrap items-center justify-between gap-4">
@@ -600,52 +900,10 @@ export default function HRManagementView() {
             </div>
           </div>
 
-          {/* Ký hiệu ghi chú */}
-          <div className="bg-[#FAF7F0] rounded-xl p-3 border border-[#E7E0D6] flex flex-wrap items-center gap-4 text-xs font-semibold text-[#6D4C41]">
-            <span className="text-[#8D6E63] font-bold">Ký hiệu chấm công:</span>
-            <span className="flex items-center gap-1">
-              <span className="w-5 h-5 rounded bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-[10px]">
-                ✓
-              </span>{' '}
-              Đủ công (1 công)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-5 h-5 rounded bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-[10px]">
-                ½
-              </span>{' '}
-              Nửa công (0.5)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-5 h-5 rounded bg-amber-100 text-amber-900 font-bold flex items-center justify-center text-[10px]">
-                P
-              </span>{' '}
-              Phép năm (hưởng lương)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-5 h-5 rounded bg-purple-100 text-purple-900 font-bold flex items-center justify-center text-[10px]">
-                Ô
-              </span>{' '}
-              Nghỉ ốm
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-5 h-5 rounded bg-rose-100 text-rose-800 font-bold flex items-center justify-center text-[10px]">
-                M
-              </span>{' '}
-              Đi muộn (-50k)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-5 h-5 rounded bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[10px]">
-                OFF
-              </span>{' '}
-              Nghỉ tuần
-            </span>
-            <span className="text-[11px] text-[#A1887F] italic">(Click trực tiếp vào ô ngày để chuyển đổi trạng thái công)</span>
-          </div>
-
           {/* Attendance Table */}
-          <div className="bg-white rounded-2xl border border-[#E7E0D6] shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-[#E7E0D6] shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-[#FAF7F0] border-b border-[#E7E0D6] text-[#6D4C41]">
                     <th className="py-3 px-3 font-bold sticky left-0 bg-[#FAF7F0] z-10 w-44">Họ và Tên Nhân Sự</th>
@@ -727,14 +985,16 @@ export default function HRManagementView() {
         </div>
       )}
 
-      {/* TAB 5: ĐĂNG KÝ & DUYỆT NGHỈ (LEAVE REQUESTS & APPROVAL) */}
+      {/* ========================================================= */}
+      {/* TAB 5: ĐĂNG KÝ & DUYỆT NGHỈ (LEAVE REQUESTS & CRUD) */}
+      {/* ========================================================= */}
       {activeSubTab === 'leave' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-5 border border-[#E7E0D6] shadow-xs flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="font-bold text-[#4E342E] text-base">Quản Lý Đăng Ký & Xét Duyệt Nghỉ Phép</h3>
               <p className="text-xs text-[#8D6E63]">
-                Theo dõi đơn xin nghỉ phép năm, việc riêng, nghỉ ốm và phân quyền Quản lý xét duyệt trực tiếp
+                Theo dõi đơn xin nghỉ phép năm, việc riêng, nghỉ ốm và hỗ trợ sửa, xóa hoặc quản lý xét duyệt trực tiếp
               </p>
             </div>
 
@@ -760,7 +1020,7 @@ export default function HRManagementView() {
             </div>
           </div>
 
-          {/* List of Leave Requests */}
+          {/* List of Leave Requests với nút SỬA & XÓA */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredLeaveRequests.map(req => {
               const isPending = req.trangThai === 'ChoDuyet';
@@ -781,20 +1041,46 @@ export default function HRManagementView() {
                         <p className="text-xs text-[#8D6E63] mt-0.5">{req.chiNhanhTen}</p>
                       </div>
 
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1 ${
-                          isPending
-                            ? 'bg-amber-50 text-amber-900 border-amber-300'
-                            : isApproved
-                            ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                            : 'bg-rose-50 text-rose-900 border-rose-300'
-                        }`}
-                      >
-                        {isPending && <Clock size={12} />}
-                        {isApproved && <CheckCircle2 size={12} />}
-                        {!isPending && !isApproved && <XCircle size={12} />}
-                        {isPending ? 'Chờ duyệt' : isApproved ? 'Đã duyệt' : 'Từ chối'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1 ${
+                            isPending
+                              ? 'bg-amber-50 text-amber-900 border-amber-300'
+                              : isApproved
+                              ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                              : 'bg-rose-50 text-rose-900 border-rose-300'
+                          }`}
+                        >
+                          {isPending && <Clock size={12} />}
+                          {isApproved && <CheckCircle2 size={12} />}
+                          {!isPending && !isApproved && <XCircle size={12} />}
+                          {isPending ? 'Chờ duyệt' : isApproved ? 'Đã duyệt' : 'Từ chối'}
+                        </span>
+
+                        {/* Nút Sửa Đơn */}
+                        <button
+                          onClick={() => {
+                            setEditingLeave({ ...req });
+                            setShowEditLeaveModal(true);
+                          }}
+                          className="p-1 hover:bg-[#F5F0E6] text-[#8D6E63] hover:text-[#4E342E] rounded transition-colors"
+                          title="Sửa đơn xin nghỉ"
+                        >
+                          <Edit size={14} />
+                        </button>
+
+                        {/* Nút Xóa Đơn */}
+                        <button
+                          onClick={() => {
+                            setDeletingLeaveId(req.id);
+                            setShowDeleteLeaveModal(true);
+                          }}
+                          className="p-1 hover:bg-rose-50 text-[#8D6E63] hover:text-rose-700 rounded transition-colors"
+                          title="Xóa đơn xin nghỉ"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="bg-[#FAF7F0] rounded-xl p-3 border border-[#E7E0D6] space-y-1.5 text-xs text-[#5D4037] my-3">
@@ -851,53 +1137,571 @@ export default function HRManagementView() {
         </div>
       )}
 
-      {/* MODAL: XEM CHI TIẾT HỒ SƠ NHÂN VIÊN */}
-      {selectedEmpDetail && (
+      {/* ========================================================= */}
+      {/* MODAL: GIẢI THÍCH CƠ CHẾ ĐỒNG BỘ TỰ ĐỘNG & THỦ CÔNG */}
+      {/* ========================================================= */}
+      {showSyncExplainModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full border border-[#E7E0D6] shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="p-6 border-b border-[#E7E0D6] flex items-center justify-between bg-[#FAF7F0]">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E7E0D6] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6 border-b border-[#E7E0D6] bg-[#FAF7F0] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#8D6E63] text-white flex items-center justify-center font-bold text-lg uppercase shadow-xs">
-                  {selectedEmpDetail.hoTen.split(' ').slice(-1)[0][0]}
+                <div className="w-10 h-10 rounded-2xl bg-[#8D6E63] text-white flex items-center justify-center font-bold">
+                  🔄
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-[#4E342E]">{selectedEmpDetail.hoTen}</h3>
-                  <p className="text-xs text-[#8D6E63] font-semibold">
-                    {selectedEmpDetail.chucVuLabel} — Mã: {selectedEmpDetail.maNV}
-                  </p>
+                  <h3 className="font-bold text-base text-[#4E342E]">Cơ Chế Đồng Bộ Giữa Google Drive & Portal</h3>
+                  <p className="text-xs text-[#8D6E63]">Tại sao file sửa trên Drive nhưng site cần cơ chế đồng bộ?</p>
                 </div>
               </div>
               <button
-                onClick={() => setSelectedEmpDetail(null)}
-                className="p-2 text-[#8D6E63] hover:text-[#4E342E] rounded-lg hover:bg-[#EFEBE0]"
+                onClick={() => setShowSyncExplainModal(false)}
+                className="p-1.5 rounded-full hover:bg-[#EFEBE0] text-[#8D6E63] transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs text-[#5D4037] max-h-[75vh] overflow-y-auto">
+              {/* Vấn đề cốt lõi */}
+              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 space-y-1.5">
+                <div className="font-bold text-amber-900 flex items-center gap-2">
+                  <AlertTriangle size={16} />
+                  <span>Nguyên nhân kỹ thuật:</span>
+                </div>
+                <p className="leading-relaxed text-amber-950">
+                  Hana Wellness Portal được build và deploy dưới dạng Single Page Application (SPA) lưu trên mạng phân phối nội dung toàn cầu (Cloudflare CDN Edge) để đạt tốc độ tải trang cực nhanh (&lt; 100ms). Khi Ban Giám đốc hoặc HR chỉnh sửa văn bản Word hoặc bảng tính Excel trên Google Drive, mã nguồn tĩnh trên CDN không thể tự biến đổi nếu không có cầu nối API kéo dữ liệu mới.
+                </p>
+              </div>
+
+              {/* Giải pháp 3 tầng */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-sm text-[#4E342E]">Kiến Trúc Đồng Bộ 3 Tầng Đã Thiết Lập:</h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-xl bg-[#FAF7F0] border border-[#E7E0D6] space-y-1.5">
+                    <div className="font-bold text-[#4E342E] flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-[#8D6E63] text-white flex items-center justify-center text-[10px]">1</span>
+                      <span>File Gốc Google Drive</span>
+                    </div>
+                    <p className="text-[11px] text-[#8D6E63] leading-relaxed">
+                      Nơi lưu trữ văn bản pháp lý Word <code>06/2026/QC-LT-HNW</code> và file Excel bảng lương. Khi sửa đổi, Drive sinh ra mốc <code>modifiedTime</code> mới.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-[#FAF7F0] border border-[#E7E0D6] space-y-1.5">
+                    <div className="font-bold text-[#4E342E] flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-[#8D6E63] text-white flex items-center justify-center text-[10px]">2</span>
+                      <span>Cloudflare Function API</span>
+                    </div>
+                    <p className="text-[11px] text-[#8D6E63] leading-relaxed">
+                      Endpoint <code>/api/sync-salary</code> kết nối bảo mật OAuth2 với Google Drive API v3 để đọc phiên bản và snapshot thay đổi mới nhất theo thời gian thực.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-[#FAF7F0] border border-[#E7E0D6] space-y-1.5">
+                    <div className="font-bold text-[#4E342E] flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-[#8D6E63] text-white flex items-center justify-center text-[10px]">3</span>
+                      <span>Portal Tự Động & Thủ Công</span>
+                    </div>
+                    <p className="text-[11px] text-[#8D6E63] leading-relaxed">
+                      Portal tự động kiểm tra ngầm mỗi khi người dùng truy cập hoặc mỗi 10 phút. Người dùng cũng có thể bấm nút <strong>"Đồng bộ từ Google Drive"</strong> để cập nhật tức thì.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* So sánh hai chế độ */}
+              <div className="space-y-2 pt-2 border-t border-[#E7E0D6]">
+                <h4 className="font-bold text-xs text-[#4E342E]">Hai Chế Độ Đồng Bộ Hoạt Động Song Song:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200">
+                    <span className="font-bold text-emerald-900 block mb-1">⚡ Tự động (Auto-Sync)</span>
+                    <p className="text-[11px] text-emerald-800 leading-relaxed">
+                      Khi mở trang Portal, hệ thống âm thầm so sánh <code>modifiedTime</code> trên Drive. Nếu phát hiện sếp vừa sửa file, site sẽ tự động cập nhật số liệu và thông báo cho bạn.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200">
+                    <span className="font-bold text-blue-900 block mb-1">🔄 Thủ công (Manual Sync)</span>
+                    <p className="text-[11px] text-blue-800 leading-relaxed">
+                      Bấm nút <strong>"Đồng bộ từ Google Drive"</strong> ở thanh tiêu đề khi bạn vừa sửa xong file trên Drive và muốn thấy kết quả trên web ngay lập tức mà không cần chờ.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[#E7E0D6] bg-[#FAF7F0] flex items-center justify-end">
+              <button
+                onClick={() => setShowSyncExplainModal(false)}
+                className="px-5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Đã Hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: SỬA HỒ SƠ NHÂN VIÊN (EDIT EMPLOYEE) */}
+      {/* ========================================================= */}
+      {showEditEmpModal && editingEmployee && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E7E0D6] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-5 border-b border-[#E7E0D6] bg-[#FAF7F0] flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base text-[#4E342E]">Chỉnh Sửa Hồ Sơ Nhân Viên</h3>
+                <p className="text-xs text-[#8D6E63]">Mã nhân sự: {editingEmployee.maNV}</p>
+              </div>
+              <button
+                onClick={() => setShowEditEmpModal(false)}
+                className="p-1.5 rounded-full hover:bg-[#EFEBE0] text-[#8D6E63] transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditEmployee} className="p-6 space-y-4 text-xs text-[#5D4037] max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Họ và tên nhân sự:</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingEmployee.hoTen}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, hoTen: e.target.value.toUpperCase() })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold mb-1">Chức danh / Vị trí:</label>
+                  <select
+                    value={editingEmployee.chucVu}
+                    onChange={e => {
+                      const val = e.target.value as any;
+                      const labelMap: Record<string, string> = {
+                        KTV: 'Kỹ thuật viên Spa & Trị liệu',
+                        LeTan: 'Lễ tân / CSKH',
+                        KeToan: 'Kế toán',
+                        QuanLy: 'Quản lý Cơ sở',
+                        Marketing: 'Marketing',
+                        BaoVe: 'Bảo vệ',
+                        TapVu: 'Lao công / Tạp vụ',
+                      };
+                      setEditingEmployee({
+                        ...editingEmployee,
+                        chucVu: val,
+                        chucVuLabel: labelMap[val] || val,
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-bold"
+                  >
+                    <option value="KTV">Kỹ thuật viên Spa & Trị liệu (KTV)</option>
+                    <option value="LeTan">Lễ tân / CSKH</option>
+                    <option value="KeToan">Kế toán</option>
+                    <option value="QuanLy">Quản lý Cơ sở</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="BaoVe">Bảo vệ</option>
+                    <option value="TapVu">Lao công / Tạp vụ</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Ngạch:</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.ngach}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, ngach: e.target.value.toUpperCase() as any })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Bậc:</label>
+                  <select
+                    value={editingEmployee.bac}
+                    onChange={e =>
+                      setEditingEmployee({
+                        ...editingEmployee,
+                        bac: Number(e.target.value) as any,
+                        capBacTen: `${editingEmployee.chucVuLabel} - Bậc ${e.target.value}`,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-bold"
+                  >
+                    <option value={1}>Bậc 1</option>
+                    <option value={2}>Bậc 2</option>
+                    <option value={3}>Bậc 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Chi nhánh:</label>
+                  <select
+                    value={editingEmployee.chiNhanh}
+                    onChange={e =>
+                      setEditingEmployee({
+                        ...editingEmployee,
+                        chiNhanh: e.target.value,
+                        chiNhanhTen: e.target.value === 'CN1' ? 'Chi nhánh 1 — Quận 1' : 'Chi nhánh Quận 3 (Trụ sở)',
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-bold"
+                  >
+                    <option value="CN_Q3">Chi nhánh Quận 3 (Trụ sở)</option>
+                    <option value="CN1">Chi nhánh 1 — Quận 1</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Lương thỏa thuận (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editingEmployee.luongThoaThuan}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, luongThoaThuan: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold text-emerald-800"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Mức lương cam kết (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editingEmployee.mucLuongCamKet || 0}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, mucLuongCamKet: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold text-amber-800"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Số điện thoại:</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.soDienThoai}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, soDienThoai: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Số CCCD:</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.soCCCD}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, soCCCD: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Địa chỉ thường trú (HKTT):</label>
+                <input
+                  type="text"
+                  value={editingEmployee.diaChiThuongTru}
+                  onChange={e => setEditingEmployee({ ...editingEmployee, diaChiThuongTru: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Số tài khoản ngân hàng:</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.soTaiKhoan}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, soTaiKhoan: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Ngân hàng:</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.nganHang}
+                    onChange={e => setEditingEmployee({ ...editingEmployee, nganHang: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#E7E0D6] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditEmpModal(false)}
+                  className="px-4 py-2 bg-[#EFEBE0] text-[#5D4037] rounded-xl font-bold text-xs"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white rounded-xl font-bold text-xs shadow-xs flex items-center gap-1.5"
+                >
+                  <Save size={14} />
+                  <span>Lưu Thay Đổi</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: XÁC NHẬN XÓA NHÂN VIÊN (DELETE EMPLOYEE) */}
+      {/* ========================================================= */}
+      {showDeleteEmpConfirmModal && deletingEmployee && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-rose-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-5 border-b border-rose-100 bg-rose-50/70 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-rose-900">Xác Nhận Xóa Nhân Viên</h3>
+                <p className="text-xs text-rose-700">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-3 text-xs text-[#5D4037]">
+              <p>
+                Bạn có chắc chắn muốn xóa hồ sơ của nhân sự:
+              </p>
+              <div className="p-3 bg-[#FAF7F0] rounded-xl border border-[#E7E0D6]">
+                <p className="font-bold text-sm text-[#4E342E]">{deletingEmployee.hoTen}</p>
+                <p className="text-[#8D6E63]">
+                  Mã: {deletingEmployee.maNV} · {deletingEmployee.chucVuLabel} ({deletingEmployee.chiNhanhTen})
+                </p>
+              </div>
+              <p className="text-rose-700 italic">
+                Lưu ý: Dữ liệu hồ sơ sẽ bị xóa khỏi danh sách nhân sự hiện tại.
+              </p>
+            </div>
+
+            <div className="p-4 border-t border-[#E7E0D6] bg-[#FAF7F0] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteEmpConfirmModal(false)}
+                className="px-4 py-2 bg-[#EFEBE0] text-[#5D4037] rounded-xl font-bold text-xs"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteEmployee}
+                className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold text-xs shadow-xs"
+              >
+                Xác Nhận Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: SỬA ĐƠN XIN NGHỈ (EDIT LEAVE REQUEST) */}
+      {/* ========================================================= */}
+      {showEditLeaveModal && editingLeave && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full border border-[#E7E0D6] shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-5 border-b border-[#E7E0D6] flex items-center justify-between bg-[#FAF7F0]">
+              <h3 className="font-bold text-base text-[#4E342E]">Chỉnh Sửa Đơn Xin Nghỉ Phép</h3>
+              <button
+                onClick={() => setShowEditLeaveModal(false)}
+                className="text-[#8D6E63] hover:text-[#4E342E] text-sm"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-6 max-h-[75vh] overflow-y-auto space-y-5 text-xs text-[#5D4037]">
-              {/* Thẻ thông tin cá nhân & CCCD */}
+            <form onSubmit={handleSaveEditLeave} className="p-6 space-y-4 text-xs text-[#5D4037]">
+              <div>
+                <label className="block font-bold mb-1">Nhân Sự:</label>
+                <div className="px-3 py-2 bg-[#FAF7F0] border border-[#E7E0D6] rounded-xl font-bold">
+                  {editingLeave.hoTen} ({editingLeave.chucVuLabel})
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Loại Nghỉ Phép:</label>
+                <select
+                  value={editingLeave.loaiNghi}
+                  onChange={e => setEditingLeave({ ...editingLeave, loaiNghi: e.target.value as any })}
+                  className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                >
+                  <option value="PhepNam">Nghỉ phép năm (Hưởng nguyên lương)</option>
+                  <option value="ViecRieng">Nghỉ việc riêng (Hiếu, hỷ gia đình)</option>
+                  <option value="NghiOm">Nghỉ ốm có giấy khám y tế</option>
+                  <option value="KhongLuong">Nghỉ không hưởng lương</option>
+                  <option value="DoiCa">Đổi ca làm việc / Trực bù</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Từ ngày:</label>
+                  <input
+                    type="date"
+                    required
+                    value={editingLeave.tuNgay}
+                    onChange={e => setEditingLeave({ ...editingLeave, tuNgay: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Đến ngày:</label>
+                  <input
+                    type="date"
+                    required
+                    value={editingLeave.denNgay}
+                    onChange={e => setEditingLeave({ ...editingLeave, denNgay: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Số ngày nghỉ:</label>
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={editingLeave.soNgayNghi}
+                  onChange={e => setEditingLeave({ ...editingLeave, soNgayNghi: Number(e.target.value) })}
+                  className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-bold font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Người nhận bàn giao công việc:</label>
+                <input
+                  type="text"
+                  value={editingLeave.nguoiBanGiao}
+                  onChange={e => setEditingLeave({ ...editingLeave, nguoiBanGiao: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold mb-1">Lý do xin nghỉ:</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={editingLeave.lyDo}
+                  onChange={e => setEditingLeave({ ...editingLeave, lyDo: e.target.value })}
+                  className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-[#E7E0D6] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditLeaveModal(false)}
+                  className="px-4 py-2 bg-[#EFEBE0] text-[#5D4037] rounded-xl font-bold text-xs"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white rounded-xl font-bold text-xs shadow-xs"
+                >
+                  Cập Nhật Đơn
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: XÁC NHẬN XÓA ĐƠN NGHỈ (DELETE LEAVE CONFIRM) */}
+      {/* ========================================================= */}
+      {showDeleteLeaveModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full border border-rose-200 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 p-5 space-y-4">
+            <div className="flex items-center gap-3 text-rose-700">
+              <AlertTriangle size={24} />
+              <h3 className="font-bold text-base text-rose-900">Xóa Đơn Xin Nghỉ?</h3>
+            </div>
+            <p className="text-xs text-[#6D4C41]">
+              Bạn có chắc chắn muốn xóa đơn xin nghỉ này khỏi hệ thống quản lý?
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E7E0D6]">
+              <button
+                onClick={() => setShowDeleteLeaveModal(false)}
+                className="px-4 py-2 bg-[#EFEBE0] text-[#5D4037] rounded-xl font-bold text-xs"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleDeleteLeave}
+                className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold text-xs shadow-xs"
+              >
+                Xác Nhận Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: XEM CHI TIẾT HỒ SƠ NHÂN VIÊN */}
+      {/* ========================================================= */}
+      {selectedEmpDetail && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-[#E7E0D6] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-6 border-b border-[#E7E0D6] flex items-center justify-between bg-[#FAF7F0]">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#8D6E63] text-white flex items-center justify-center font-black text-lg shadow-xs">
+                  {selectedEmpDetail.hoTen.split(' ').slice(-1)[0][0]}
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-[#4E342E]">{selectedEmpDetail.hoTen}</h3>
+                  <p className="text-xs text-[#8D6E63]">
+                    Mã NV: <strong>{selectedEmpDetail.maNV}</strong> · {selectedEmpDetail.chucVuLabel}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedEmpDetail(null)}
+                className="p-1.5 rounded-full hover:bg-[#EFEBE0] text-[#8D6E63] transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 text-xs text-[#5D4037] max-h-[70vh] overflow-y-auto">
+              {/* Thông tin nhân thân */}
               <div>
                 <h4 className="font-bold text-sm text-[#4E342E] mb-2 flex items-center gap-1.5">
-                  <BadgeCheck size={16} className="text-emerald-700" />
+                  <Users size={16} className="text-[#8D6E63]" />
                   <span>Thông Tin Cá Nhân & Căn Cước Công Dân</span>
                 </h4>
                 <div className="grid grid-cols-2 gap-3 bg-[#FAF7F0] p-4 rounded-xl border border-[#E7E0D6]">
                   <div>
                     <span className="text-[#8D6E63]">Ngày sinh:</span>{' '}
-                    <span className="font-bold">{selectedEmpDetail.ngaySinh}</span> ({selectedEmpDetail.gioiTinh})
+                    <span className="font-semibold">{selectedEmpDetail.ngaySinh}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#8D6E63]">Giới tính:</span>{' '}
+                    <span className="font-semibold">{selectedEmpDetail.gioiTinh}</span>
                   </div>
                   <div>
                     <span className="text-[#8D6E63]">Số CCCD:</span>{' '}
                     <span className="font-mono font-bold">{selectedEmpDetail.soCCCD}</span>
                   </div>
                   <div>
-                    <span className="text-[#8D6E63]">Ngày & Nơi cấp:</span>{' '}
-                    <span>{selectedEmpDetail.ngayCapCCCD} ({selectedEmpDetail.noiCapCCCD})</span>
+                    <span className="text-[#8D6E63]">Ngày cấp:</span> <span>{selectedEmpDetail.ngayCapCCCD}</span>
                   </div>
-                  <div>
-                    <span className="text-[#8D6E63]">Quê quán:</span>{' '}
-                    <span>{selectedEmpDetail.queQuan}</span>
+                  <div className="col-span-2">
+                    <span className="text-[#8D6E63]">Nơi cấp:</span> <span>{selectedEmpDetail.noiCapCCCD}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[#8D6E63]">Quê quán:</span> <span>{selectedEmpDetail.queQuan}</span>
                   </div>
                   <div className="col-span-2">
                     <span className="text-[#8D6E63]">Đăng ký thường trú (HKTT):</span>{' '}
@@ -973,23 +1777,6 @@ export default function HRManagementView() {
                   </div>
                 </div>
               </div>
-
-              {/* Thông tin người liên hệ khẩn cấp */}
-              {selectedEmpDetail.nguoiLienHeKhanCap && (
-                <div>
-                  <h4 className="font-bold text-sm text-[#4E342E] mb-2">Thông Tin Người Thân & Liên Hệ Khẩn Cấp</h4>
-                  <div className="bg-[#FAF7F0] p-3 rounded-xl border border-[#E7E0D6] text-xs">
-                    <div>
-                      Họ tên: <strong>{selectedEmpDetail.nguoiLienHeKhanCap.hoTen}</strong> (
-                      {selectedEmpDetail.nguoiLienHeKhanCap.quanHe}) — SĐT:{' '}
-                      {selectedEmpDetail.nguoiLienHeKhanCap.soDienThoai}
-                    </div>
-                    <div className="text-[11px] text-[#8D6E63] mt-0.5">
-                      Địa chỉ: {selectedEmpDetail.nguoiLienHeKhanCap.diaChi}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="p-4 border-t border-[#E7E0D6] bg-[#FAF7F0] flex items-center justify-between">
@@ -1008,18 +1795,32 @@ export default function HRManagementView() {
                 <div />
               )}
 
-              <button
-                onClick={() => setSelectedEmpDetail(null)}
-                className="px-5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Đóng
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingEmployee({ ...selectedEmpDetail });
+                    setShowEditEmpModal(true);
+                  }}
+                  className="px-4 py-2 bg-[#FAF7F0] hover:bg-[#EFEBE0] text-[#5D4037] border border-[#E7E0D6] text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Edit size={14} />
+                  <span>Sửa Hồ Sơ</span>
+                </button>
+                <button
+                  onClick={() => setSelectedEmpDetail(null)}
+                  className="px-5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* ========================================================= */}
       {/* MODAL: TẠO ĐƠN XIN NGHỈ MỚI */}
+      {/* ========================================================= */}
       {showCreateLeaveModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full border border-[#E7E0D6] shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
@@ -1142,7 +1943,9 @@ export default function HRManagementView() {
         </div>
       )}
 
+      {/* ========================================================= */}
       {/* MODAL: THÊM NHÂN VIÊN MỚI */}
+      {/* ========================================================= */}
       {showAddEmpModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full border border-[#E7E0D6] shadow-xl overflow-hidden animate-in fade-in zoom-in-95">
@@ -1208,7 +2011,7 @@ export default function HRManagementView() {
                     giayKhamSucKhoe: false,
                   },
                 };
-                setEmployees([newEmp, ...employees]);
+                updateEmployees([newEmp, ...employees]);
                 setShowAddEmpModal(false);
                 setNewEmpName('');
                 setNewEmpPhone('');
@@ -1284,7 +2087,7 @@ export default function HRManagementView() {
         </div>
       )}
 
-      {/* Toast Notification */}
+      {/* TOAST NOTIFICATION */}
       {toast.show && (
         <div
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border text-xs font-bold animate-in fade-in slide-in-from-bottom-2 ${

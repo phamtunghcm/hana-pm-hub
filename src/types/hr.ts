@@ -91,6 +91,8 @@ export interface SalaryRegulationScale {
   moTa: string;
   phuCapCom: string;
   phuCapXangXe: string;
+  phuCapGuiXe?: string;
+  phuCapDongPhuc?: string;
   hoaHong: string;
   thuongKPI: string;
 }

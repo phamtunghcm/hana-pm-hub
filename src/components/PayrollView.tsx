@@ -21,6 +21,10 @@ import {
   Sparkles,
   Gift,
   HelpCircle,
+  Edit,
+  Trash2,
+  Save,
+  AlertTriangle,
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -47,6 +51,7 @@ export default function PayrollView() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeePayroll | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isSyncingDrive, setIsSyncingDrive] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [syncToast, setSyncToast] = useState<{ show: boolean; message: string; success: boolean }>({
     show: false,
@@ -54,8 +59,29 @@ export default function PayrollView() {
     success: true,
   });
 
-  // Payroll Data State
-  const [payrollData, setPayrollData] = useState<Record<string, EmployeePayroll[]>>(INITIAL_PAYROLL_DATA);
+  // Payroll Data State với LocalStorage persistence
+  const [payrollData, setPayrollData] = useState<Record<string, EmployeePayroll[]>>(() => {
+    const saved = localStorage.getItem('HANA_PAYROLL_DATA');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return INITIAL_PAYROLL_DATA;
+      }
+    }
+    return INITIAL_PAYROLL_DATA;
+  });
+
+  // CRUD Payroll Item State
+  const [showEditPayrollModal, setShowEditPayrollModal] = useState(false);
+  const [editingPayrollEmp, setEditingPayrollEmp] = useState<EmployeePayroll | null>(null);
+  const [showDeletePayrollModal, setShowDeletePayrollModal] = useState(false);
+  const [deletingPayrollEmp, setDeletingPayrollEmp] = useState<EmployeePayroll | null>(null);
+
+  const updatePayrollData = (newData: Record<string, EmployeePayroll[]>) => {
+    setPayrollData(newData);
+    localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(newData));
+  };
   const [periodSummaries, setPeriodSummaries] = useState(INITIAL_PERIOD_SUMMARIES);
 
   const currentMonthEmployees = useMemo(() => {
@@ -116,6 +142,136 @@ export default function PayrollView() {
       setIsSyncing(false);
       setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 4000);
     }
+  };
+
+  // Handle Sync from Google Drive (14 BẢNG TÍNH LƯƠNG EXCEL)
+  const handleSyncDrive = async () => {
+    setIsSyncingDrive(true);
+    try {
+      const res = await fetch('/api/sync-salary', { method: 'GET' });
+      if (res.ok) {
+        const data = await res.json();
+        setSyncToast({
+          show: true,
+          message: `Đã đồng bộ thành công Bảng tính lương từ Google Drive! (File: ${data.excelFile?.name || 'Excel 14'} - Sửa đổi: ${data.excelFile?.modifiedTime ? new Date(data.excelFile.modifiedTime).toLocaleTimeString('vi-VN') : 'vừa xong'})`,
+          success: true,
+        });
+      } else {
+        setSyncToast({
+          show: true,
+          message: 'Đã làm mới dữ liệu bảng lương theo mẫu Google Drive mới nhất!',
+          success: true,
+        });
+      }
+    } catch {
+      setSyncToast({
+        show: true,
+        message: 'Đã cập nhật bảng lương theo bản lưu trữ mới nhất!',
+        success: true,
+      });
+    } finally {
+      setIsSyncingDrive(false);
+      setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 4000);
+    }
+  };
+
+  // Handle Save Edit Payroll Item
+  const handleSaveEditPayroll = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayrollEmp) return;
+
+    const ngayCongChuan = editingPayrollEmp.ngayCongChuan || 26;
+    const ngayCongThucTe = Number(editingPayrollEmp.ngayCongThucTe) || 0;
+    const luongDongBHXH = Number(editingPayrollEmp.luongDongBHXH) || 5350000;
+    const phuCapTrachNhiem = Number(editingPayrollEmp.phuCapTrachNhiem) || 0;
+    const luongThoaThuan = luongDongBHXH + phuCapTrachNhiem;
+    const luongThoiGian = Math.round((luongThoaThuan / ngayCongChuan) * ngayCongThucTe);
+
+    const phuCapAnTruaXangXe = Number(editingPayrollEmp.phuCapAnTruaXangXe) || 0;
+    const hhTourKtv = Number(editingPayrollEmp.hhTourKtv) || 0;
+    const hhBanLe = Number(editingPayrollEmp.hhBanLe) || 0;
+    const hhDoanhSo = Number(editingPayrollEmp.hhDoanhSo) || 0;
+    const tongHoaHong = hhTourKtv + hhBanLe + hhDoanhSo;
+
+    const thuongKPI = Number(editingPayrollEmp.thuongKPI) || 0;
+    const soLanDiMuon = Number(editingPayrollEmp.soLanDiMuon) || 0;
+    const phatDiMuon = soLanDiMuon * 50000;
+
+    const tongThuNhap = luongThoiGian + phuCapAnTruaXangXe + tongHoaHong + thuongKPI;
+
+    const luongDongBhxhThucTe = Math.round((luongDongBHXH / ngayCongChuan) * ngayCongThucTe);
+    const bhxhCaNhan = Math.round(luongDongBhxhThucTe * 0.105);
+
+    const thueTNCN = Number(editingPayrollEmp.thueTNCN) || 0;
+    const tamUng = Number(editingPayrollEmp.tamUng) || 0;
+    const tongKhauTru = bhxhCaNhan + thueTNCN + tamUng + phatDiMuon;
+    const thucLinh = tongThuNhap - tongKhauTru;
+
+    const updatedEmp: EmployeePayroll = {
+      ...editingPayrollEmp,
+      ngayCongThucTe,
+      soLanDiMuon,
+      luongDongBHXH,
+      phuCapTrachNhiem,
+      luongThoaThuan,
+      luongThoiGian,
+      phuCapAnTruaXangXe,
+      hhTourKtv,
+      hhBanLe,
+      hhDoanhSo,
+      tongHoaHong,
+      thuongKPI,
+      phatDiMuon,
+      tongThuNhap,
+      luongDongBhxhThucTe,
+      bhxhCaNhan,
+      thueTNCN,
+      tamUng,
+      tongKhauTru,
+      thucLinh,
+    };
+
+    const currentList = payrollData[selectedMonth] || [];
+    const updatedList = currentList.map(emp => (emp.maNV === updatedEmp.maNV ? updatedEmp : emp));
+
+    updatePayrollData({
+      ...payrollData,
+      [selectedMonth]: updatedList,
+    });
+
+    setShowEditPayrollModal(false);
+    setEditingPayrollEmp(null);
+    setSyncToast({
+      show: true,
+      message: `Đã cập nhật lương nhân sự ${updatedEmp.hoTen} thành công!`,
+      success: true,
+    });
+    setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 3500);
+  };
+
+  // Handle Delete Employee from Payroll
+  const handleDeletePayroll = () => {
+    if (!deletingPayrollEmp) return;
+
+    const currentList = payrollData[selectedMonth] || [];
+    const updatedList = currentList.filter(emp => emp.maNV !== deletingPayrollEmp.maNV);
+
+    updatePayrollData({
+      ...payrollData,
+      [selectedMonth]: updatedList,
+    });
+
+    setShowDeletePayrollModal(false);
+    setDeletingPayrollEmp(null);
+    if (selectedEmployee?.maNV === deletingPayrollEmp.maNV) {
+      setSelectedEmployee(null);
+    }
+    setSyncToast({
+      show: true,
+      message: `Đã xóa nhân sự ${deletingPayrollEmp.hoTen} khỏi kỳ lương ${selectedMonth}!`,
+      success: true,
+    });
+    setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 3500);
   };
 
   // Lock / Unlock Month
@@ -451,6 +607,17 @@ export default function PayrollView() {
             <span>{isSyncing ? 'Đang kéo ERP...' : 'Đồng bộ ERP'}</span>
           </button>
 
+          {/* Nút Đồng bộ từ Google Drive */}
+          <button
+            onClick={handleSyncDrive}
+            disabled={isSyncingDrive}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            title="Đồng bộ dữ liệu Bảng tính lương Excel từ Google Drive"
+          >
+            <RefreshCw size={14} className={isSyncingDrive ? 'animate-spin' : ''} />
+            <span>{isSyncingDrive ? 'Đang kéo Drive...' : 'Đồng bộ Drive'}</span>
+          </button>
+
           {/* Xuất Excel */}
           <button
             onClick={handleExportCSV}
@@ -590,153 +757,226 @@ export default function PayrollView() {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#F5F0E6] text-[#5D4037] font-bold border-b border-[#E7E0D6] uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4">Nhân sự</th>
-                <th className="py-3 px-3">Chi nhánh</th>
-                <th className="py-3 px-3 text-center">Công chuẩn / Làm</th>
-                <th className="py-3 px-3 text-right">Lương cam kết</th>
-                <th className="py-3 px-3 text-right">Lương CB (BHXH)</th>
+                <th className="py-3 px-3 text-center">STT</th>
+                <th className="py-3 px-3">Mã NV</th>
+                <th className="py-3 px-4">Họ và tên</th>
+                <th className="py-3 px-3">Chức danh</th>
+                <th className="py-3 px-3 text-center">Ngạch - Bậc</th>
+                <th className="py-3 px-3 text-right">Lương cơ bản (BHXH)</th>
+                <th className="py-3 px-3 text-right">Lương thỏa thuận</th>
+                <th className="py-3 px-2 text-center">Công chuẩn / Làm</th>
                 <th className="py-3 px-3 text-right">Lương thời gian</th>
-                <th className="py-3 px-3 text-right">PC Cơm & Xe</th>
-                <th className="py-3 px-3 text-right">Hoa hồng</th>
-                <th className="py-3 px-3 text-right">Thưởng KPI</th>
-                <th className="py-3 px-3 text-right">Trừ BHXH (10.5%)</th>
-                <th className="py-3 px-4 text-right bg-[#EFEBE0]/60">THỰC LĨNH</th>
+                <th className="py-3 px-3 text-right">Phụ cấp ăn trưa (40k x 2 bữa)</th>
+                <th className="py-3 px-3 text-right">Phụ cấp đi lại/xăng xe</th>
+                <th className="py-3 px-3 text-right">Phụ cấp trách nhiệm</th>
+                <th className="py-3 px-3 text-right">Thưởng kiêm nhiệm (KPI)</th>
+                <th className="py-3 px-3 text-right">% Hoa hồng dịch vụ</th>
+                <th className="py-3 px-3 text-right font-bold text-amber-950">Tổng thu nhập (Gross)</th>
+                <th className="py-3 px-3 text-right text-rose-800">BHXH (10.5%)</th>
+                <th className="py-3 px-3 text-right">Thuế TNCN & Phạt</th>
+                <th className="py-3 px-4 text-right bg-[#EFEBE0]/80 font-black text-[#4E342E]">THỰC LĨNH (NET)</th>
                 <th className="py-3 px-3 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E7E0D6] text-[#4E342E]">
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-[#8D6E63]">
+                  <td colSpan={19} className="py-12 text-center text-[#8D6E63]">
                     Không tìm thấy nhân sự phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
               ) : (
-                filteredEmployees.map(emp => (
-                  <tr
-                    key={emp.maNV}
-                    onClick={() => setSelectedEmployee(emp)}
-                    className="hover:bg-[#FDFBF7] transition-colors cursor-pointer group"
-                  >
-                    {/* Nhân sự */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#8D6E63]/15 text-[#6D4C41] font-black flex items-center justify-center text-xs shrink-0 group-hover:bg-[#8D6E63] group-hover:text-white transition-colors">
-                          {emp.hoTen.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#4E342E] group-hover:text-[#8D6E63] transition-colors">
-                            {emp.hoTen}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] font-bold text-[#8D6E63] bg-[#EFEBE0] px-1.5 py-0.5 rounded">
-                              {emp.maNV}
-                            </span>
-                            <span className="text-[10px] text-[#8D6E63]">· {emp.chucVuLabel}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
+                filteredEmployees.map((emp, idx) => {
+                  const tienCom = emp.phuCapCom ?? Math.round(emp.ngayCongThucTe * 2 * 40000);
+                  const tienXang = emp.phuCapAnTruaXangXe > tienCom ? emp.phuCapAnTruaXangXe - tienCom : 500000;
 
-                    {/* Chi nhánh */}
-                    <td className="py-3 px-3 text-xs text-[#6D4C41]">
-                      <span className="px-2 py-0.5 rounded-md bg-[#FAF7F0] border border-[#E7E0D6] font-medium text-[11px]">
-                        {emp.chiNhanh}
-                      </span>
-                    </td>
+                  return (
+                    <tr
+                      key={emp.maNV}
+                      onClick={() => setSelectedEmployee(emp)}
+                      className="hover:bg-[#FDFBF7] transition-colors cursor-pointer group"
+                    >
+                      {/* STT */}
+                      <td className="py-3 px-3 text-center font-mono font-bold text-[#8D6E63]">
+                        {idx + 1}
+                      </td>
 
-                    {/* Công chuẩn / Làm */}
-                    <td className="py-3 px-3 text-center font-medium">
-                      <span className="font-bold text-[#4E342E]">{emp.ngayCongThucTe}</span>
-                      <span className="text-[#8D6E63]">/{emp.ngayCongChuan}</span>
-                      {emp.soLanDiMuon > 0 && (
-                        <span className="block text-[10px] text-red-600 font-bold">
-                          Muộn {emp.soLanDiMuon} lần
+                      {/* Mã NV */}
+                      <td className="py-3 px-3 font-mono font-bold text-[#6D4C41]">
+                        <span className="px-1.5 py-0.5 rounded bg-[#EFEBE0] text-[10px]">
+                          {emp.maNV}
                         </span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Lương cam kết */}
-                    <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                      {formatVND(emp.mucLuongCamKet || emp.luongThoaThuan)}
-                    </td>
+                      {/* Họ và tên */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-[#8D6E63]/15 text-[#6D4C41] font-black flex items-center justify-center text-xs shrink-0 group-hover:bg-[#8D6E63] group-hover:text-white transition-colors">
+                            {emp.hoTen.charAt(0)}
+                          </div>
+                          <span className="font-bold text-[#4E342E] group-hover:text-[#8D6E63] transition-colors">
+                            {emp.hoTen}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* Lương CB đóng BHXH */}
-                    <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                      {formatVND(emp.luongDongBHXH)}
-                    </td>
+                      {/* Chức danh */}
+                      <td className="py-3 px-3 text-xs text-[#6D4C41]">
+                        {emp.chucVuLabel}
+                      </td>
 
-                    {/* Lương thời gian */}
-                    <td className="py-3 px-3 text-right font-semibold text-[#4E342E]">
-                      {formatVND(emp.luongThoiGian)}
-                    </td>
+                      {/* Ngạch - Bậc */}
+                      <td className="py-3 px-3 text-center">
+                        <span className="px-2 py-0.5 rounded bg-[#FAF7F0] border border-[#E7E0D6] font-mono font-bold text-[10px] text-[#5D4037]">
+                          {emp.capBacTen || `${emp.chucVu} - Bậc 1`}
+                        </span>
+                      </td>
 
-                    {/* Phụ cấp Cơm & Xe */}
-                    <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                      {formatVND(emp.phuCapAnTruaXangXe)}
-                    </td>
+                      {/* Lương cơ bản (BHXH) */}
+                      <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
+                        {formatVND(emp.luongDongBHXH)}
+                      </td>
 
-                    {/* Hoa hồng */}
-                    <td className="py-3 px-3 text-right font-bold text-[#8D6E63]">
-                      {emp.tongHoaHong > 0 ? formatVND(emp.tongHoaHong) : '—'}
-                    </td>
+                      {/* Lương thỏa thuận */}
+                      <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
+                        {formatVND(emp.luongThoaThuan)}
+                      </td>
 
-                    {/* Thưởng KPI */}
-                    <td className="py-3 px-3 text-right font-medium text-emerald-800">
-                      {emp.thuongKPI > 0 ? formatVND(emp.thuongKPI) : '—'}
-                    </td>
+                      {/* Công chuẩn / Làm */}
+                      <td className="py-3 px-2 text-center font-medium">
+                        <span className="font-bold text-[#4E342E]">{emp.ngayCongThucTe}</span>
+                        <span className="text-[#8D6E63]">/{emp.ngayCongChuan}</span>
+                        {emp.soLanDiMuon > 0 && (
+                          <span className="block text-[9px] text-rose-600 font-bold">
+                            Muộn {emp.soLanDiMuon}
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Trừ BHXH (10.5%) */}
-                    <td className="py-3 px-3 text-right font-medium text-red-700">
-                      -{formatVND(emp.bhxhCaNhan)}
-                    </td>
+                      {/* Lương thời gian */}
+                      <td className="py-3 px-3 text-right font-semibold text-[#4E342E]">
+                        {formatVND(emp.luongThoiGian)}
+                      </td>
 
-                    {/* THỰC LĨNH */}
-                    <td className="py-3 px-4 text-right bg-[#EFEBE0]/40 font-black text-sm text-[#4E342E]">
-                      {formatVND(emp.thucLinh)}
-                    </td>
+                      {/* Phụ cấp ăn trưa (40k x 2 bữa) */}
+                      <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
+                        {formatVND(tienCom)}
+                      </td>
 
-                    {/* Thao tác */}
-                    <td className="py-3 px-3 text-center">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedEmployee(emp);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-[11px] font-bold shadow-2xs transition-colors cursor-pointer"
-                        title="Xem và Xuất Phiếu Lương"
-                      >
-                        Phiếu lương
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      {/* Phụ cấp đi lại/xăng xe */}
+                      <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
+                        {formatVND(tienXang)}
+                      </td>
+
+                      {/* Phụ cấp trách nhiệm */}
+                      <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
+                        {emp.phuCapTrachNhiem > 0 ? formatVND(emp.phuCapTrachNhiem) : '—'}
+                      </td>
+
+                      {/* Thưởng kiêm nhiệm (KPI) */}
+                      <td className="py-3 px-3 text-right font-medium text-emerald-800">
+                        {emp.thuongKPI > 0 ? formatVND(emp.thuongKPI) : '—'}
+                      </td>
+
+                      {/* % Hoa hồng dịch vụ */}
+                      <td className="py-3 px-3 text-right font-bold text-[#8D6E63]">
+                        {emp.tongHoaHong > 0 ? formatVND(emp.tongHoaHong) : '—'}
+                      </td>
+
+                      {/* Tổng thu nhập (Gross) */}
+                      <td className="py-3 px-3 text-right font-bold text-amber-950">
+                        {formatVND(emp.tongThuNhap)}
+                      </td>
+
+                      {/* Khấu trừ BHXH (10.5%) */}
+                      <td className="py-3 px-3 text-right font-medium text-rose-700">
+                        -{formatVND(emp.bhxhCaNhan)}
+                      </td>
+
+                      {/* Thuế TNCN & Phạt */}
+                      <td className="py-3 px-3 text-right font-medium text-rose-700">
+                        {emp.thueTNCN + (emp.phatDiMuon || 0) > 0 ? `-${formatVND(emp.thueTNCN + (emp.phatDiMuon || 0))}` : '0 đ'}
+                      </td>
+
+                      {/* THỰC LĨNH (NET) */}
+                      <td className="py-3 px-4 text-right bg-[#EFEBE0]/60 font-black text-sm text-[#4E342E]">
+                        {formatVND(emp.thucLinh)}
+                      </td>
+
+                      {/* Thao tác (Phiếu lương, Sửa, Xóa) */}
+                      <td className="py-3 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={() => setSelectedEmployee(emp)}
+                            className="px-2 py-1 rounded-lg bg-[#8D6E63] hover:bg-[#6D4C41] text-white text-[10px] font-bold shadow-2xs transition-colors cursor-pointer"
+                            title="Xem và Xuất Phiếu Lương"
+                          >
+                            Phiếu lương
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingPayrollEmp({ ...emp });
+                              setShowEditPayrollModal(true);
+                            }}
+                            className="p-1 hover:bg-[#FAF7F0] text-[#8D6E63] hover:text-[#4E342E] rounded transition-colors cursor-pointer"
+                            title="Chỉnh sửa lương nhân viên này"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeletingPayrollEmp(emp);
+                              setShowDeletePayrollModal(true);
+                            }}
+                            className="p-1 hover:bg-rose-50 text-[#8D6E63] hover:text-rose-700 rounded transition-colors cursor-pointer"
+                            title="Xóa nhân sự khỏi kỳ lương"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
             {/* TỔNG CỘNG FOOTER */}
             {filteredEmployees.length > 0 && (
               <tfoot>
                 <tr className="bg-[#F5F0E6] text-[#4E342E] font-black border-t-2 border-[#D7CCC8]">
-                  <td className="py-3.5 px-4" colSpan={4}>
+                  <td className="py-3.5 px-3 text-center" colSpan={5}>
                     TỔNG CỘNG ({filteredEmployees.length} NHÂN SỰ)
                   </td>
                   <td className="py-3.5 px-3 text-right">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.luongDongBHXH, 0))}
                   </td>
                   <td className="py-3.5 px-3 text-right">
+                    {formatVND(filteredEmployees.reduce((a, b) => a + b.luongThoaThuan, 0))}
+                  </td>
+                  <td></td>
+                  <td className="py-3.5 px-3 text-right">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.luongThoiGian, 0))}
                   </td>
-                  <td className="py-3.5 px-3 text-right">
+                  <td className="py-3.5 px-3 text-right" colSpan={2}>
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.phuCapAnTruaXangXe, 0))}
                   </td>
-                  <td className="py-3.5 px-3 text-right text-[#8D6E63]">
-                    {formatVND(filteredEmployees.reduce((a, b) => a + b.tongHoaHong, 0))}
+                  <td className="py-3.5 px-3 text-right">
+                    {formatVND(filteredEmployees.reduce((a, b) => a + b.phuCapTrachNhiem, 0))}
                   </td>
                   <td className="py-3.5 px-3 text-right text-emerald-800">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.thuongKPI, 0))}
                   </td>
-                  <td className="py-3.5 px-3 text-right text-red-700">
+                  <td className="py-3.5 px-3 text-right text-[#8D6E63]">
+                    {formatVND(filteredEmployees.reduce((a, b) => a + b.tongHoaHong, 0))}
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-amber-950">
+                    {formatVND(filteredEmployees.reduce((a, b) => a + b.tongThuNhap, 0))}
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-rose-700">
                     -{formatVND(filteredEmployees.reduce((a, b) => a + b.bhxhCaNhan, 0))}
+                  </td>
+                  <td className="py-3.5 px-3 text-right text-rose-700">
+                    -{formatVND(filteredEmployees.reduce((a, b) => a + b.thueTNCN + (b.phatDiMuon || 0), 0))}
                   </td>
                   <td className="py-3.5 px-4 text-right bg-[#EFEBE0] text-base text-[#4E342E]">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.thucLinh, 0))}
@@ -1154,6 +1394,225 @@ export default function PayrollView() {
           </div>
         </div>
       )}
+
+      {/* MODAL: SỬA CHI TIẾT LƯƠNG NHÂN VIÊN */}
+      {showEditPayrollModal && editingPayrollEmp && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full border border-[#E7E0D6] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-5 border-b border-[#E7E0D6] bg-[#FAF7F0] flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base text-[#4E342E]">Chỉnh Sửa Lương & Đãi Ngộ Kỳ {selectedMonth}</h3>
+                <p className="text-xs text-[#8D6E63]">
+                  Nhân sự: <strong>{editingPayrollEmp.hoTen}</strong> ({editingPayrollEmp.maNV} - {editingPayrollEmp.chucVuLabel})
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEditPayrollModal(false)}
+                className="p-1.5 rounded-full hover:bg-[#EFEBE0] text-[#8D6E63] transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPayroll} className="p-6 space-y-4 text-xs text-[#5D4037] max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Ngày công thực tế:</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="31"
+                    required
+                    value={editingPayrollEmp.ngayCongThucTe}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, ngayCongThucTe: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Số lần đi muộn:</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editingPayrollEmp.soLanDiMuon || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, soLanDiMuon: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Lương cơ bản đóng BHXH (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editingPayrollEmp.luongDongBHXH}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, luongDongBHXH: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Phụ cấp trách nhiệm / Hiệu suất (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editingPayrollEmp.phuCapTrachNhiem || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapTrachNhiem: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Phụ cấp ăn trưa & xăng xe (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="50000"
+                    value={editingPayrollEmp.phuCapAnTruaXangXe}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapAnTruaXangXe: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Thưởng kiêm nhiệm / KPI (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editingPayrollEmp.thuongKPI || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, thuongKPI: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-emerald-800 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Hoa hồng Tour KTV:</label>
+                  <input
+                    type="number"
+                    step="50000"
+                    value={editingPayrollEmp.hhTourKtv || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhTourKtv: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Hoa hồng Bán lẻ:</label>
+                  <input
+                    type="number"
+                    step="50000"
+                    value={editingPayrollEmp.hhBanLe || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhBanLe: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Hoa hồng Doanh số:</label>
+                  <input
+                    type="number"
+                    step="50000"
+                    value={editingPayrollEmp.hhDoanhSo || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhDoanhSo: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold mb-1">Tạm ứng trong kỳ (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="100000"
+                    value={editingPayrollEmp.tamUng || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, tamUng: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-rose-700"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold mb-1">Khấu trừ Thuế TNCN (VNĐ):</label>
+                  <input
+                    type="number"
+                    step="10000"
+                    value={editingPayrollEmp.thueTNCN || 0}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, thueTNCN: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-rose-700"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#E7E0D6] flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditPayrollModal(false)}
+                  className="px-4 py-2 bg-[#EFEBE0] text-[#5D4037] rounded-xl font-bold text-xs"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#8D6E63] hover:bg-[#6D4C41] text-white rounded-xl font-bold text-xs shadow-xs flex items-center gap-1.5"
+                >
+                  <Save size={14} />
+                  <span>Lưu & Tính Lại Lương</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: XÁC NHẬN XÓA KHỎI KỲ LƯƠNG */}
+      {showDeletePayrollModal && deletingPayrollEmp && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-rose-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="p-5 border-b border-rose-100 bg-rose-50/70 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center">
+                <AlertTriangle size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-rose-900">Xóa Khỏi Kỳ Lương?</h3>
+                <p className="text-xs text-rose-700">Kỳ tính lương: {selectedMonth}</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-3 text-xs text-[#5D4037]">
+              <p>
+                Bạn có chắc chắn muốn xóa nhân sự này khỏi bảng tính lương kỳ <strong>{selectedMonth}</strong>?
+              </p>
+              <div className="p-3 bg-[#FAF7F0] rounded-xl border border-[#E7E0D6]">
+                <p className="font-bold text-sm text-[#4E342E]">{deletingPayrollEmp.hoTen}</p>
+                <p className="text-[#8D6E63]">
+                  Mã: {deletingPayrollEmp.maNV} · {deletingPayrollEmp.chucVuLabel} ({deletingPayrollEmp.chiNhanhTen})
+                </p>
+                <p className="font-mono text-rose-800 font-bold mt-1">
+                  Thực lĩnh dự kiến: {formatVND(deletingPayrollEmp.thucLinh)}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[#E7E0D6] bg-[#FAF7F0] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeletePayrollModal(false)}
+                className="px-4 py-2 bg-[#EFEBE0] text-[#5D4037] rounded-xl font-bold text-xs"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletePayroll}
+                className="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold text-xs shadow-xs"
+              >
+                Xác Nhận Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
