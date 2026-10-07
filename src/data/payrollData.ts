@@ -36,11 +36,15 @@ export function calculateHanaPayrollRecord(emp: EmployeePayroll | any): Employee
   const luongDongBhxhThucTe = luongThoiGian;
 
   // 4. Thưởng KPI là kết quả cuối cùng sau khi lấy tổng thu nhập 10tr (nếu đủ 26 công) trừ lương bhxh, trừ phụ cấp xăng
+  // Mặc định tự động tính theo gói 10tr, nhưng cho phép người dùng/kế toán chỉnh sửa thủ công nếu có điều chỉnh KPI
   const tongThuNhap10TrTheoCong = (ngayCongThucTe >= ngayCongChuan)
     ? DINH_MUC_CHUAN_THU_NHAP_10TR
     : Math.round((DINH_MUC_CHUAN_THU_NHAP_10TR / ngayCongChuan) * ngayCongThucTe);
 
-  const thuongKPI = Math.max(0, tongThuNhap10TrTheoCong - luongDongBhxhThucTe - phuCapXang);
+  const macDinhThuongKPI = Math.max(0, tongThuNhap10TrTheoCong - luongDongBhxhThucTe - phuCapXang);
+  const thuongKPI = (emp.thuongKPI !== undefined && emp.thuongKPI !== null && !isNaN(Number(emp.thuongKPI)))
+    ? Math.max(0, Number(emp.thuongKPI))
+    : macDinhThuongKPI;
 
   // Hoa hồng
   const hhTourKtv = Number(emp.hhTourKtv) || 0;
