@@ -46,11 +46,12 @@ export interface EmployeePayroll {
   ngayNghiKhongLuong: number;
 
   // Thu nhập cố định & thời gian
+  coDongBHXH?: boolean; // Tháng này có tham gia đóng BHXH và các quỹ bảo hiểm hay không (mặc định true)
   luongDongBHXH: number; // Mức lương đóng BHXH theo ngạch bậc (vd: 5.500.000 VNĐ hoặc 5.350.000 VNĐ)
   phuCapTrachNhiem?: number; // Đã bỏ phụ cấp trách nhiệm (mặc định 0)
   luongThoaThuan: number; // Mức lương cơ sở / thỏa thuận
-  luongThoiGian: number; // Lương thời gian theo BHXH: luongDongBHXH / ngayCongChuan * ngayCongThucTe
-  mucLuongCamKet?: number; // Mức tổng thu nhập cam kết (10.000.000 VNĐ nếu đủ 26 công)
+  luongThoiGian: number; // Lương thời gian: luongDongBHXH / ngayCongChuan * ngayCongThucTe
+  mucLuongCamKet?: number; // Mức tổng thu nhập cam kết (mặc định 10.000.000 VNĐ, có thể sửa)
   trangThaiLamViec?: string; // "Chính thức" | "Thử việc"
   cheDoNghi?: string; // "3 - 4 ngày/tháng (Hưởng nguyên lương)"
 

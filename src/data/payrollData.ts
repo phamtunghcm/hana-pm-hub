@@ -16,14 +16,22 @@ export function calculateHanaPayrollRecord(emp: EmployeePayroll | any): Employee
   const ngayCongThucTe = Number(emp.ngayCongThucTe) || 0;
   const luongDongBHXH = Number(emp.luongDongBHXH) || 5350000;
 
-  // 1. Bỏ phụ cấp trách nhiệm
+  // 1. Ô Cam kết thu nhập (tạm ghi 10tr và có thể sửa)
+  const mucLuongCamKet = (emp.mucLuongCamKet !== undefined && emp.mucLuongCamKet !== null && !isNaN(Number(emp.mucLuongCamKet)))
+    ? Number(emp.mucLuongCamKet)
+    : DINH_MUC_CHUAN_THU_NHAP_10TR;
+
+  // 2. Ô tích tháng này có tham gia đóng BHXH và các quỹ bảo hiểm hay không (mặc định true)
+  const coDongBHXH = emp.coDongBHXH !== undefined ? Boolean(emp.coDongBHXH) : true;
+
+  // Bỏ phụ cấp trách nhiệm
   const phuCapTrachNhiem = 0;
   const luongThoaThuan = luongDongBHXH;
 
-  // 2. Cố định phụ cấp tiền cơm
+  // Cố định phụ cấp tiền cơm
   const phuCapCom = emp.phuCapCom !== undefined ? Number(emp.phuCapCom) : PHU_CAP_COM_CO_DINH_CHUAN;
 
-  // 3. Phụ cấp xăng theo ngày công nhưng không quá định mức chuẩn (500k)
+  // Phụ cấp xăng theo ngày công nhưng không quá định mức chuẩn (500k)
   const phuCapXang = Math.min(
     DINH_MUC_CHUAN_XANG_XE,
     Math.round((DINH_MUC_CHUAN_XANG_XE / ngayCongChuan) * ngayCongThucTe)
@@ -31,20 +39,22 @@ export function calculateHanaPayrollRecord(emp: EmployeePayroll | any): Employee
   const phuCapGuiXe = emp.phuCapGuiXe !== undefined ? Number(emp.phuCapGuiXe) : 200000;
   const phuCapAnTruaXangXe = phuCapCom + phuCapXang;
 
-  // Lương thời gian căn cứ đóng BHXH theo ngày công thực tế
+  // Lương thời gian căn bản theo ngày công thực tế
   const luongThoiGian = Math.round((luongDongBHXH / ngayCongChuan) * ngayCongThucTe);
-  const luongDongBhxhThucTe = luongThoiGian;
+  const luongDongBhxhThucTe = coDongBHXH ? luongThoiGian : 0;
 
-  // 4. Thưởng KPI là kết quả cuối cùng sau khi lấy tổng thu nhập 10tr (nếu đủ 26 công) trừ lương bhxh, trừ phụ cấp xăng
-  // Mặc định tự động tính theo gói 10tr, nhưng cho phép người dùng/kế toán chỉnh sửa thủ công nếu có điều chỉnh KPI
-  const tongThuNhap10TrTheoCong = (ngayCongThucTe >= ngayCongChuan)
-    ? DINH_MUC_CHUAN_THU_NHAP_10TR
-    : Math.round((DINH_MUC_CHUAN_THU_NHAP_10TR / ngayCongChuan) * ngayCongThucTe);
+  // Mức cam kết thu nhập theo công thực tế (tạm tính theo mức cam kết, mặc định 10tr)
+  const camKetTheoCong = (ngayCongThucTe >= ngayCongChuan)
+    ? mucLuongCamKet
+    : Math.round((mucLuongCamKet / ngayCongChuan) * ngayCongThucTe);
 
-  const macDinhThuongKPI = Math.max(0, tongThuNhap10TrTheoCong - luongDongBhxhThucTe - phuCapXang);
-  const thuongKPI = (emp.thuongKPI !== undefined && emp.thuongKPI !== null && !isNaN(Number(emp.thuongKPI)))
+  // 3. Thưởng KPI tạm tính theo công thức: Cam kết theo công - Lương thời gian căn bản - Phụ cấp xăng xe
+  const kpiTamTinh = Math.max(0, camKetTheoCong - luongThoiGian - phuCapXang);
+
+  // Thưởng KPI có thể chỉnh sửa tự do (editable)
+  const thuongKPI = (emp.thuongKPI !== undefined && emp.thuongKPI !== null && !isNaN(Number(emp.thuongKPI)) && (emp.thuongKPI as any) !== '')
     ? Math.max(0, Number(emp.thuongKPI))
-    : macDinhThuongKPI;
+    : kpiTamTinh;
 
   // Hoa hồng
   const hhTourKtv = Number(emp.hhTourKtv) || 0;
@@ -59,10 +69,10 @@ export function calculateHanaPayrollRecord(emp: EmployeePayroll | any): Employee
   // Tổng thu nhập Gross
   const tongThuNhap = luongThoiGian + phuCapAnTruaXangXe + tongHoaHong + thuongKPI;
 
-  // Khấu trừ BHXH NLĐ (10.5%)
-  const bhxhNld8 = Math.round(luongDongBhxhThucTe * 0.08);
-  const bhytNld1_5 = Math.round(luongDongBhxhThucTe * 0.015);
-  const bhtnNld1 = Math.round(luongDongBhxhThucTe * 0.01);
+  // Khấu trừ BHXH NLĐ (10.5%) - Chỉ tính nếu tháng này CÓ ĐÓNG BHXH (coDongBHXH === true)
+  const bhxhNld8 = coDongBHXH ? Math.round(luongDongBhxhThucTe * 0.08) : 0;
+  const bhytNld1_5 = coDongBHXH ? Math.round(luongDongBhxhThucTe * 0.015) : 0;
+  const bhtnNld1 = coDongBHXH ? Math.round(luongDongBhxhThucTe * 0.01) : 0;
   const bhxhCaNhan = bhxhNld8 + bhytNld1_5 + bhtnNld1;
 
   const thueTNCN = Number(emp.thueTNCN) || 0;
@@ -70,16 +80,17 @@ export function calculateHanaPayrollRecord(emp: EmployeePayroll | any): Employee
   const tongKhauTru = bhxhCaNhan + thueTNCN + tamUng + phatDiMuon;
   const thucLinh = tongThuNhap - tongKhauTru;
 
-  // BHXH Doanh nghiệp đóng thêm (21.5%)
-  const bhxhDoanhNghiep17 = Math.round(luongDongBhxhThucTe * 0.17);
-  const bhytDoanhNghiep3 = Math.round(luongDongBhxhThucTe * 0.03);
-  const bhtnDoanhNghiep1_5 = Math.round(luongDongBhxhThucTe * 0.015);
+  // BHXH Doanh nghiệp đóng thêm (21.5%) - Chỉ tính nếu CÓ ĐÓNG BHXH
+  const bhxhDoanhNghiep17 = coDongBHXH ? Math.round(luongDongBhxhThucTe * 0.17) : 0;
+  const bhytDoanhNghiep3 = coDongBHXH ? Math.round(luongDongBhxhThucTe * 0.03) : 0;
+  const bhtnDoanhNghiep1_5 = coDongBHXH ? Math.round(luongDongBhxhThucTe * 0.015) : 0;
   const tongBhxhDoanhNghiep = bhxhDoanhNghiep17 + bhytDoanhNghiep3 + bhtnDoanhNghiep1_5;
   const tongGiaTriDaiNgoToanDien = tongThuNhap + tongBhxhDoanhNghiep;
 
   return {
     ...emp,
-    mucLuongCamKet: DINH_MUC_CHUAN_THU_NHAP_10TR,
+    coDongBHXH,
+    mucLuongCamKet,
     phuCapTrachNhiem,
     luongThoaThuan,
     luongThoiGian,
