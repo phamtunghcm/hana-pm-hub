@@ -36,6 +36,7 @@ import {
   formatVND,
   numberToVietnameseWords,
   getEnrichedEmployee,
+  calculateHanaPayrollRecord,
 } from '../data/payrollData';
 import { useHana } from '../store/HanaContext';
 
@@ -180,56 +181,23 @@ export default function PayrollView() {
     e.preventDefault();
     if (!editingPayrollEmp) return;
 
-    const ngayCongChuan = editingPayrollEmp.ngayCongChuan || 26;
-    const ngayCongThucTe = Number(editingPayrollEmp.ngayCongThucTe) || 0;
-    const luongDongBHXH = Number(editingPayrollEmp.luongDongBHXH) || 5350000;
-    const phuCapTrachNhiem = Number(editingPayrollEmp.phuCapTrachNhiem) || 0;
-    const luongThoaThuan = luongDongBHXH + phuCapTrachNhiem;
-    const luongThoiGian = Math.round((luongThoaThuan / ngayCongChuan) * ngayCongThucTe);
-
-    const phuCapAnTruaXangXe = Number(editingPayrollEmp.phuCapAnTruaXangXe) || 0;
-    const hhTourKtv = Number(editingPayrollEmp.hhTourKtv) || 0;
-    const hhBanLe = Number(editingPayrollEmp.hhBanLe) || 0;
-    const hhDoanhSo = Number(editingPayrollEmp.hhDoanhSo) || 0;
-    const tongHoaHong = hhTourKtv + hhBanLe + hhDoanhSo;
-
-    const thuongKPI = Number(editingPayrollEmp.thuongKPI) || 0;
-    const soLanDiMuon = Number(editingPayrollEmp.soLanDiMuon) || 0;
-    const phatDiMuon = soLanDiMuon * 50000;
-
-    const tongThuNhap = luongThoiGian + phuCapAnTruaXangXe + tongHoaHong + thuongKPI;
-
-    const luongDongBhxhThucTe = Math.round((luongDongBHXH / ngayCongChuan) * ngayCongThucTe);
-    const bhxhCaNhan = Math.round(luongDongBhxhThucTe * 0.105);
-
-    const thueTNCN = Number(editingPayrollEmp.thueTNCN) || 0;
-    const tamUng = Number(editingPayrollEmp.tamUng) || 0;
-    const tongKhauTru = bhxhCaNhan + thueTNCN + tamUng + phatDiMuon;
-    const thucLinh = tongThuNhap - tongKhauTru;
-
-    const updatedEmp: EmployeePayroll = {
+    // Tính toán lại theo 4 nguyên tắc mới:
+    // 1. Bỏ phụ cấp trách nhiệm.
+    // 2. Cố định phụ cấp tiền cơm (mặc định 800.000 VNĐ).
+    // 3. Phụ cấp xăng theo ngày công, tối đa 500.000 VNĐ.
+    // 4. Thưởng KPI = 10tr (theo công) - Lương BHXH - Phụ cấp xăng.
+    const updatedEmp: EmployeePayroll = calculateHanaPayrollRecord({
       ...editingPayrollEmp,
-      ngayCongThucTe,
-      soLanDiMuon,
-      luongDongBHXH,
-      phuCapTrachNhiem,
-      luongThoaThuan,
-      luongThoiGian,
-      phuCapAnTruaXangXe,
-      hhTourKtv,
-      hhBanLe,
-      hhDoanhSo,
-      tongHoaHong,
-      thuongKPI,
-      phatDiMuon,
-      tongThuNhap,
-      luongDongBhxhThucTe,
-      bhxhCaNhan,
-      thueTNCN,
-      tamUng,
-      tongKhauTru,
-      thucLinh,
-    };
+      ngayCongThucTe: Number(editingPayrollEmp.ngayCongThucTe) || 0,
+      soLanDiMuon: Number(editingPayrollEmp.soLanDiMuon) || 0,
+      luongDongBHXH: Number(editingPayrollEmp.luongDongBHXH) || 5350000,
+      phuCapCom: editingPayrollEmp.phuCapCom !== undefined ? Number(editingPayrollEmp.phuCapCom) : 800000,
+      hhTourKtv: Number(editingPayrollEmp.hhTourKtv) || 0,
+      hhBanLe: Number(editingPayrollEmp.hhBanLe) || 0,
+      hhDoanhSo: Number(editingPayrollEmp.hhDoanhSo) || 0,
+      thueTNCN: Number(editingPayrollEmp.thueTNCN) || 0,
+      tamUng: Number(editingPayrollEmp.tamUng) || 0,
+    });
 
     const currentList = payrollData[selectedMonth] || [];
     const updatedList = currentList.map(emp => (emp.maNV === updatedEmp.maNV ? updatedEmp : emp));
@@ -286,7 +254,7 @@ export default function PayrollView() {
       : `Bạn có chắc muốn KHÓA SỔ LƯƠNG ${currentSummary.thangDisplay}? Sau khi khóa, số liệu sẽ được chốt để chuyển khoản.`;
     if (!window.confirm(confirmMsg)) return;
 
-    setPeriodSummaries(prev => ({
+    setPeriodSummaries((prev: any) => ({
       ...prev,
       [selectedMonth]: {
         ...currentSummary,
@@ -325,14 +293,14 @@ export default function PayrollView() {
       'Công thực tế',
       'Lương cam kết (VNĐ)',
       'Lương đóng BHXH (VNĐ)',
-      'Phụ cấp trách nhiệm / Hiệu suất (VNĐ)',
       'Lương thời gian (VNĐ)',
-      'Phụ cấp cơm & xe (VNĐ)',
+      'Phụ cấp tiền cơm (Cố định, VNĐ)',
+      'Phụ cấp xăng xe (Theo công, max 500k, VNĐ)',
       'Hoa hồng Tour KTV (VNĐ)',
       'Hoa hồng Bán lẻ (VNĐ)',
       'Hoa hồng Doanh số (VNĐ)',
       'Tổng hoa hồng (VNĐ)',
-      'Thưởng KPI (VNĐ)',
+      'Thưởng KPI (Gói 10tr trừ BHXH, Xăng, VNĐ)',
       'Phạt đi muộn (VNĐ)',
       'Khấu trừ BHXH 10.5% (VNĐ)',
       'Thuế TNCN (VNĐ)',
@@ -351,11 +319,11 @@ export default function PayrollView() {
       `"${e.nganHang}"`,
       e.ngayCongChuan,
       e.ngayCongThucTe,
-      e.mucLuongCamKet || e.luongThoaThuan,
+      e.mucLuongCamKet || 10000000,
       e.luongDongBHXH,
-      e.phuCapTrachNhiem,
       e.luongThoiGian,
-      e.phuCapAnTruaXangXe,
+      e.phuCapCom || 800000,
+      e.phuCapXang || Math.min(500000, Math.round((500000 / e.ngayCongChuan) * e.ngayCongThucTe)),
       e.hhTourKtv,
       e.hhBanLe,
       e.hhDoanhSo,
@@ -766,10 +734,9 @@ export default function PayrollView() {
                 <th className="py-3 px-3 text-right">Lương thỏa thuận</th>
                 <th className="py-3 px-2 text-center">Công chuẩn / Làm</th>
                 <th className="py-3 px-3 text-right">Lương thời gian</th>
-                <th className="py-3 px-3 text-right">Phụ cấp ăn trưa (40k x 2 bữa)</th>
-                <th className="py-3 px-3 text-right">Phụ cấp đi lại/xăng xe</th>
-                <th className="py-3 px-3 text-right">Phụ cấp trách nhiệm</th>
-                <th className="py-3 px-3 text-right">Thưởng kiêm nhiệm (KPI)</th>
+                <th className="py-3 px-3 text-right">Phụ cấp tiền cơm (Cố định)</th>
+                <th className="py-3 px-3 text-right">Phụ cấp xăng xe (Max 500k)</th>
+                <th className="py-3 px-3 text-right text-emerald-900 font-black">Thưởng KPI (Bù đủ 10tr)</th>
                 <th className="py-3 px-3 text-right">% Hoa hồng dịch vụ</th>
                 <th className="py-3 px-3 text-right font-bold text-amber-950">Tổng thu nhập (Gross)</th>
                 <th className="py-3 px-3 text-right text-rose-800">BHXH (10.5%)</th>
@@ -781,14 +748,14 @@ export default function PayrollView() {
             <tbody className="divide-y divide-[#E7E0D6] text-[#4E342E]">
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={19} className="py-12 text-center text-[#8D6E63]">
+                  <td colSpan={18} className="py-12 text-center text-[#8D6E63]">
                     Không tìm thấy nhân sự phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
               ) : (
                 filteredEmployees.map((emp, idx) => {
-                  const tienCom = emp.phuCapCom ?? Math.round(emp.ngayCongThucTe * 2 * 40000);
-                  const tienXang = emp.phuCapAnTruaXangXe > tienCom ? emp.phuCapAnTruaXangXe - tienCom : 500000;
+                  const tienCom = emp.phuCapCom || 800000;
+                  const tienXang = emp.phuCapXang || Math.min(500000, Math.round((500000 / emp.ngayCongChuan) * emp.ngayCongThucTe));
 
                   return (
                     <tr
@@ -839,7 +806,7 @@ export default function PayrollView() {
 
                       {/* Lương thỏa thuận */}
                       <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                        {formatVND(emp.luongThoaThuan)}
+                        {formatVND(emp.luongThoaThuan || emp.luongDongBHXH)}
                       </td>
 
                       {/* Công chuẩn / Làm */}
@@ -858,23 +825,18 @@ export default function PayrollView() {
                         {formatVND(emp.luongThoiGian)}
                       </td>
 
-                      {/* Phụ cấp ăn trưa (40k x 2 bữa) */}
+                      {/* Phụ cấp tiền cơm (Cố định) */}
                       <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
                         {formatVND(tienCom)}
                       </td>
 
-                      {/* Phụ cấp đi lại/xăng xe */}
+                      {/* Phụ cấp đi lại/xăng xe (Max 500k) */}
                       <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
                         {formatVND(tienXang)}
                       </td>
 
-                      {/* Phụ cấp trách nhiệm */}
-                      <td className="py-3 px-3 text-right font-medium text-[#6D4C41]">
-                        {emp.phuCapTrachNhiem > 0 ? formatVND(emp.phuCapTrachNhiem) : '—'}
-                      </td>
-
-                      {/* Thưởng kiêm nhiệm (KPI) */}
-                      <td className="py-3 px-3 text-right font-medium text-emerald-800">
+                      {/* Thưởng kiêm nhiệm (KPI) - Bù đủ 10tr */}
+                      <td className="py-3 px-3 text-right font-bold text-emerald-800">
                         {emp.thuongKPI > 0 ? formatVND(emp.thuongKPI) : '—'}
                       </td>
 
@@ -951,17 +913,17 @@ export default function PayrollView() {
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.luongDongBHXH, 0))}
                   </td>
                   <td className="py-3.5 px-3 text-right">
-                    {formatVND(filteredEmployees.reduce((a, b) => a + b.luongThoaThuan, 0))}
+                    {formatVND(filteredEmployees.reduce((a, b) => a + (b.luongThoaThuan || b.luongDongBHXH), 0))}
                   </td>
                   <td></td>
                   <td className="py-3.5 px-3 text-right">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.luongThoiGian, 0))}
                   </td>
-                  <td className="py-3.5 px-3 text-right" colSpan={2}>
-                    {formatVND(filteredEmployees.reduce((a, b) => a + b.phuCapAnTruaXangXe, 0))}
+                  <td className="py-3.5 px-3 text-right">
+                    {formatVND(filteredEmployees.reduce((a, b) => a + (b.phuCapCom || 800000), 0))}
                   </td>
                   <td className="py-3.5 px-3 text-right">
-                    {formatVND(filteredEmployees.reduce((a, b) => a + b.phuCapTrachNhiem, 0))}
+                    {formatVND(filteredEmployees.reduce((a, b) => a + (b.phuCapXang || Math.min(500000, Math.round((500000 / b.ngayCongChuan) * b.ngayCongThucTe))), 0))}
                   </td>
                   <td className="py-3.5 px-3 text-right text-emerald-800">
                     {formatVND(filteredEmployees.reduce((a, b) => a + b.thuongKPI, 0))}
@@ -1193,23 +1155,31 @@ export default function PayrollView() {
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1.5 px-3 pl-6 font-medium">2. Lương hiệu suất & trách nhiệm (bù đủ cam kết)</td>
-                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">{formatVND(enrichedSelectedEmp.phuCapTrachNhiem)}</td>
+                        <td className="py-1.5 px-3 pl-6 font-medium">1. Lương cơ bản đóng BHXH</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">{formatVND(enrichedSelectedEmp.luongDongBHXH)}</td>
                         <td className="py-1.5 px-3 text-center text-[#8D6E63]">
                           {enrichedSelectedEmp.ngayCongThucTe} / {enrichedSelectedEmp.ngayCongChuan} công
                         </td>
                         <td className="py-1.5 px-3 text-right font-medium">
-                          {formatVND(enrichedSelectedEmp.luongThoiGian - (enrichedSelectedEmp.luongDongBhxhThucTe || 0))}
+                          {formatVND(enrichedSelectedEmp.luongDongBhxhThucTe || enrichedSelectedEmp.luongThoiGian)}
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-1.5 px-3 pl-6 font-medium">3. Phụ cấp đãi ngộ: Tiền cơm (40.000 đ/bữa x 2 bữa/ngày)</td>
-                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">40,000 đ</td>
+                        <td className="py-1.5 px-3 pl-6 font-medium">2. Phụ cấp đãi ngộ: Tiền cơm (Cố định hàng tháng)</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">Cố định</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">1 tháng</td>
+                        <td className="py-1.5 px-3 text-right font-medium">
+                          {formatVND(enrichedSelectedEmp.phuCapCom || 800000)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 px-3 pl-6 font-medium">3. Phụ cấp đãi ngộ: Xăng xe (Theo ngày công, tối đa 500.000 đ)</td>
+                        <td className="py-1.5 px-3 text-center text-[#8D6E63]">500,000 đ (Max)</td>
                         <td className="py-1.5 px-3 text-center text-[#8D6E63]">
-                          {enrichedSelectedEmp.ngayCongThucTe * 2} bữa ({enrichedSelectedEmp.ngayCongThucTe} ngày)
+                          {enrichedSelectedEmp.ngayCongThucTe} / {enrichedSelectedEmp.ngayCongChuan} công
                         </td>
                         <td className="py-1.5 px-3 text-right font-medium">
-                          {formatVND(enrichedSelectedEmp.phuCapCom || enrichedSelectedEmp.phuCapAnTruaXangXe)}
+                          {formatVND(enrichedSelectedEmp.phuCapXang || Math.min(500000, Math.round((500000 / enrichedSelectedEmp.ngayCongChuan) * enrichedSelectedEmp.ngayCongThucTe)))}
                         </td>
                       </tr>
                       <tr>
@@ -1235,9 +1205,9 @@ export default function PayrollView() {
                       {enrichedSelectedEmp.thuongKPI > 0 && (
                         <tr>
                           <td className="py-1.5 px-3 pl-6 font-bold text-emerald-800">
-                            6. Thưởng hiệu suất hoàn thành chỉ tiêu KPI
+                            6. Thưởng hiệu suất KPI (Gói cam kết 10.000.000 đ - Lương BHXH - Xăng xe)
                           </td>
-                          <td className="py-1.5 px-3 text-center text-emerald-800">Đạt chỉ tiêu</td>
+                          <td className="py-1.5 px-3 text-center text-emerald-800">Bù đủ 10tr</td>
                           <td className="py-1.5 px-3 text-center text-emerald-800">100%</td>
                           <td className="py-1.5 px-3 text-right font-bold text-emerald-800">
                             {formatVND(enrichedSelectedEmp.thuongKPI)}
@@ -1453,39 +1423,55 @@ export default function PayrollView() {
                   />
                 </div>
                 <div>
-                  <label className="block font-bold mb-1">Phụ cấp trách nhiệm / Hiệu suất (VNĐ):</label>
+                  <label className="block font-bold mb-1">Phụ cấp tiền cơm (Cố định, VNĐ):</label>
                   <input
                     type="number"
-                    step="100000"
-                    value={editingPayrollEmp.phuCapTrachNhiem || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapTrachNhiem: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                    step="50000"
+                    value={editingPayrollEmp.phuCapCom !== undefined ? editingPayrollEmp.phuCapCom : 800000}
+                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapCom: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold mb-1">Phụ cấp ăn trưa & xăng xe (VNĐ):</label>
-                  <input
-                    type="number"
-                    step="50000"
-                    value={editingPayrollEmp.phuCapAnTruaXangXe}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapAnTruaXangXe: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold mb-1">Thưởng kiêm nhiệm / KPI (VNĐ):</label>
-                  <input
-                    type="number"
-                    step="100000"
-                    value={editingPayrollEmp.thuongKPI || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, thuongKPI: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-emerald-800 font-bold"
-                  />
-                </div>
-              </div>
+              {/* TỰ ĐỘNG TÍNH PHỤ CẤP XĂNG & THƯỞNG KPI THEO QUY CHẾ */}
+              {(() => {
+                const congChuan = editingPayrollEmp.ngayCongChuan || 26;
+                const congLam = Number(editingPayrollEmp.ngayCongThucTe) || 0;
+                const luongBhxh = Number(editingPayrollEmp.luongDongBHXH) || 5350000;
+                const xang = Math.min(500000, Math.round((500000 / congChuan) * congLam));
+                const bhxhTheoCong = Math.round((luongBhxh / congChuan) * congLam);
+                const mucTieu10Tr = (congLam >= congChuan) ? 10000000 : Math.round((10000000 / congChuan) * congLam);
+                const kpi = Math.max(0, mucTieu10Tr - bhxhTheoCong - xang);
+
+                return (
+                  <div className="p-3 bg-[#FAF7F0] border border-[#E7E0D6] rounded-xl space-y-2 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-[#8D6E63] font-bold block">Phụ cấp xăng xe (Theo công, max 500k):</span>
+                        <span className="font-mono font-bold text-[#4E342E] text-sm">
+                          {formatVND(xang)}
+                        </span>
+                        <span className="text-[10px] text-[#A1887F] block">
+                          ({congLam}/{congChuan} công × 500.000đ)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-emerald-800 font-bold block">Thưởng KPI (Gói 10tr trừ BHXH, Xăng):</span>
+                        <span className="font-mono font-bold text-emerald-800 text-sm">
+                          {formatVND(kpi)}
+                        </span>
+                        <span className="text-[10px] text-emerald-700 block">
+                          = {formatVND(mucTieu10Tr)} - {formatVND(bhxhTheoCong)} - {formatVND(xang)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-[#8D6E63] italic border-t border-[#E7E0D6]/60 pt-1.5">
+                      ✓ Đã bỏ phụ cấp trách nhiệm. Tiền cơm cố định {formatVND(editingPayrollEmp.phuCapCom !== undefined ? editingPayrollEmp.phuCapCom : 800000)}. Thưởng KPI tự động bù đủ gói 10.000.000đ khi đi đủ công.
+                    </p>
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-3 gap-3">
                 <div>

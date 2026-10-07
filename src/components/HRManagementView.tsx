@@ -540,10 +540,11 @@ export default function HRManagementView() {
                 </p>
                 <p>
                   Áp dụng cho toàn bộ CBNV Công ty TNHH Hana Wellness. Cơ cấu thu nhập hàng tháng bao gồm:{' '}
-                  <strong>Lương cơ bản ngạch bậc</strong>, <strong>Phụ cấp ăn trưa 40.000đ/bữa</strong> (ngày 2 bữa theo ca),{' '}
-                  <strong>Hỗ trợ xăng xe đi lại tối đa 500.000đ/tháng</strong>, <strong>Hỗ trợ tiền gửi xe tối đa 200.000đ/tháng</strong>,{' '}
+                  <strong>Lương cơ bản ngạch bậc</strong>, <strong>Phụ cấp tiền cơm cố định (800.000đ/tháng)</strong>,{' '}
+                  <strong>Hỗ trợ xăng xe theo ngày công (tối đa định mức 500.000đ/tháng)</strong>, <strong>Hỗ trợ tiền gửi xe tối đa 200.000đ/tháng</strong>,{' '}
                   <strong>Cấp 02 bộ đồng phục/năm</strong>, <strong>% Hoa hồng dịch vụ</strong> và{' '}
-                  <strong>Thưởng hiệu quả công việc & kiêm nhiệm (KPI)</strong>.
+                  <strong>Thưởng KPI (Gói thu nhập 10.000.000đ nếu đủ 26 công trừ Lương BHXH và Phụ cấp xăng)</strong>.{' '}
+                  <span className="text-rose-800 font-bold">Lưu ý: Không áp dụng phụ cấp trách nhiệm.</span>
                 </p>
                 <p className="text-[11px] text-amber-800 font-semibold pt-0.5">
                   ✓ Trạng thái: Đã đồng bộ với văn bản Word sửa đổi trên Google Drive (Bản v{SALARY_REGULATION_METADATA.version}).
@@ -642,9 +643,9 @@ export default function HRManagementView() {
               <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center font-bold mb-2">
                 🍱
               </div>
-              <h4 className="font-bold text-[#4E342E] text-xs">Phụ Cấp Ăn Trưa</h4>
+              <h4 className="font-bold text-[#4E342E] text-xs">Phụ Cấp Tiền Cơm</h4>
               <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
-                Hỗ trợ <strong>40.000 VNĐ/bữa</strong> (ngày 2 bữa đối với nhân sự làm ca 10 tiếng: 09:00 - 19:00 có 2 tiếng nghỉ ngơi).
+                Áp dụng <strong>cố định 800.000 VNĐ/tháng</strong> cho CBNV làm việc tại cơ sở (không phân bổ lẻ theo ngày công).
               </p>
             </div>
 
@@ -654,7 +655,7 @@ export default function HRManagementView() {
               </div>
               <h4 className="font-bold text-[#4E342E] text-xs">Hỗ Trợ Xăng Xe</h4>
               <p className="text-[11px] text-[#8D6E63] mt-1.5 leading-relaxed">
-                Hỗ trợ tối đa <strong>500.000 VNĐ/tháng</strong> (theo điều kiện đi lại thực tế phục vụ cơ sở).
+                Tính theo ngày công thực tế nhưng <strong>không vượt quá định mức chuẩn 500.000 VNĐ/tháng</strong>.
               </p>
             </div>
 

@@ -46,18 +46,19 @@ export interface EmployeePayroll {
   ngayNghiKhongLuong: number;
 
   // Thu nhập cố định & thời gian
-  luongDongBHXH: number; // Cố định 5.350.000 VNĐ theo QĐ 30/08/2026 (hoặc mức thỏa thuận)
-  phuCapTrachNhiem: number; // Phần chênh lệch lương thỏa thuận cũ - 5.350.000đ (hoặc lương hiệu suất bù cam kết)
-  luongThoaThuan: number; // luongDongBHXH + phuCapTrachNhiem
-  luongThoiGian: number; // (luongDongBHXH + phuCapTrachNhiem) / 26 * ngayCongThucTe
-  mucLuongCamKet?: number; // Mức lương cam kết (vd 10.000.000 đ)
+  luongDongBHXH: number; // Mức lương đóng BHXH theo ngạch bậc (vd: 5.500.000 VNĐ hoặc 5.350.000 VNĐ)
+  phuCapTrachNhiem?: number; // Đã bỏ phụ cấp trách nhiệm (mặc định 0)
+  luongThoaThuan: number; // Mức lương cơ sở / thỏa thuận
+  luongThoiGian: number; // Lương thời gian theo BHXH: luongDongBHXH / ngayCongChuan * ngayCongThucTe
+  mucLuongCamKet?: number; // Mức tổng thu nhập cam kết (10.000.000 VNĐ nếu đủ 26 công)
   trangThaiLamViec?: string; // "Chính thức" | "Thử việc"
   cheDoNghi?: string; // "3 - 4 ngày/tháng (Hưởng nguyên lương)"
 
-  // Đãi ngộ Cơm & Gửi xe theo mẫu Google Sheet
-  phuCapCom?: number; // Tiền cơm 40.000đ/bữa x 2 bữa/ngày x số ngày làm
+  // Đãi ngộ Cơm & Xăng xe & Gửi xe theo quy chế mới
+  phuCapCom: number; // Cố định phụ cấp tiền cơm (mặc định 800.000 VNĐ/tháng)
+  phuCapXang: number; // Phụ cấp xăng theo ngày công, tối đa định mức chuẩn 500.000 VNĐ/tháng
   phuCapGuiXe?: number; // Tiền gửi xe cố định hàng tháng (200.000đ)
-  phuCapAnTruaXangXe: number; // Tổng phụ cấp cơm + xe + điện thoại
+  phuCapAnTruaXangXe: number; // Tổng phụ cấp cơm + xăng xe (+ gửi xe nếu có)
 
   // Hoa hồng
   hhTourKtv: number; // Hoa hồng đi tour (KTV Chính + Phụ)

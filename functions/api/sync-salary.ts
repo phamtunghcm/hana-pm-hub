@@ -86,10 +86,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
         regulationHighlights: {
           soQuyChe: "06/2026/QC-LT-HNW",
           ngayBanHanh: "20/09/2026",
-          phuCapAnTrua: "40.000 VNĐ/bữa (ngày 2 bữa theo ca thực tế)",
-          phuCapXangXe: "Tối đa 500.000 VNĐ/tháng (theo điều kiện đi lại thực tế)",
+          phuCapTrachNhiem: "Không áp dụng phụ cấp trách nhiệm (đã bãi bỏ)",
+          phuCapAnTrua: "Cố định 800.000 VNĐ/tháng (phụ cấp tiền cơm)",
+          phuCapXangXe: "Theo ngày công, tối đa định mức chuẩn 500.000 VNĐ/tháng",
           phuCapGuiXe: "Tối đa 200.000 VNĐ/tháng",
-          phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là"
+          phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là",
+          thuongKPI: "Gói thu nhập chuẩn 10.000.000 VNĐ (nếu đủ 26 công) trừ Lương BHXH, trừ Phụ cấp xăng"
         },
         message: "Đồng bộ thời gian thực thành công từ Google Drive API!"
       };
@@ -133,10 +135,12 @@ export async function onRequest(context: { request: Request; env: Env }) {
       regulationHighlights: {
         soQuyChe: "06/2026/QC-LT-HNW",
         ngayBanHanh: "20/09/2026",
-        phuCapAnTrua: "40.000 VNĐ/bữa (ngày 2 bữa theo ca thực tế)",
-        phuCapXangXe: "Tối đa 500.000 VNĐ/tháng (theo điều kiện đi lại thực tế)",
+        phuCapTrachNhiem: "Không áp dụng phụ cấp trách nhiệm (đã bãi bỏ)",
+        phuCapAnTrua: "Cố định 800.000 VNĐ/tháng (phụ cấp tiền cơm)",
+        phuCapXangXe: "Theo ngày công, tối đa định mức chuẩn 500.000 VNĐ/tháng",
         phuCapGuiXe: "Tối đa 200.000 VNĐ/tháng",
-        phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là"
+        phuCapDongPhuc: "Cấp từ 02 bộ đồng phục/năm hoặc hỗ trợ chi phí giặt là",
+        thuongKPI: "Gói thu nhập chuẩn 10.000.000 VNĐ (nếu đủ 26 công) trừ Lương BHXH, trừ Phụ cấp xăng"
       },
       message: "Đồng bộ thành công dữ liệu Quy chế lương & Bảng tính lương (Phiên bản v120 từ Google Drive)!"
     };
