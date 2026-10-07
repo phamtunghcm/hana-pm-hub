@@ -1576,7 +1576,7 @@ export default function PayrollView({
             </div>
 
             {/* Form Body - 5 Khối Khoa học & Mọi con số đều sửa được */}
-            <form onSubmit={handleSaveEditPayroll} className="p-6 space-y-6 text-xs text-[#5D4037] overflow-y-auto grow">
+            <form onSubmit={handleSaveEditPayroll} noValidate className="p-6 space-y-6 text-xs text-[#5D4037] overflow-y-auto grow">
               
               {/* KHỐI 1: THỜI GIAN LÀM VIỆC & KỶ LUẬT LAO ĐỘNG */}
               <div className="p-4 bg-[#FAF7F0] border border-[#E7E0D6] rounded-2xl space-y-3">
@@ -1691,7 +1691,7 @@ export default function PayrollView({
                     </div>
                     <input
                       type="number"
-                      step="10000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.phatDiMuon !== undefined ? editingPayrollEmp.phatDiMuon : ((Number(editingPayrollEmp.soLanDiMuon) || 0) * 50000)}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phatDiMuon: Number(e.target.value) })}
@@ -1747,7 +1747,7 @@ export default function PayrollView({
                     </label>
                     <input
                       type="number"
-                      step="500000"
+                      step="any"
                       value={editingPayrollEmp.mucLuongCamKet !== undefined ? editingPayrollEmp.mucLuongCamKet : 10000000}
                       onChange={e => {
                         const newCamKet = Number(e.target.value);
@@ -1779,7 +1779,7 @@ export default function PayrollView({
                     </label>
                     <input
                       type="number"
-                      step="100000"
+                      step="any"
                       value={editingPayrollEmp.luongDongBHXH}
                       onChange={e => {
                         const newBhxh = Number(e.target.value);
@@ -1825,7 +1825,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Phụ cấp tiền cơm (Cố định, VNĐ):</label>
                     <input
                       type="number"
-                      step="50000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.phuCapCom !== undefined ? editingPayrollEmp.phuCapCom : 800000}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapCom: Number(e.target.value) })}
@@ -1867,7 +1867,7 @@ export default function PayrollView({
                         <>
                           <input
                             type="number"
-                            step="10000"
+                            step="any"
                             min="0"
                             value={currentVal}
                             onChange={e => {
@@ -1890,7 +1890,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Phụ cấp gửi xe (VNĐ):</label>
                     <input
                       type="number"
-                      step="10000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.phuCapGuiXe !== undefined ? editingPayrollEmp.phuCapGuiXe : 200000}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapGuiXe: Number(e.target.value) })}
@@ -1936,7 +1936,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Hoa hồng Tour KTV trị liệu (VNĐ):</label>
                     <input
                       type="number"
-                      step="50000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.hhTourKtv || 0}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhTourKtv: Number(e.target.value) })}
@@ -1949,7 +1949,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Hoa hồng Bán lẻ mỹ phẩm (VNĐ):</label>
                     <input
                       type="number"
-                      step="50000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.hhBanLe || 0}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhBanLe: Number(e.target.value) })}
@@ -1962,7 +1962,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Hoa hồng Doanh số chung (VNĐ):</label>
                     <input
                       type="number"
-                      step="50000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.hhDoanhSo || 0}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhDoanhSo: Number(e.target.value) })}
@@ -1977,7 +1977,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Tạm ứng trong kỳ (VNĐ):</label>
                     <input
                       type="number"
-                      step="100000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.tamUng || 0}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, tamUng: Number(e.target.value) })}
@@ -1990,7 +1990,7 @@ export default function PayrollView({
                     <label className="block font-bold mb-1 text-[#4E342E]">Khấu trừ Thuế TNCN (VNĐ):</label>
                     <input
                       type="number"
-                      step="10000"
+                      step="any"
                       min="0"
                       value={editingPayrollEmp.thueTNCN || 0}
                       onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, thueTNCN: Number(e.target.value) })}
@@ -2151,7 +2151,7 @@ export default function PayrollView({
                       <div className="relative">
                         <input
                           type="number"
-                          step="50000"
+                          step="any"
                           min="0"
                           value={editingPayrollEmp.thuongKPI !== undefined ? editingPayrollEmp.thuongKPI : kpiGoiYBuDuCamKet}
                           onChange={e => {

@@ -586,32 +586,9 @@ export default function HRManagementView() {
         </div>
       </div>
 
-      {/* SUB-TABS NAVIGATION */}
+      {/* SUB-TABS NAVIGATION - SẮP XẾP THEO LOGIC QUY TRÌNH CHUẨN */}
       <div className="flex items-center gap-2 border-b border-[#E7E0D6] pb-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveSubTab('payroll')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
-            activeSubTab === 'payroll'
-              ? 'bg-[#8D6E63] text-white shadow-md'
-              : 'text-[#6D4C41] hover:bg-[#F5F0E6] hover:text-[#4E342E]'
-          }`}
-        >
-          <Wallet size={18} />
-          <span>Bảng Lương ERP & Phiếu Lương</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('regulations')}
-          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
-            activeSubTab === 'regulations'
-              ? 'bg-[#8D6E63] text-white shadow-md'
-              : 'text-[#6D4C41] hover:bg-[#F5F0E6] hover:text-[#4E342E]'
-          }`}
-        >
-          <Award size={18} />
-          <span>Quy chế Lương & Thang Ngạch Bậc</span>
-        </button>
-
+        {/* BƯỚC 1: HỒ SƠ NHÂN VIÊN */}
         <button
           onClick={() => setActiveSubTab('directory')}
           className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
@@ -621,9 +598,10 @@ export default function HRManagementView() {
           }`}
         >
           <Users size={18} />
-          <span>Hồ Sơ Nhân Viên ({employees.length})</span>
+          <span>1. Hồ Sơ Nhân Viên ({employees.length})</span>
         </button>
 
+        {/* BƯỚC 2: BẢNG CHẤM CÔNG */}
         <button
           onClick={() => setActiveSubTab('attendance')}
           className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
@@ -633,9 +611,10 @@ export default function HRManagementView() {
           }`}
         >
           <CalendarDays size={18} />
-          <span>Bảng Chấm Công (Ca 09:00 - 19:00)</span>
+          <span>2. Bảng Chấm Công (Ca 09:00 - 19:00)</span>
         </button>
 
+        {/* BƯỚC 3: ĐĂNG KÝ & DUYỆT NGHỈ */}
         <button
           onClick={() => setActiveSubTab('leave')}
           className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer relative ${
@@ -645,12 +624,38 @@ export default function HRManagementView() {
           }`}
         >
           <FileCheck2 size={18} />
-          <span>Đăng Ký & Duyệt Nghỉ</span>
+          <span>3. Đăng Ký & Duyệt Nghỉ</span>
           {leaveRequests.filter(r => r.trangThai === 'ChoDuyet').length > 0 && (
             <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-black bg-rose-500 text-white animate-pulse">
               {leaveRequests.filter(r => r.trangThai === 'ChoDuyet').length}
             </span>
           )}
+        </button>
+
+        {/* BƯỚC 4: BẢNG LƯƠNG ERP & PHIẾU LƯƠNG */}
+        <button
+          onClick={() => setActiveSubTab('payroll')}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
+            activeSubTab === 'payroll'
+              ? 'bg-[#8D6E63] text-white shadow-md'
+              : 'text-[#6D4C41] hover:bg-[#F5F0E6] hover:text-[#4E342E]'
+          }`}
+        >
+          <Wallet size={18} />
+          <span>4. Bảng Lương ERP & Phiếu Lương</span>
+        </button>
+
+        {/* BƯỚC 5: QUY CHẾ LƯƠNG & THANG NGẠCH BẬC */}
+        <button
+          onClick={() => setActiveSubTab('regulations')}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap cursor-pointer ${
+            activeSubTab === 'regulations'
+              ? 'bg-[#8D6E63] text-white shadow-md'
+              : 'text-[#6D4C41] hover:bg-[#F5F0E6] hover:text-[#4E342E]'
+          }`}
+        >
+          <Award size={18} />
+          <span>5. Quy chế Lương & Thang Ngạch Bậc</span>
         </button>
       </div>
 
@@ -1586,7 +1591,7 @@ export default function HRManagementView() {
                   <label className="block font-bold mb-1">Lương thỏa thuận (VNĐ):</label>
                   <input
                     type="number"
-                    step="100000"
+                    step="any"
                     value={editingEmployee.luongThoaThuan}
                     onChange={e => setEditingEmployee({ ...editingEmployee, luongThoaThuan: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold text-emerald-800"
@@ -1596,7 +1601,7 @@ export default function HRManagementView() {
                   <label className="block font-bold mb-1">Mức lương cam kết (VNĐ):</label>
                   <input
                     type="number"
-                    step="100000"
+                    step="any"
                     value={editingEmployee.mucLuongCamKet || 0}
                     onChange={e => setEditingEmployee({ ...editingEmployee, mucLuongCamKet: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold text-amber-800"
@@ -2286,7 +2291,7 @@ export default function HRManagementView() {
                 <label className="block font-bold mb-1">Lương cơ bản thỏa thuận (VNĐ):</label>
                 <input
                   type="number"
-                  step="100000"
+                  step="any"
                   value={newEmpSalary}
                   onChange={e => setNewEmpSalary(Number(e.target.value))}
                   className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
