@@ -1418,59 +1418,62 @@ export default function PayrollView() {
             </div>
 
             <form onSubmit={handleSaveEditPayroll} className="p-6 space-y-4 text-xs text-[#5D4037] max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold mb-1">Ngày công thực tế:</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    max="31"
-                    required
-                    value={editingPayrollEmp.ngayCongThucTe}
-                    onChange={e => {
-                      const newCong = Number(e.target.value);
-                      const congChuan = editingPayrollEmp.ngayCongChuan || 26;
-                      const luongBhxh = Number(editingPayrollEmp.luongDongBHXH) || 5350000;
-                      
-                      const oldCong = Number(editingPayrollEmp.ngayCongThucTe) || 0;
-                      const oldXang = Math.min(500000, Math.round((500000 / congChuan) * oldCong));
-                      const oldBhxhTheoCong = Math.round((luongBhxh / congChuan) * oldCong);
-                      const oldMucTieu = (oldCong >= congChuan) ? 10000000 : Math.round((10000000 / congChuan) * oldCong);
-                      const oldAutoKpi = Math.max(0, oldMucTieu - oldBhxhTheoCong - oldXang);
+              {/* PHẦN 1: THỜI GIAN LÀM VIỆC & LƯƠNG CĂN BẢN */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8D6E63] border-b border-[#E7E0D6] pb-1">
+                  1. Thời gian làm việc & Lương cơ bản
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold mb-1">Ngày công thực tế (Chuẩn 26):</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      max="31"
+                      required
+                      value={editingPayrollEmp.ngayCongThucTe}
+                      onChange={e => {
+                        const newCong = Number(e.target.value);
+                        const congChuan = editingPayrollEmp.ngayCongChuan || 26;
+                        const luongBhxh = Number(editingPayrollEmp.luongDongBHXH) || 5350000;
+                        
+                        const oldCong = Number(editingPayrollEmp.ngayCongThucTe) || 0;
+                        const oldXang = Math.min(500000, Math.round((500000 / congChuan) * oldCong));
+                        const oldBhxhTheoCong = Math.round((luongBhxh / congChuan) * oldCong);
+                        const oldMucTieu = (oldCong >= congChuan) ? 10000000 : Math.round((10000000 / congChuan) * oldCong);
+                        const oldAutoKpi = Math.max(0, oldMucTieu - oldBhxhTheoCong - oldXang);
 
-                      const newXang = Math.min(500000, Math.round((500000 / congChuan) * newCong));
-                      const newBhxhTheoCong = Math.round((luongBhxh / congChuan) * newCong);
-                      const newMucTieu = (newCong >= congChuan) ? 10000000 : Math.round((10000000 / congChuan) * newCong);
-                      const newAutoKpi = Math.max(0, newMucTieu - newBhxhTheoCong - newXang);
+                        const newXang = Math.min(500000, Math.round((500000 / congChuan) * newCong));
+                        const newBhxhTheoCong = Math.round((luongBhxh / congChuan) * newCong);
+                        const newMucTieu = (newCong >= congChuan) ? 10000000 : Math.round((10000000 / congChuan) * newCong);
+                        const newAutoKpi = Math.max(0, newMucTieu - newBhxhTheoCong - newXang);
 
-                      // Nếu trước đó đang dùng mặc định, tự động đồng bộ theo công mới
-                      const shouldAutoUpdateKpi = editingPayrollEmp.thuongKPI === undefined || editingPayrollEmp.thuongKPI === oldAutoKpi;
+                        const shouldAutoUpdateKpi = editingPayrollEmp.thuongKPI === undefined || editingPayrollEmp.thuongKPI === oldAutoKpi;
 
-                      setEditingPayrollEmp({
-                        ...editingPayrollEmp,
-                        ngayCongThucTe: newCong,
-                        thuongKPI: shouldAutoUpdateKpi ? newAutoKpi : editingPayrollEmp.thuongKPI,
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
-                  />
+                        setEditingPayrollEmp({
+                          ...editingPayrollEmp,
+                          ngayCongThucTe: newCong,
+                          thuongKPI: shouldAutoUpdateKpi ? newAutoKpi : editingPayrollEmp.thuongKPI,
+                        });
+                      }}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold mb-1">Số lần đi muộn (Phạt 50k/lần):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editingPayrollEmp.soLanDiMuon || 0}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, soLanDiMuon: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block font-bold mb-1">Số lần đi muộn:</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editingPayrollEmp.soLanDiMuon || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, soLanDiMuon: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold mb-1">Lương cơ bản đóng BHXH (VNĐ):</label>
+                  <label className="block font-bold mb-1">Mức lương cơ bản đóng BHXH (Hợp đồng, VNĐ):</label>
                   <input
                     type="number"
                     step="100000"
@@ -1497,92 +1500,245 @@ export default function PayrollView() {
                     className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
                   />
                 </div>
-                <div>
-                  <label className="block font-bold mb-1">Phụ cấp tiền cơm (Cố định, VNĐ):</label>
-                  <input
-                    type="number"
-                    step="50000"
-                    value={editingPayrollEmp.phuCapCom !== undefined ? editingPayrollEmp.phuCapCom : 800000}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapCom: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
-                  />
+              </div>
+
+              {/* PHẦN 2: PHỤ CẤP ĐÃI NGỘ */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8D6E63] border-b border-[#E7E0D6] pb-1">
+                  2. Chế độ phụ cấp đãi ngộ
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold mb-1">Phụ cấp tiền cơm (Cố định, VNĐ):</label>
+                    <input
+                      type="number"
+                      step="50000"
+                      value={editingPayrollEmp.phuCapCom !== undefined ? editingPayrollEmp.phuCapCom : 800000}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, phuCapCom: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold"
+                    />
+                    <span className="text-[10px] text-[#8D6E63] mt-0.5 block">Cố định 800k/tháng theo quy chế</span>
+                  </div>
+                  <div>
+                    <label className="block font-bold mb-1">Phụ cấp xăng xe (Theo ngày công):</label>
+                    {(() => {
+                      const congChuan = editingPayrollEmp.ngayCongChuan || 26;
+                      const congLam = Number(editingPayrollEmp.ngayCongThucTe) || 0;
+                      const xang = Math.min(500000, Math.round((500000 / congChuan) * congLam));
+                      return (
+                        <div className="px-3 py-2 bg-[#F5F0E6] border border-[#E7E0D6] rounded-xl text-xs font-mono font-bold text-[#4E342E]">
+                          {formatVND(xang)}
+                          <span className="text-[10px] text-[#8D6E63] font-normal block">
+                            (Tối đa 500k · {congLam}/{congChuan} công)
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
 
-              {/* TỰ ĐỘNG TÍNH PHỤ CẤP XĂNG & THƯỞNG KPI (MẶC ĐỊNH TÍNH NHƯNG CHO SỬA) */}
+              {/* PHẦN 3: HOA HỒNG DỊCH VỤ & KHẤU TRỪ */}
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-[#8D6E63] border-b border-[#E7E0D6] pb-1">
+                  3. Hoa hồng dịch vụ & Các khoản khấu trừ
+                </h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold mb-1">Hoa hồng Tour KTV:</label>
+                    <input
+                      type="number"
+                      step="50000"
+                      value={editingPayrollEmp.hhTourKtv || 0}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhTourKtv: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold mb-1">Hoa hồng Bán lẻ:</label>
+                    <input
+                      type="number"
+                      step="50000"
+                      value={editingPayrollEmp.hhBanLe || 0}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhBanLe: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold mb-1">Hoa hồng Doanh số:</label>
+                    <input
+                      type="number"
+                      step="50000"
+                      value={editingPayrollEmp.hhDoanhSo || 0}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhDoanhSo: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold mb-1">Tạm ứng trong kỳ (VNĐ):</label>
+                    <input
+                      type="number"
+                      step="100000"
+                      value={editingPayrollEmp.tamUng || 0}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, tamUng: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-rose-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold mb-1">Khấu trừ Thuế TNCN (VNĐ):</label>
+                    <input
+                      type="number"
+                      step="10000"
+                      value={editingPayrollEmp.thueTNCN || 0}
+                      onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, thueTNCN: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-rose-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* PHẦN 4 & 5: BẢNG TỔNG HỢP CÁC MỤC TRƯỚC KPI & Ô ĐIỀN KPI CUỐI CÙNG */}
               {(() => {
                 const congChuan = editingPayrollEmp.ngayCongChuan || 26;
                 const congLam = Number(editingPayrollEmp.ngayCongThucTe) || 0;
                 const luongBhxh = Number(editingPayrollEmp.luongDongBHXH) || 5350000;
+                const luongBhxhTheoCong = Math.round((luongBhxh / congChuan) * congLam);
+                
+                const phuCapCom = editingPayrollEmp.phuCapCom !== undefined ? Number(editingPayrollEmp.phuCapCom) : 800000;
                 const xang = Math.min(500000, Math.round((500000 / congChuan) * congLam));
-                const bhxhTheoCong = Math.round((luongBhxh / congChuan) * congLam);
+
+                const hhTour = Number(editingPayrollEmp.hhTourKtv) || 0;
+                const hhBanLe = Number(editingPayrollEmp.hhBanLe) || 0;
+                const hhDoanhSo = Number(editingPayrollEmp.hhDoanhSo) || 0;
+                const tongHoaHong = hhTour + hhBanLe + hhDoanhSo;
+
+                const soLanDiMuon = Number(editingPayrollEmp.soLanDiMuon) || 0;
+                const phatDiMuon = soLanDiMuon * 50000;
+                const tamUng = Number(editingPayrollEmp.tamUng) || 0;
+                const thueTNCN = Number(editingPayrollEmp.thueTNCN) || 0;
+
+                // TỔNG THU NHẬP CỦA CÁC MỤC KHÁC (TRƯỚC KHI CỘNG KPI)
+                const tongThuNhapChuaKpi = luongBhxhTheoCong + phuCapCom + xang + tongHoaHong;
+
+                // MỨC CHUẨN GÓI 10TR & GỢI Ý BÙ ĐỦ
                 const mucTieu10Tr = (congLam >= congChuan) ? 10000000 : Math.round((10000000 / congChuan) * congLam);
-                const macDinhKpi = Math.max(0, mucTieu10Tr - bhxhTheoCong - xang);
+                const kpiGoiYBuDu10Tr = Math.max(0, mucTieu10Tr - luongBhxhTheoCong - xang);
+
+                // THƯỞNG KPI HIỆN TẠI DO QUẢN LÝ ĐIỀN / CHỌN
                 const currentKpi = (editingPayrollEmp.thuongKPI !== undefined && editingPayrollEmp.thuongKPI !== null && (editingPayrollEmp.thuongKPI as any) !== '')
                   ? Number(editingPayrollEmp.thuongKPI)
-                  : macDinhKpi;
-                const isOverridden = currentKpi !== macDinhKpi;
+                  : kpiGoiYBuDu10Tr;
+                const isOverridden = currentKpi !== kpiGoiYBuDu10Tr;
+
+                // DỰ KIẾN KẾT QUẢ CUỐI CÙNG
+                const tongGrossDuKien = tongThuNhapChuaKpi + currentKpi;
+                const bhxhCaNhanDuKien = Math.round(luongBhxhTheoCong * 0.08) + Math.round(luongBhxhTheoCong * 0.015) + Math.round(luongBhxhTheoCong * 0.01);
+                const tongKhauTruDuKien = bhxhCaNhanDuKien + thueTNCN + tamUng + phatDiMuon;
+                const thucLinhDuKien = tongGrossDuKien - tongKhauTruDuKien;
 
                 return (
-                  <div className="p-3.5 bg-[#FAF7F0] border border-[#E7E0D6] rounded-xl space-y-3 text-xs">
-                    <div className="grid grid-cols-2 gap-3 items-center">
-                      <div className="bg-white p-2.5 rounded-lg border border-[#E7E0D6]">
-                        <span className="text-[#8D6E63] font-bold block mb-1">Phụ cấp xăng xe (Theo công, max 500k):</span>
-                        <span className="font-mono font-bold text-[#4E342E] text-sm">
-                          {formatVND(xang)}
+                  <div className="space-y-3 pt-2">
+                    {/* BẢNG TỔNG HỢP CÁC MỤC KHÁC (TRƯỚC KHI TỰ QUYẾT KPI) */}
+                    <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-[#4E342E] text-xs flex items-center gap-1.5">
+                          <span>📊 TỔNG THU NHẬP CÁC MỤC KHÁC (Chưa gồm KPI):</span>
                         </span>
-                        <span className="text-[10px] text-[#A1887F] block mt-0.5">
-                          ({congLam}/{congChuan} công × 500.000đ định mức)
+                        <span className="font-mono text-base font-black text-amber-950 bg-white px-3 py-1 rounded-xl border border-amber-200 shadow-2xs">
+                          {formatVND(tongThuNhapChuaKpi)}
                         </span>
                       </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-[#E7E0D6]">
-                        <span className="text-[#8D6E63] font-bold block mb-1">Mức chuẩn gói 10tr theo công:</span>
-                        <span className="font-mono font-bold text-[#4E342E] text-sm">
-                          {formatVND(mucTieu10Tr)}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#6D4C41] pt-1 border-t border-amber-200/60">
+                        <div>
+                          <span className="text-[#8D6E63] block">1. Lương BHXH ({congLam}c):</span>
+                          <strong className="font-mono">{formatVND(luongBhxhTheoCong)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[#8D6E63] block">2. Tiền cơm cố định:</span>
+                          <strong className="font-mono">{formatVND(phuCapCom)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[#8D6E63] block">3. Phụ cấp xăng ({congLam}c):</span>
+                          <strong className="font-mono">{formatVND(xang)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[#8D6E63] block">4. Tổng hoa hồng:</span>
+                          <strong className="font-mono text-emerald-800">{formatVND(tongHoaHong)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] bg-white/70 p-2 rounded-xl border border-amber-200/60">
+                        <span className="text-[#6D4C41]">
+                          🎯 Định mức gói 10tr theo công: <strong>{formatVND(mucTieu10Tr)}</strong>
                         </span>
-                        <span className="text-[10px] text-[#A1887F] block mt-0.5">
-                          (BHXH theo công: {formatVND(bhxhTheoCong)})
+                        <span className="text-emerald-800 font-bold">
+                          💡 Gợi ý bù đủ 10tr (10tr - BHXH - Xăng): <strong>{formatVND(kpiGoiYBuDu10Tr)}</strong>
                         </span>
                       </div>
                     </div>
 
-                    {/* Ô NHẬP THƯỞNG KPI - MẶC ĐỊNH TÍNH NHƯNG CHO PHÉP SỬA */}
-                    <div className="bg-white p-3 rounded-xl border-2 border-emerald-300 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="font-bold text-emerald-900 flex items-center gap-1.5">
-                          <span>Thưởng KPI (Gói 10tr trừ BHXH, Xăng):</span>
-                          {isOverridden ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                              Đã sửa thủ công
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              Mặc định tự động tính
-                            </span>
-                          )}
-                        </label>
+                    {/* BƯỚC CUỐI CÙNG: Ô ĐIỀN THƯỞNG KPI TỰ QUYẾT ĐỊNH */}
+                    <div className="p-4 bg-emerald-50/50 border-2 border-emerald-400 rounded-2xl space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <label className="font-black text-emerald-950 text-xs flex items-center gap-2">
+                            <span>🎯 BƯỚC CUỐI: TỰ QUYẾT ĐỊNH THƯỞNG KPI</span>
+                            {isOverridden ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                ✏️ Đã tự điều chỉnh
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                ✓ Đang theo mức bù đủ 10tr
+                              </span>
+                            )}
+                          </label>
+                          <p className="text-[10px] text-emerald-800 mt-0.5">
+                            Quản lý xem tổng thu nhập các mục trên ({formatVND(tongThuNhapChuaKpi)}) rồi nhập số thưởng KPI theo quyết định của mình.
+                          </p>
+                        </div>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingPayrollEmp({
-                              ...editingPayrollEmp,
-                              thuongKPI: macDinhKpi,
-                            });
-                          }}
-                          className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1 cursor-pointer"
-                          title="Bấm để lấy lại số tính mặc định theo công thức bù đủ 10tr"
-                        >
-                          <span>↺ Lấy mặc định ({formatVND(macDinhKpi)})</span>
-                        </button>
+                        {/* Nút thao tác nhanh */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPayrollEmp({
+                                ...editingPayrollEmp,
+                                thuongKPI: kpiGoiYBuDu10Tr,
+                              });
+                            }}
+                            className="px-2.5 py-1 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-lg text-[11px] font-bold text-emerald-800 transition-colors shadow-2xs cursor-pointer"
+                            title="Điền mức bù đủ gói 10tr"
+                          >
+                            ↺ Bù đủ 10tr ({formatVND(kpiGoiYBuDu10Tr)})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPayrollEmp({
+                                ...editingPayrollEmp,
+                                thuongKPI: 0,
+                              });
+                            }}
+                            className="px-2.5 py-1 bg-white hover:bg-rose-50 border border-[#E7E0D6] rounded-lg text-[11px] font-bold text-[#8D6E63] hover:text-rose-700 transition-colors shadow-2xs cursor-pointer"
+                            title="Không thưởng KPI"
+                          >
+                            0đ
+                          </button>
+                        </div>
                       </div>
 
+                      {/* Ô nhập số tiền KPI lớn */}
                       <div className="relative">
                         <input
                           type="number"
                           step="50000"
-                          value={editingPayrollEmp.thuongKPI !== undefined ? editingPayrollEmp.thuongKPI : macDinhKpi}
+                          value={editingPayrollEmp.thuongKPI !== undefined ? editingPayrollEmp.thuongKPI : kpiGoiYBuDu10Tr}
                           onChange={e => {
                             const val = e.target.value === '' ? ('' as any) : Number(e.target.value);
                             setEditingPayrollEmp({
@@ -1590,85 +1746,46 @@ export default function PayrollView() {
                               thuongKPI: val,
                             });
                           }}
-                          className="w-full px-3 py-2 bg-emerald-50/40 border border-emerald-300 rounded-xl text-sm font-mono font-black text-emerald-900 focus:outline-emerald-600"
-                          placeholder={macDinhKpi.toString()}
+                          className="w-full px-4 py-2.5 bg-white border-2 border-emerald-500 rounded-xl text-base font-mono font-black text-emerald-950 focus:outline-emerald-600 shadow-inner"
+                          placeholder={kpiGoiYBuDu10Tr.toString()}
                         />
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-[#8D6E63] pt-1 border-t border-[#E7E0D6]/60">
-                        <span>
-                          Công thức mặc định: {formatVND(mucTieu10Tr)} (gói 10tr) - {formatVND(bhxhTheoCong)} (BHXH) - {formatVND(xang)} (Xăng) = <strong className="text-emerald-800">{formatVND(macDinhKpi)}</strong>
-                        </span>
+                      {/* DỰ KIẾN KẾT QUẢ SAU KHI ĐIỀN KPI */}
+                      <div className="p-3 bg-white rounded-xl border border-emerald-200/80 space-y-2">
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-[#FAF7F0] p-2 rounded-lg border border-[#E7E0D6]">
+                            <span className="text-[10px] text-[#8D6E63] font-bold block">Tổng Gross dự kiến:</span>
+                            <span className="font-mono font-bold text-xs text-[#4E342E]">
+                              {formatVND(tongGrossDuKien)}
+                            </span>
+                          </div>
+
+                          <div className="bg-rose-50/50 p-2 rounded-lg border border-rose-200">
+                            <span className="text-[10px] text-rose-700 font-bold block">Khấu trừ BHXH (10.5%):</span>
+                            <span className="font-mono font-bold text-xs text-rose-700">
+                              -{formatVND(bhxhCaNhanDuKien)}
+                            </span>
+                          </div>
+
+                          <div className="bg-emerald-100/70 p-2 rounded-lg border border-emerald-300">
+                            <span className="text-[10px] text-emerald-900 font-black block">THỰC LĨNH CHUYỂN KHOẢN:</span>
+                            <span className="font-mono font-black text-sm text-emerald-950">
+                              {formatVND(thucLinhDuKien)}
+                            </span>
+                          </div>
+                        </div>
+
                         {isOverridden && (
-                          <span className="text-amber-700 font-semibold italic">
-                            Chênh lệch so với mặc định: {currentKpi > macDinhKpi ? '+' : ''}{formatVND(currentKpi - macDinhKpi)}
-                          </span>
+                          <p className="text-[10px] text-amber-800 text-center font-semibold italic">
+                            (Đã điều chỉnh: {currentKpi > kpiGoiYBuDu10Tr ? 'Tăng +' : 'Giảm -'}{formatVND(Math.abs(currentKpi - kpiGoiYBuDu10Tr))} so với mức bù đủ gói 10tr)
+                          </p>
                         )}
                       </div>
                     </div>
-
-                    <p className="text-[10px] text-[#8D6E63] italic">
-                      ✓ Đã bỏ phụ cấp trách nhiệm. Tiền cơm cố định {formatVND(editingPayrollEmp.phuCapCom !== undefined ? editingPayrollEmp.phuCapCom : 800000)}. Quản lý có thể trực tiếp sửa số tiền KPI nếu có điều chỉnh theo đánh giá thực tế.
-                    </p>
                   </div>
                 );
               })()}
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold mb-1">Hoa hồng Tour KTV:</label>
-                  <input
-                    type="number"
-                    step="50000"
-                    value={editingPayrollEmp.hhTourKtv || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhTourKtv: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold mb-1">Hoa hồng Bán lẻ:</label>
-                  <input
-                    type="number"
-                    step="50000"
-                    value={editingPayrollEmp.hhBanLe || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhBanLe: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold mb-1">Hoa hồng Doanh số:</label>
-                  <input
-                    type="number"
-                    step="50000"
-                    value={editingPayrollEmp.hhDoanhSo || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, hhDoanhSo: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold mb-1">Tạm ứng trong kỳ (VNĐ):</label>
-                  <input
-                    type="number"
-                    step="100000"
-                    value={editingPayrollEmp.tamUng || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, tamUng: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-rose-700"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold mb-1">Khấu trừ Thuế TNCN (VNĐ):</label>
-                  <input
-                    type="number"
-                    step="10000"
-                    value={editingPayrollEmp.thueTNCN || 0}
-                    onChange={e => setEditingPayrollEmp({ ...editingPayrollEmp, thueTNCN: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-[#FDFBF7] border border-[#E7E0D6] rounded-xl text-xs font-mono text-rose-700"
-                  />
-                </div>
-              </div>
 
               <div className="pt-3 border-t border-[#E7E0D6] flex justify-end gap-2">
                 <button
