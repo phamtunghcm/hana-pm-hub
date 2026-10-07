@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import {
+import { Sparkles,
   Users,
   Wallet,
   CalendarDays,
@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import PayrollView from './PayrollView';
+import { HANA_DATA_VERSION, INITIAL_PAYROLL_DATA } from '../data/payrollData';
 import {
   INITIAL_EMPLOYEES,
   SALARY_REGULATIONS,
@@ -40,16 +41,24 @@ export default function HRManagementView() {
   // Sub-tab Navigation
   const [activeSubTab, setActiveSubTab] = useState<'payroll' | 'directory' | 'attendance' | 'leave' | 'regulations'>('payroll');
 
-  // Employee Directory States
+  // Employee Directory States với Auto-Clean dữ liệu cũ
   const [employees, setEmployees] = useState<EmployeeProfile[]>(() => {
+    const version = localStorage.getItem('HANA_EMPLOYEES_DATA_VERSION');
     const saved = localStorage.getItem('HANA_EMPLOYEES_DATA');
-    if (saved) {
+    if (saved && version === HANA_DATA_VERSION) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const hasLegacyDummy = parsed.some((e: any) => ['NV001', 'NV002', 'NV003', 'NV004', 'NV005', 'NV006', 'NV007', 'NV008', 'NV009', 'NV010', 'NV011'].includes(e.maNV));
+        if (!hasLegacyDummy && parsed.length > 0) {
+          return parsed;
+        }
       } catch {
-        return INITIAL_EMPLOYEES;
+        // Fallback
       }
     }
+    // Tự động làm sạch dữ liệu cũ và lưu 4 KTV chuẩn ERP
+    localStorage.setItem('HANA_EMPLOYEES_DATA_VERSION', HANA_DATA_VERSION);
+    localStorage.setItem('HANA_EMPLOYEES_DATA', JSON.stringify(INITIAL_EMPLOYEES));
     return INITIAL_EMPLOYEES;
   });
 
@@ -386,6 +395,18 @@ export default function HRManagementView() {
       setSelectedEmpDetail(null);
     }
     showToast(`Đã xóa nhân viên ${deletingEmployee.hoTen} khỏi hệ thống!`, true);
+  };
+
+  // Làm sạch danh sách và khôi phục 4 KTV chuẩn từ Google Drive/ERP
+  const handleResetEmployeesERP = () => {
+    if (window.confirm('Khôi phục danh sách chuẩn 4 KTV chính thức thực tế từ Google Drive/ERP (loại bỏ toàn bộ nhân sự cũ đã xóa)?')) {
+      localStorage.setItem('HANA_EMPLOYEES_DATA_VERSION', HANA_DATA_VERSION);
+      localStorage.setItem('HANA_EMPLOYEES_DATA', JSON.stringify(INITIAL_EMPLOYEES));
+      localStorage.setItem('HANA_PAYROLL_DATA_VERSION', HANA_DATA_VERSION);
+      localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(INITIAL_PAYROLL_DATA));
+      setEmployees(INITIAL_EMPLOYEES);
+      showToast('Đã làm sạch và đồng bộ chuẩn 4 KTV thực tế từ Google Drive/ERP!', true);
+    }
   };
 
   return (
@@ -733,6 +754,15 @@ export default function HRManagementView() {
                 <option value="QuanLy">Quản lý / Vận hành</option>
               </select>
             </div>
+
+            <button
+              onClick={handleResetEmployeesERP}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              title="Làm sạch dữ liệu và chỉ giữ lại 4 KTV chính thức thực tế từ Google Drive/ERP (xóa sạch nhân sự ảo cũ)"
+            >
+              <Sparkles size={16} />
+              <span>Chuẩn Hóa ERP (4 KTV)</span>
+            </button>
 
             <button
               onClick={() => setShowAddEmpModal(true)}
