@@ -115,5 +115,18 @@
     "fileLink": "https://docs.google.com/document/d/1KFGrIqzpjagkyzaaBdXBRXflg42ccPYY/edit?usp=drivesdk",
     "sheetLink": "https://docs.google.com/spreadsheets/d/1Qq3a6LjbvcF3SrVmodCRGGBNQ2vFyMlQ/edit?usp=drive_link",
     "folderLink": "https://drive.google.com/drive/folders/1prdsSerfEfqjU0fzfa-__eRphpJhoS6p?usp=drive_link"
+  },
+  {
+    "id": 10,
+    "group": "Bắt buộc",
+    "title": "Biểu mẫu D02-LT - Danh sách lao động nộp BHXH",
+    "level": "Bắt buộc khi có nhân sự",
+    "content": "- Báo tăng lao động tham gia BHXH, BHYT, BHTN. - Điều chỉnh tiền lương đóng BHXH. - Kê khai giảm lao động theo Quyết định 505/QĐ-BHXH.",
+    "department": "Kế toán / Nhân sự",
+    "deadline": "Hàng tháng",
+    "status": "Hoàn thành",
+    "fileLink": "https://docs.google.com/document/d/13CjX9BiUKhrIuhl9kG-OSJVkxv5Di0N0/edit?usp=sharing",
+    "sheetLink": "https://docs.google.com/spreadsheets/d/1GHQH-F-yEJ5swrs2f5UZN06vJWAZ6_QK/edit?usp=sharing",
+    "folderLink": "https://drive.google.com/drive/folders/17GEr_yuOy1JelriKnFSYYmrvxaC4tueA?usp=sharing"
   }
 ]

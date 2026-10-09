@@ -41,6 +41,7 @@ import {
   calculateHanaPayrollRecord,
 } from '../data/payrollData';
 import { useHana } from '../store/HanaContext';
+import D02BhxhModal from './D02BhxhModal';
 
 export interface PayrollViewProps {
   payrollData?: Record<string, EmployeePayroll[]>;
@@ -63,6 +64,7 @@ export default function PayrollView({
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeePayroll | null>(null);
+  const [showD02Modal, setShowD02Modal] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [isSyncingDrive, setIsSyncingDrive] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -709,6 +711,16 @@ export default function PayrollView({
           >
             <Sparkles size={14} />
             <span>Làm sạch chuẩn ERP (4 KTV)</span>
+          </button>
+
+          {/* Biểu Mẫu D02-LT (Nộp BHXH) */}
+          <button
+            onClick={() => setShowD02Modal(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#E8F5E9] hover:bg-[#C8E6C9] text-[#1B5E20] border border-[#A5D6A7] flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            title="Mở Biểu Mẫu D02-LT nộp BHXH theo Quyết định 505/QĐ-BHXH"
+          >
+            <ShieldCheck size={14} className="text-[#2E7D32]" />
+            <span>Biểu Mẫu D02-LT (Nộp BHXH)</span>
           </button>
 
           {/* Xuất Excel */}
@@ -2277,6 +2289,14 @@ export default function PayrollView({
           </div>
         </div>
       )}
+
+      {/* MODAL BIỂU MẪU D02-LT NỘP BHXH */}
+      <D02BhxhModal
+        isOpen={showD02Modal}
+        onClose={() => setShowD02Modal(false)}
+        employees={currentMonthEmployees}
+        selectedMonth={selectedMonth}
+      />
     </div>
   );
 }
