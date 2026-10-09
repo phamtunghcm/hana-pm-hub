@@ -90,7 +90,7 @@ export default function PayrollView({
         // Fallback
       }
     }
-    // Tự động làm sạch dữ liệu cũ và khởi tạo 4 KTV chính thức thực tế từ ERP
+    // Tự động làm sạch dữ liệu cũ và khởi tạo 3 nhân sự thực tế từ ERP
     localStorage.setItem('HANA_PAYROLL_DATA_VERSION', HANA_DATA_VERSION);
     localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(INITIAL_PAYROLL_DATA));
     localStorage.setItem('HANA_EMPLOYEES_DATA_VERSION', HANA_DATA_VERSION);
@@ -99,9 +99,9 @@ export default function PayrollView({
   });
 
 
-  // Làm sạch dữ liệu và khôi phục chuẩn 4 KTV thực tế từ Google Drive/ERP
+  // Làm sạch dữ liệu và khôi phục chuẩn 3 nhân sự thực tế từ Google Drive/ERP
   const handleResetToCleanERP = () => {
-    if (window.confirm('Hành động này sẽ làm sạch danh sách và chỉ giữ lại 4 KTV chính thức thực tế từ ERP (xóa bỏ triệt để các nhân sự cũ đã xóa trên ERP). Tiếp tục?')) {
+    if (window.confirm('Hành động này sẽ làm sạch danh sách và chỉ giữ lại 3 nhân sự thực tế từ ERP (xóa bỏ triệt để các nhân sự cũ đã xóa trên ERP). Tiếp tục?')) {
       localStorage.setItem('HANA_PAYROLL_DATA_VERSION', HANA_DATA_VERSION);
       localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(INITIAL_PAYROLL_DATA));
       localStorage.setItem('HANA_EMPLOYEES_DATA_VERSION', HANA_DATA_VERSION);
@@ -109,7 +109,7 @@ export default function PayrollView({
       setPayrollData(INITIAL_PAYROLL_DATA);
       setSyncToast({
         show: true,
-        message: 'Đã làm sạch danh sách nhân sự! Đang hiển thị chuẩn 4 KTV thực tế từ Google Drive/ERP.',
+        message: 'Đã làm sạch danh sách nhân sự! Đang hiển thị chuẩn 3 nhân sự thực tế từ Google Drive/ERP.',
         success: true,
       });
       setTimeout(() => setSyncToast(prev => ({ ...prev, show: false })), 4000);
@@ -707,10 +707,10 @@ export default function PayrollView({
           <button
             onClick={handleResetToCleanERP}
             className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            title="Làm sạch dữ liệu và chỉ giữ lại 4 KTV chính thức thực tế từ ERP (xóa sạch nhân sự ảo cũ)"
+            title="Làm sạch dữ liệu và chỉ giữ lại 3 nhân sự thực tế từ ERP (xóa sạch nhân sự ảo cũ)"
           >
             <Sparkles size={14} />
-            <span>Làm sạch chuẩn ERP (4 KTV)</span>
+            <span>Chuẩn Hóa ERP (3 Nhân Sự)</span>
           </button>
 
           {/* Biểu Mẫu D02-LT (Nộp BHXH) */}

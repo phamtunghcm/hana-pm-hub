@@ -36,7 +36,7 @@ export interface EmployeePayroll {
   nganHang: string;
   ngayVaoLam: string;
   soNguoiPhuThuoc: number;
-  hinhThucLuong: 'LCBHoaHong' | 'CoDinh';
+  hinhThucLuong: 'LCBHoaHong' | 'CoDinh' | 'HocViecKhongThuLao';
 
   // Chấm công
   ngayCongChuan: number;

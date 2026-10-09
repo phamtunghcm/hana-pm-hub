@@ -4,7 +4,7 @@ export interface EmployeeProfile {
   chucVu: 'KTV' | 'CSKH' | 'Sale' | 'LeTan' | 'BacSi' | 'QuanLy' | 'BaoVe' | 'TapVu' | 'KeToan' | 'Marketing';
   chucVuLabel: string;
   ngach: 'KTV' | 'LT' | 'KT' | 'NS' | 'MKT' | 'SM' | 'GM' | 'BV' | 'LC';
-  bac: 1 | 2 | 3;
+  bac: 0 | 1 | 2 | 3;
   capBacTen: string;
   chiNhanh: string;
   chiNhanhTen: string;
@@ -26,8 +26,8 @@ export interface EmployeeProfile {
   luongThoaThuan: number;
   luongDongBHXH: number;
   mucLuongCamKet?: number;
-  hinhThucLuong: 'LCBHoaHong' | 'CoDinh';
-  trangThaiLamViec: 'Chính thức' | 'Thử việc' | 'Đã nghỉ việc';
+  hinhThucLuong: 'LCBHoaHong' | 'CoDinh' | 'HocViecKhongThuLao';
+  trangThaiLamViec: 'Chính thức' | 'Thử việc' | 'Đã nghỉ việc' | 'Học việc';
   soTaiKhoan: string;
   nganHang: string;
   driveFolderUrl?: string;

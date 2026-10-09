@@ -58,7 +58,7 @@ export default function HRManagementView() {
         // Fallback
       }
     }
-    // Tự động làm sạch dữ liệu cũ và lưu 4 KTV chuẩn ERP
+    // Tự động làm sạch dữ liệu cũ và lưu 3 nhân sự chuẩn ERP
     localStorage.setItem('HANA_EMPLOYEES_DATA_VERSION', HANA_DATA_VERSION);
     localStorage.setItem('HANA_EMPLOYEES_DATA', JSON.stringify(INITIAL_EMPLOYEES));
     return INITIAL_EMPLOYEES;
@@ -582,13 +582,13 @@ export default function HRManagementView() {
 
   // Làm sạch danh sách và khôi phục 4 KTV chuẩn từ Google Drive/ERP
   const handleResetEmployeesERP = () => {
-    if (window.confirm('Khôi phục danh sách chuẩn 4 KTV chính thức thực tế từ Google Drive/ERP (loại bỏ toàn bộ nhân sự cũ đã xóa)?')) {
+    if (window.confirm('Khôi phục danh sách chuẩn 3 nhân sự thực tế từ Google Drive/ERP (2 KTV chính thức & 1 Học viên DDS)?')) {
       localStorage.setItem('HANA_EMPLOYEES_DATA_VERSION', HANA_DATA_VERSION);
       localStorage.setItem('HANA_EMPLOYEES_DATA', JSON.stringify(INITIAL_EMPLOYEES));
       localStorage.setItem('HANA_PAYROLL_DATA_VERSION', HANA_DATA_VERSION);
       localStorage.setItem('HANA_PAYROLL_DATA', JSON.stringify(INITIAL_PAYROLL_DATA));
       setEmployees(INITIAL_EMPLOYEES);
-      showToast('Đã làm sạch và đồng bộ chuẩn 4 KTV thực tế từ Google Drive/ERP!', true);
+      showToast('Đã làm sạch và đồng bộ chuẩn 3 nhân sự thực tế từ Google Drive/ERP!', true);
     }
   };
 
@@ -770,10 +770,10 @@ export default function HRManagementView() {
             <button
               onClick={handleResetEmployeesERP}
               className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
-              title="Làm sạch dữ liệu và chỉ giữ lại 4 KTV chính thức thực tế từ Google Drive/ERP (xóa sạch nhân sự ảo cũ)"
+              title="Làm sạch dữ liệu và đồng bộ chuẩn 3 nhân sự thực tế từ Google Drive/ERP"
             >
               <Sparkles size={16} />
-              <span>Chuẩn Hóa ERP (4 KTV)</span>
+              <span>Chuẩn Hóa ERP (3 Nhân Sự)</span>
             </button>
 
             
