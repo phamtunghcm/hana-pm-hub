@@ -243,7 +243,7 @@ export const INITIAL_EMPLOYEES: EmployeeProfile[] = [
     chiNhanh: 'CN_Q3',
     chiNhanhTen: 'Chi nhánh Quận 3 (Trụ sở)',
     soDienThoai: '0974.689.419',
-    email: 'luong.phuong@hanawellness.vn',
+    email: '',
     ngaySinh: '20/12/1981',
     gioiTinh: 'Nữ',
     soCCCD: '030181007364',
@@ -277,8 +277,8 @@ export const INITIAL_EMPLOYEES: EmployeeProfile[] = [
     nguoiLienHeKhanCap: {
       hoTen: 'Trần Văn Nghị',
       quanHe: 'Chồng',
-      soDienThoai: '0974.689.419',
-      diaChi: '118/14A KP 18, P. Trung Mỹ Tây, Q.12, TP.HCM',
+      soDienThoai: '',
+      diaChi: 'Phường Trung Mỹ Tây, Quận 12, TP. Hồ Chí Minh',
     },
   },
 ];

@@ -1,6 +1,6 @@
 import type { EmployeePayroll, PayrollPeriodSummary } from '../types/payroll';
 
-export const HANA_DATA_VERSION = '2026-10-09-v5-official';
+export const HANA_DATA_VERSION = '2026-10-09-v6-truthful';
 export const DINH_MUC_CHUAN_XANG_XE = 500000; // Tối đa 500.000 VNĐ/tháng theo quy chế 06/2026/QC-LT-HNW
 export const DINH_MUC_CHUAN_THU_NHAP_10TR = 10000000; // Gói thu nhập chuẩn 10.000.000 VNĐ nếu đủ 26 công
 export const PHU_CAP_COM_CO_DINH_CHUAN = 800000; // Cố định phụ cấp tiền cơm 800.000 VNĐ/tháng
